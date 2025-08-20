@@ -1,0 +1,161 @@
+[
+  {
+    "id": "etruscan-italic-pre-roman-0-1",
+    "name": "Etruscan / Italic Pre-Roman",
+    "start": -1200,
+    "end": -509,
+    "color": "#D7263D",
+    "yRel": 0.06,
+    "hRel": 0.02
+  },
+  {
+    "id": "roman-0-2",
+    "name": "ROMAN",
+    "start": -509,
+    "end": 395,
+    "color": "#cbd5e1",
+    "yRel": 0.06,
+    "hRel": 0.02
+  },
+  {
+    "id": "north-african-berber-amazigh-punic-carthaginian-phoenician-1-0",
+    "name": "North-African (Berber (Amazigh)/Punic (Carthaginian/Phoenician)",
+    "start": -6000,
+    "end": -146,
+    "color": "#0E9F9A",
+    "yRel": 0.08,
+    "hRel": 0.02
+  },
+  {
+    "id": "roman-1-2",
+    "name": "ROMAN",
+    "start": -146,
+    "end": 395,
+    "color": "#cbd5e1",
+    "yRel": 0.08,
+    "hRel": 0.02
+  },
+  {
+    "id": "anatolian-hettite-thracian-balkan-2-0",
+    "name": "Anatolian (Hettite/Thracian/Balkan)",
+    "start": -4000,
+    "end": -323,
+    "color": "#7E22CE",
+    "yRel": 0.14,
+    "hRel": 0.02
+  },
+  {
+    "id": "roman-2-2",
+    "name": "ROMAN",
+    "start": -63,
+    "end": 395,
+    "color": "#cbd5e1",
+    "yRel": 0.10,
+    "hRel": 0.02
+  },
+  {
+    "id": "semetic-phoenician-arameic-hebrew-3-0",
+    "name": "Semetic (Phoenician/Arameic/Hebrew)",
+    "start": -3500,
+    "end": -330,
+    "color": "#EA580C",
+    "yRel": 0.12,
+    "hRel": 0.02
+  },
+  {
+    "id": "roman-3-2",
+    "name": "ROMAN",
+    "start": -63,
+    "end": 395,
+    "color": "#cbd5e1",
+    "yRel": 0.12,
+    "hRel": 0.02
+  },
+  {
+    "id": "greek-myceanian-minoan-4-0",
+    "name": "Greek (Myceanian/Minoan)",
+    "start": -3000,
+    "end": -323,
+    "color": "#2563EB",
+    "yRel": 0.10,
+    "hRel": 0.02
+  },
+  {
+    "id": "roman-4-2",
+    "name": "ROMAN",
+    "start": -146,
+    "end": 395,
+    "color": "#cbd5e1",
+    "yRel": 0.14,
+    "hRel": 0.02
+  },
+  {
+    "id": "mesopotamian-babylonain-akkadian-assyrian-sumerian-5-0",
+    "name": "Mesopotamian (Babylonain/Akkadian/Assyrian/Sumerian)",
+    "start": -5500,
+    "end": -331,
+    "color": "#6B8E23",
+    "yRel": 0.16,
+    "hRel": 0.02
+  },
+  {
+    "id": "roman-5-2",
+    "name": "ROMAN",
+    "start": -30,
+    "end": 395,
+    "color": "#cbd5e1",
+    "yRel": 0.16,
+    "hRel": 0.02
+  },
+  {
+    "id": "egyptian-6-0",
+    "name": "Egyptian",
+    "start": -5000,
+    "end": -332,
+    "color": "#BE185D",
+    "yRel": 0.18,
+    "hRel": 0.02
+  },
+  {
+    "id": "roman-6-2",
+    "name": "ROMAN",
+    "start": -30,
+    "end": 395,
+    "color": "#cbd5e1",
+    "yRel": 0.18,
+    "hRel": 0.02
+  },
+  {
+    "id": "persian-alchemenid-elamaite-zaroastrian-parthian-indic-7-0",
+    "name": "Persian (Alchemenid/Elamaite/Zaroastrian/Parthian/Indic)",
+    "start": -5200,
+    "end": -330,
+    "color": "#15803D",
+    "yRel": 0.20,
+    "hRel": 0.02
+  },
+  {
+    "id": "persian-7-2",
+    "name": "Persian",
+    "start": -140,
+    "end": 651,
+    "color": "#15803D",
+    "yRel": 0.20,
+    "hRel": 0.02
+  },
+  {
+    "id": "hellenistic-composite",
+    "name": "HELLENISTIC",
+    "color": "#9ca3af",
+    "hRel": 0.02,
+    "segments": [
+      { "start": -333, "end": -63,  "yRel": 0.10 },
+      { "start": -330
+      , "end": -63,  "yRel": 0.12 },
+      { "start": -323, "end": -146, "yRel": 0.14 },
+      { "start": -331, "end": -30,  "yRel": 0.16 },
+      { "start": -332, "end": -30,  "yRel": 0.18 },
+      { "start": -330, "end": -140, "yRel": 0.20 }
+    ]
+  }
+]

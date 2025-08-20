@@ -1,0 +1,126 @@
+:root {
+  --bg: #ffffff;                /* page background */
+  --text: #111827;              /* default text color (near black) */
+  --muted: #4b5563;
+  /* Visual tuning for durations */
+  --shape-opacity: 0.45;        /* default dimmed look */
+  --shape-hover-opacity: 1;     /* fully vivid on hover/focus */
+  --shape-hover-brightness: 1.22;
+  --shape-hover-saturate: 1.06;
+}
+
+/* Fill the viewport */
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+
+.appShell {
+  width: 100vw;
+  height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* The SVG should occupy all available space */
+.timelineSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:#ffffff;
+}
+
+/* If you’re not using .viewport/.landscape wrappers anymore, you can delete these. */
+.viewport {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+}
+.landscape { width: 100%; height: 100%; }
+
+@media (orientation: portrait) {
+  .landscape {
+    position: absolute;
+    transform-origin: top left;
+    width: 100dvh;
+    height: 100dvw;
+    transform: rotate(-90deg) translate(-100dvh, 0);
+  }
+}
+
+/* Axis & grid */
+.axis text { fill: var(--muted); font-size: 11px; }
+.axis path, .axis line { stroke: #3a4a64; }
+.grid .tick line {
+  stroke: #e5e7eb;
+  opacity: 1;
+  stroke-width: 1;
+  stroke-linecap: round;     /* rounded “dots” */
+  stroke-dasharray: 6 6;     /* dot length, gap */
+  vector-effect: non-scaling-stroke; /* stays crisp while zooming */
+  shape-rendering: crispEdges;
+}
+
+
+/* Bars & composites */
+.bar { cursor: default; }
+
+/* Singles: crisp edges, square corners, dim by default */
+.bar rect {
+  shape-rendering: geometricPrecision;
+  fill-opacity: var(--shape-opacity);
+  transition: fill-opacity 160ms ease, filter 160ms ease;
+  /* square corners ensured from JSX (no rx/ry) */
+}
+
+/* Composites: single, seamless path; dim by default */
+.composite .compositeShape {
+  shape-rendering: geometricPrecision;
+  stroke: none; /* no seams/borders */
+  fill-opacity: var(--shape-opacity);
+  transition: fill-opacity 160ms ease, filter 160ms ease;
+}
+
+/* On hover/focus: brighten + fully opaque */
+.bar:hover rect,
+.bar:hover .compositeShape,
+.bar:focus-within rect,
+.bar:focus-within .compositeShape {
+  fill-opacity: var(--shape-hover-opacity);
+  filter: brightness(var(--shape-hover-brightness)) saturate(var(--shape-hover-saturate));
+}
+
+/* Labels: hidden by default, shown on hover/focus */
+.bar .barLabel {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-in-out;
+  fill: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bar:hover .barLabel,
+.bar:focus-within .barLabel {
+  opacity: 1;
+}
+
+/* Optional: keyboard focus “pop” (add tabindex to .bar in JSX if you want this) */
+.bar:focus-within rect,
+.bar:focus-within .compositeShape {
+  outline: none;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .bar rect,
+  .composite .compositeShape,
+  .bar .barLabel {
+    transition: none;
+  }
+}
