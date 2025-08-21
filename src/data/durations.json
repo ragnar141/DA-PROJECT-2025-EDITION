@@ -1,56 +1,20 @@
 [
   {
-    "id": "etruscan-italic-pre-roman-0-1",
-    "name": "Etruscan / Italic Pre-Roman",
-    "start": -1200,
-    "end": -509,
-    "color": "#D7263D",
-    "yRel": 0.06,
-    "hRel": 0.02
-  },
-  {
-    "id": "roman-0-2",
-    "name": "ROMAN",
-    "start": -509,
-    "end": 395,
-    "color": "#cbd5e1",
-    "yRel": 0.06,
-    "hRel": 0.02
-  },
-  {
     "id": "north-african-berber-amazigh-punic-carthaginian-phoenician-1-0",
-    "name": "North-African (Berber (Amazigh)/Punic (Carthaginian/Phoenician)",
-    "start": -6000,
+    "name": "North-African (Berber/Punic)",
+    "start": -3000,
     "end": -146,
     "color": "#0E9F9A",
     "yRel": 0.08,
     "hRel": 0.02
   },
   {
-    "id": "roman-1-2",
-    "name": "ROMAN",
-    "start": -146,
-    "end": 395,
-    "color": "#cbd5e1",
-    "yRel": 0.08,
-    "hRel": 0.02
-  },
-  {
     "id": "anatolian-hettite-thracian-balkan-2-0",
     "name": "Anatolian (Hettite/Thracian/Balkan)",
-    "start": -4000,
-    "end": -323,
-    "color": "#7E22CE",
+    "start": -3000,
+    "end": -330,
+    "color": "#D7263D",
     "yRel": 0.14,
-    "hRel": 0.02
-  },
-  {
-    "id": "roman-2-2",
-    "name": "ROMAN",
-    "start": -63,
-    "end": 395,
-    "color": "#cbd5e1",
-    "yRel": 0.10,
     "hRel": 0.02
   },
   {
@@ -58,35 +22,8 @@
     "name": "Semetic (Phoenician/Arameic/Hebrew)",
     "start": -3500,
     "end": -330,
-    "color": "#EA580C",
+    "color": "#15803D",
     "yRel": 0.12,
-    "hRel": 0.02
-  },
-  {
-    "id": "roman-3-2",
-    "name": "ROMAN",
-    "start": -63,
-    "end": 395,
-    "color": "#cbd5e1",
-    "yRel": 0.12,
-    "hRel": 0.02
-  },
-  {
-    "id": "greek-myceanian-minoan-4-0",
-    "name": "Greek (Myceanian/Minoan)",
-    "start": -3000,
-    "end": -323,
-    "color": "#2563EB",
-    "yRel": 0.10,
-    "hRel": 0.02
-  },
-  {
-    "id": "roman-4-2",
-    "name": "ROMAN",
-    "start": -146,
-    "end": 395,
-    "color": "#cbd5e1",
-    "yRel": 0.14,
     "hRel": 0.02
   },
   {
@@ -94,17 +31,8 @@
     "name": "Mesopotamian (Babylonain/Akkadian/Assyrian/Sumerian)",
     "start": -5500,
     "end": -331,
-    "color": "#6B8E23",
-    "yRel": 0.16,
-    "hRel": 0.02
-  },
-  {
-    "id": "roman-5-2",
-    "name": "ROMAN",
-    "start": -30,
-    "end": 395,
-    "color": "#cbd5e1",
-    "yRel": 0.16,
+    "color": "#7E22CE",
+    "yRel": 0.18,
     "hRel": 0.02
   },
   {
@@ -112,17 +40,8 @@
     "name": "Egyptian",
     "start": -5000,
     "end": -332,
-    "color": "#BE185D",
-    "yRel": 0.18,
-    "hRel": 0.02
-  },
-  {
-    "id": "roman-6-2",
-    "name": "ROMAN",
-    "start": -30,
-    "end": 395,
-    "color": "#cbd5e1",
-    "yRel": 0.18,
+    "color": "#2563EB",
+    "yRel": 0.16,
     "hRel": 0.02
   },
   {
@@ -130,32 +49,205 @@
     "name": "Persian (Alchemenid/Elamaite/Zaroastrian/Parthian/Indic)",
     "start": -5200,
     "end": -330,
-    "color": "#15803D",
+    "color": "#065F46",
     "yRel": 0.20,
     "hRel": 0.02
   },
-  {
-    "id": "persian-7-2",
-    "name": "Persian",
-    "start": -140,
-    "end": 651,
-    "color": "#15803D",
-    "yRel": 0.20,
-    "hRel": 0.02
-  },
+  
   {
     "id": "hellenistic-composite",
-    "name": "HELLENISTIC",
-    "color": "#9ca3af",
+    "name": "Greek (Myceanian/Minoan/Hellenic/Hellenistic)",
+    "color": "#FACC15",
     "hRel": 0.02,
     "segments": [
-      { "start": -333, "end": -63,  "yRel": 0.10 },
-      { "start": -330
-      , "end": -63,  "yRel": 0.12 },
-      { "start": -323, "end": -146, "yRel": 0.14 },
-      { "start": -331, "end": -30,  "yRel": 0.16 },
-      { "start": -332, "end": -30,  "yRel": 0.18 },
-      { "start": -330, "end": -140, "yRel": 0.20 }
+      { "start": -3000, "end": -146,  "yRel": 0.10 },
+      { "start": -330,  "end": -63,  "yRel": 0.12 },
+      { "start": -330,  "end": -30, "yRel": 0.14 },
+      { "start": -332,  "end": -30,  "yRel": 0.16 },
+      { "start": -331,  "end": -141,  "yRel": 0.18 },
+      { "start": -330,  "end": -140, "yRel": 0.20 }
     ]
+  },
+  {
+    "id": "roman-composite",
+    "name": "Roman (Italic/Etruscan/Latin)",
+    "color": "#FCA5A5",
+    "hRel": 0.02,
+    "segments": [
+      { "start": -1200, "end": 395, "yRel": 0.06 },
+      { "start": -146,  "end": 395, "yRel": 0.08 },
+      { "start": -146,   "end": 395, "yRel": 0.10 },
+      { "start": -63,   "end": 395, "yRel": 0.12 },
+      { "start": -30,  "end": 395, "yRel": 0.14 },
+      { "start": -30,   "end": 395, "yRel": 0.16 }
+      
+    ]
+  },
+
+  {
+    "id": "parthian/sassanian",
+    "name": "Parthian, Sassanian",
+    "start": -140,
+    "end": 651,
+    "color": "#2563EB",
+    "yRel": 0.20,
+    "hRel": 0.02
+  },
+  {
+    "id": "armenian",
+    "name": "Armenian",
+    "start": 405,
+    "end": 2025,
+    "color": "#A16207",
+    "yRel": 0.22,
+    "hRel": 0.02
+  },
+  {
+    "id": "wri",
+    "name": "Western Roman Empire",
+    "start": 395,
+    "end": 476,
+    "color": "#6D28D9",
+    "yRel": 0.06,
+    "hRel": 0.08
+  },
+  {
+    "id": "anglosaxon",
+    "name": "Anglo-Saxon, Norman England, Welsh, Irish, Scottish, English",
+    "start": 410,
+    "end": 2025,
+    "color": "#2F9E44",
+    "yRel": 0.02,
+    "hRel": 0.02
+  },
+  {
+    "id": "ere",
+    "name": "Eastern Roman Empire (Byzantine Empire)",
+    "start": 395,
+    "end": 1453,
+    "color": "#7F1D1D",
+    "yRel": 0.16,
+    "hRel": 0.02
+  },
+  {
+    "id": "franks",
+    "name": "Franks, Carolingian Empire",
+    "color": "#7F1D1D",
+    "hRel": 0.02,
+    "segments": [
+      { "start": 486, "end": 843, "yRel": 0.06 },
+      { "start": 774, "end": 843, "yRel": 0.08 }      
+    ]
+  },
+  {
+    "id": "ostrogoths",
+    "name": "Ostrogoths",
+    "start": 493,
+    "end": 554,
+    "color": "#7F1D1D",
+    "yRel": 0.08,
+    "hRel": 0.02
+  },
+  {
+    "id": "lombards",
+    "name": "Lombards",
+    "start": 568,
+    "end": 774,
+    "color": "#FACC15",
+    "yRel": 0.08,
+    "hRel": 0.02
+  },
+   {
+    "id": "visegoths",
+    "name": "Visegoths",
+    "start": 476,
+    "end": 711,
+    "color": "#15803D",
+    "yRel": 0.10,
+    "hRel": 0.02
+  },
+  {
+    "id": "islamic-persian-central-asia",
+    "name": "Islamic Persia and Central Asia",
+    "start": 651,
+    "end": 2025,
+    "color": "#FF3131",
+    "yRel": 0.20,
+    "hRel": 0.02
+  },
+   {
+    "id": "islamic-north-africa-near-east",
+    "name": "Islamic North Africa and Near East",
+    "start": 642,
+    "end": 2025,
+    "color": "#FF3131",
+    "yRel": 0.14,
+    "hRel": 0.02
+  },
+    {
+    "id": "ottoman-empire",
+    "name": "Ottoman Empire",
+    "start": 1453,
+    "end": 1922,
+    "color": "#7FFF00",
+    "yRel": 0.16,
+    "hRel": 0.02
+  },
+    {
+    "id": "islamic-iberia",
+    "name": "Islamic Iberia",
+    "start": 711,
+    "end": 1085,
+    "color": "#FF3131",
+    "yRel": 0.10,
+    "hRel": 0.02
+  },
+  {
+    "id": "italia",
+    "name": "Italia",
+    "start": 1050,
+    "end": 2025,
+    "color": "#007FFF",
+    "yRel": 0.04,
+    "hRel": 0.02
+  },
+  {
+    "id": "eastfrancia",
+    "name": "East Francia, Holy Roman Empire, Germany",
+    "start": 843,
+    "end": 2025,
+    "color": "#DA70D6",
+    "yRel": 0.06,
+    "hRel": 0.02
+  },
+   {
+    "id": "westfrancia",
+    "name": "West Francia, France",
+    "start": 843,
+    "end": 2025,
+    "color": "#6F00FF",
+    "yRel": 0.08,
+    "hRel": 0.02
+  },
+   {
+    "id": "espana",
+    "name": "Spain",
+    "start": 1085,
+    "end": 2025,
+    "color": "#FFD400",
+    "yRel": 0.10,
+    "hRel": 0.02
+  },
+     {
+    "id": "mongol",
+    "name": "Mongol Empire",
+    "start": 1206,
+    "end": 1691,
+    "color": "#FFD400",
+    "yRel": 0.18,
+    "hRel": 0.02
   }
+
+
+
 ]
