@@ -5,67 +5,67 @@
     "start": -3000,
     "end": -146,
     "color": "#0E9F9A",
-    "yRel": 0.08,
+    "yRel": 0.083,
     "hRel": 0.02
   },
   {
-    "id": "anatolian-hettite-thracian-balkan-2-0",
-    "name": "Anatolian (Hettite/Thracian/Balkan)",
+    "id": "anatolian-hittite-thracian-balkan-2-0",
+    "name": "Anatolian (Hittite/Thracian/Balkan)",
     "start": -3000,
     "end": -330,
-    "color": "#D7263D",
-    "yRel": 0.14,
+    "color": "#E53935",
+    "yRel": 0.146,
     "hRel": 0.02
   },
   {
-    "id": "semetic-phoenician-arameic-hebrew-3-0",
-    "name": "Semetic (Phoenician/Arameic/Hebrew)",
+    "id": "semitic-phoenician-aramaic-hebrew-3-0",
+    "name": "Semitic (Phoenician/Aramaic/Hebrew)",
     "start": -3500,
     "end": -330,
-    "color": "#15803D",
-    "yRel": 0.12,
+    "color": "#1E40FF",
+    "yRel": 0.125,
     "hRel": 0.02
   },
   {
-    "id": "mesopotamian-babylonain-akkadian-assyrian-sumerian-5-0",
-    "name": "Mesopotamian (Babylonain/Akkadian/Assyrian/Sumerian)",
+    "id": "mesopotamian-babylonian-akkadian-assyrian-sumerian-5-0",
+    "name": "Mesopotamian (Babylonian/Akkadian/Assyrian/Sumerian)",
     "start": -5500,
-    "end": -331,
-    "color": "#7E22CE",
-    "yRel": 0.18,
+    "end": -330,
+    "color": "#4FC3F7",
+    "yRel": 0.188,
     "hRel": 0.02
   },
   {
     "id": "egyptian-6-0",
     "name": "Egyptian",
     "start": -5000,
-    "end": -332,
-    "color": "#2563EB",
-    "yRel": 0.16,
+    "end": -330,
+    "color": "#9C27B0",
+    "yRel": 0.167,
     "hRel": 0.02
   },
   {
-    "id": "persian-alchemenid-elamaite-zaroastrian-parthian-indic-7-0",
-    "name": "Persian (Alchemenid/Elamaite/Zaroastrian/Parthian/Indic)",
+    "id": "persian-alchaemenid-elamite-zoroastrian-parthian-indic-7-0",
+    "name": "Persian (Alchaemenid/Elamite/Zoroastrian/Parthian/Indic)",
     "start": -5200,
     "end": -330,
-    "color": "#065F46",
-    "yRel": 0.20,
+    "color": "#00C853",
+    "yRel": 0.209,
     "hRel": 0.02
   },
   
   {
     "id": "hellenistic-composite",
-    "name": "Greek (Myceanian/Minoan/Hellenic/Hellenistic)",
-    "color": "#FACC15",
+    "name": "Greek (Mycenaean/Minoan/Hellenic/Hellenistic)",
+    "color": "#FFD500",
     "hRel": 0.02,
     "segments": [
-      { "start": -3000, "end": -146,  "yRel": 0.10 },
-      { "start": -330,  "end": -63,  "yRel": 0.12 },
-      { "start": -330,  "end": -30, "yRel": 0.14 },
-      { "start": -332,  "end": -30,  "yRel": 0.16 },
-      { "start": -331,  "end": -141,  "yRel": 0.18 },
-      { "start": -330,  "end": -140, "yRel": 0.20 }
+      { "start": -3000, "end": -146,  "yRel": 0.104 },
+      { "start": -330,  "end": -146,  "yRel": 0.125 },
+      { "start": -330,  "end": -146, "yRel": 0.146 },
+      { "start": -330,  "end": -146,  "yRel": 0.167 },
+      { "start": -330,  "end": -146,  "yRel": 0.188 },
+      { "start": -330,  "end": -146, "yRel": 0.209 }
     ]
   },
   {
@@ -74,12 +74,12 @@
     "color": "#FCA5A5",
     "hRel": 0.02,
     "segments": [
-      { "start": -1200, "end": 395, "yRel": 0.06 },
-      { "start": -146,  "end": 395, "yRel": 0.08 },
-      { "start": -146,   "end": 395, "yRel": 0.10 },
-      { "start": -63,   "end": 395, "yRel": 0.12 },
-      { "start": -30,  "end": 395, "yRel": 0.14 },
-      { "start": -30,   "end": 395, "yRel": 0.16 }
+      { "start": -1200, "end": 395, "yRel": 0.062 },
+      { "start": -146,  "end": 395, "yRel": 0.083 },
+      { "start": -146,   "end": 395, "yRel": 0.104 },
+      { "start": -146,   "end": 395, "yRel": 0.125 },
+      { "start": -146,  "end": 395, "yRel": 0.146 },
+      { "start": -146,   "end": 395, "yRel": 0.167 }
       
     ]
   },
@@ -87,10 +87,10 @@
   {
     "id": "parthian/sassanian",
     "name": "Parthian, Sassanian",
-    "start": -140,
+    "start": -146,
     "end": 651,
     "color": "#2563EB",
-    "yRel": 0.20,
+    "yRel": 0.209,
     "hRel": 0.02
   },
   {
@@ -99,7 +99,7 @@
     "start": 405,
     "end": 2025,
     "color": "#A16207",
-    "yRel": 0.22,
+    "yRel": 0.23,
     "hRel": 0.02
   },
   {
@@ -108,8 +108,8 @@
     "start": 395,
     "end": 476,
     "color": "#6D28D9",
-    "yRel": 0.06,
-    "hRel": 0.08
+    "yRel": 0.062,
+    "hRel": 0.062
   },
   {
     "id": "anglosaxon",
@@ -126,7 +126,7 @@
     "start": 395,
     "end": 1453,
     "color": "#7F1D1D",
-    "yRel": 0.16,
+    "yRel": 0.167,
     "hRel": 0.02
   },
   {
@@ -135,35 +135,35 @@
     "color": "#7F1D1D",
     "hRel": 0.02,
     "segments": [
-      { "start": 486, "end": 843, "yRel": 0.06 },
-      { "start": 774, "end": 843, "yRel": 0.08 }      
+      { "start": 476, "end": 843, "yRel": 0.062 },
+      { "start": 774, "end": 843, "yRel": 0.083 }      
     ]
   },
   {
     "id": "ostrogoths",
     "name": "Ostrogoths",
-    "start": 493,
+    "start": 476,
     "end": 554,
     "color": "#7F1D1D",
-    "yRel": 0.08,
+    "yRel": 0.083,
     "hRel": 0.02
   },
   {
     "id": "lombards",
     "name": "Lombards",
-    "start": 568,
+    "start": 554,
     "end": 774,
     "color": "#FACC15",
-    "yRel": 0.08,
+    "yRel": 0.083,
     "hRel": 0.02
   },
    {
-    "id": "visegoths",
-    "name": "Visegoths",
+    "id": "visigoths",
+    "name": "Visigoths",
     "start": 476,
     "end": 711,
     "color": "#15803D",
-    "yRel": 0.10,
+    "yRel": 0.104,
     "hRel": 0.02
   },
   {
@@ -172,7 +172,7 @@
     "start": 651,
     "end": 2025,
     "color": "#FF3131",
-    "yRel": 0.20,
+    "yRel": 0.209,
     "hRel": 0.02
   },
    {
@@ -181,7 +181,7 @@
     "start": 642,
     "end": 2025,
     "color": "#FF3131",
-    "yRel": 0.14,
+    "yRel": 0.146,
     "hRel": 0.02
   },
     {
@@ -190,7 +190,7 @@
     "start": 1453,
     "end": 1922,
     "color": "#7FFF00",
-    "yRel": 0.16,
+    "yRel": 0.167,
     "hRel": 0.02
   },
     {
@@ -199,7 +199,7 @@
     "start": 711,
     "end": 1085,
     "color": "#FF3131",
-    "yRel": 0.10,
+    "yRel": 0.104,
     "hRel": 0.02
   },
   {
@@ -208,7 +208,7 @@
     "start": 1050,
     "end": 2025,
     "color": "#007FFF",
-    "yRel": 0.04,
+    "yRel": 0.041,
     "hRel": 0.02
   },
   {
@@ -217,7 +217,7 @@
     "start": 843,
     "end": 2025,
     "color": "#DA70D6",
-    "yRel": 0.06,
+    "yRel": 0.062,
     "hRel": 0.02
   },
    {
@@ -226,7 +226,7 @@
     "start": 843,
     "end": 2025,
     "color": "#6F00FF",
-    "yRel": 0.08,
+    "yRel": 0.083,
     "hRel": 0.02
   },
    {
@@ -235,7 +235,7 @@
     "start": 1085,
     "end": 2025,
     "color": "#FFD400",
-    "yRel": 0.10,
+    "yRel": 0.104,
     "hRel": 0.02
   },
      {
@@ -244,7 +244,7 @@
     "start": 1206,
     "end": 1691,
     "color": "#FFD400",
-    "yRel": 0.18,
+    "yRel": 0.188,
     "hRel": 0.02
   }
 

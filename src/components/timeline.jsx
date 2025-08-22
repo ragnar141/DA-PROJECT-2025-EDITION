@@ -169,13 +169,54 @@ export default function Timeline() {
     const gridFor = (scale) =>
       d3.axisBottom(scale).tickValues(tickAstro).tickSize(-innerHeight).tickFormat(() => "");
 
+    // --- Debug + crisp pixel helpers ---
+const DPR = window.devicePixelRatio || 1;
+
+// Half a device pixel in CSS px (works for DPR 1, 1.5, 2, etc.)
+const HALF_DPR_PX = 0.5 / DPR;
+
+// Snap an x (CSS px) to the center of the nearest device pixel:
+const snapX = (x) => Math.round(x * DPR) / DPR + HALF_DPR_PX;
+
+// Log a few tick positions
+function logGrid(where) {
+  const sample = [];
+  d3.select(gridRef.current).selectAll(".tick").each(function(d, i) {
+    if (i < 6) {
+      const tr = d3.select(this).attr("transform"); // "translate(x,0)"
+      sample.push({ i, tick: d, transform: tr });
+    }
+  });
+  console.log(`[grid ${where}] DPR=${DPR}`, sample);
+}
+
+// Move each tick group to a snapped x so its 1px stroke sits perfectly
+function snapGrid(zx) {
+  d3.select(gridRef.current)
+    .selectAll(".tick")
+    .attr("transform", function(d, i) {
+      const x = zx(d);               // x in CSS px
+      const snapped = snapX(x);      // snap to device pixel center
+      if (i < 6) {
+        console.log("[snap]", { i, tick: d, x, snapped, delta: snapped - x });
+      }
+      return `translate(${snapped},0)`;
+    });
+
+  // Optional: hide the horizontal domain baseline
+  d3.select(gridRef.current).select(".domain").attr("display", "none");
+}
+
+
     function apply(zx, zy) {
       // Axis anchored to bottom
       gAxis.attr("transform", `translate(${margin.left},${margin.top + axisY})`).call(axisFor(zx));
 
       // Grid (CSS handles stroke/dots)
       gGrid.attr("transform", `translate(0,${axisY})`).call(gridFor(zx));
-
+      logGrid("beforeSnap");
+      snapGrid(zx);
+      logGrid("afterSnap");  
       // Singles
       singleSel.attr("transform", (d) => {
         const x0 = zx(toAstronomical(d.start));
@@ -228,29 +269,28 @@ export default function Timeline() {
       });
     }
 
-    // initial draw (identity zoom)
-    apply(x, y0);
+const MIN_ZOOM = 0.8;
+const MAX_ZOOM = 22;
 
-    // zoom/pan (both axes)
-    const zoom = d3
-      .zoom()
-      .scaleExtent([0.5, 24])
-      .translateExtent([
-        [0, 0],
-        [innerWidth, innerHeight]
-      ])
-      .extent([
-        [0, 0],
-        [innerWidth, innerHeight]
-      ])
-      .on("zoom", (event) => {
-        const t = event.transform;
-        const zx = t.rescaleX(x);
-        const zy = t.rescaleY(y0);
-        apply(zx, zy);
-      });
+const zoom = d3.zoom()
+  .scaleExtent([MIN_ZOOM, MAX_ZOOM])
+  .translateExtent([[0, 0], [innerWidth, innerHeight]])
+  .extent([[0, 0], [innerWidth, innerHeight]])
+  .on("zoom", (event) => {
+    const t = event.transform;
+    const zx = t.rescaleX(x);
+    const zy = t.rescaleY(y0);
+    apply(zx, zy);
+  });
 
-    d3.select(svgRef.current).call(zoom);
+const svgSel = d3.select(svgRef.current).call(zoom);
+
+const s  = MIN_ZOOM;
+const tx = (innerWidth  - innerWidth  * s) / 2;
+const ty = (innerHeight - innerHeight * s) / 2;
+
+svgSel.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(s));
+   
 
     return () => d3.select(svgRef.current).on(".zoom", null);
   }, [singleRows, compositeRows, width, height, innerWidth, innerHeight, axisY, margin.left, margin.top, tickAstro, x, y0]);

@@ -34,6 +34,15 @@ body {
   background:#ffffff;
 }
 
+.grid .tick line {
+  vector-effect: non-scaling-stroke;
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+  stroke: #e5e7eb;
+  stroke-linecap: butt;   /* use 'butt' for even dashes; 'round' can look thicker */
+  stroke-dasharray: 6 6;
+}
+
 /* If you’re not using .viewport/.landscape wrappers anymore, you can delete these. */
 .viewport {
   position: relative;
@@ -67,7 +76,6 @@ body {
   shape-rendering: crispEdges;
 }
 
-
 /* Bars & composites */
 .bar { cursor: default; }
 
@@ -76,7 +84,6 @@ body {
   shape-rendering: geometricPrecision;
   fill-opacity: var(--shape-opacity);
   transition: fill-opacity 160ms ease, filter 160ms ease;
-  /* square corners ensured from JSX (no rx/ry) */
 }
 
 /* Composites: single, seamless path; dim by default */
@@ -96,12 +103,12 @@ body {
   filter: brightness(var(--shape-hover-brightness)) saturate(var(--shape-hover-saturate));
 }
 
-/* Labels: hidden by default, shown on hover/focus */
+/* Labels */
 .bar .barLabel {
-  opacity: 0;
+  opacity: 100;
   pointer-events: none;
   transition: opacity 120ms ease-in-out;
-  fill: #fff;
+  fill: #000000;
   font-size: 12px;
   font-weight: 600;
 }
@@ -110,17 +117,21 @@ body {
   opacity: 1;
 }
 
-/* Optional: keyboard focus “pop” (add tabindex to .bar in JSX if you want this) */
+/* Optional: keyboard focus pop (if you later add tabindex) */
 .bar:focus-within rect,
 .bar:focus-within .compositeShape {
   outline: none;
 }
 
-/* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .bar rect,
   .composite .compositeShape,
   .bar .barLabel {
     transition: none;
   }
+}
+
+/* Optional: wrapper positioning if you want UI elements inside */
+.timelineWrap {
+  position: relative;
 }
