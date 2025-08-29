@@ -19,21 +19,29 @@ const SymbolicSystemColorPairs = {
 /* ===== Label sizing vs zoom ===== */
 const LABEL_BASE_PX = 11;
 
-/* ===== NEW: render + hover constants ===== */
+/* ===== Render + hover constants ===== */
 const BASE_OPACITY = 0.3;
-const HOVER_OPACITY = 1;
-const AUTHOR_BASE_STROKE = 2;    // at k = 1
-const TEXT_BASE_R = 3.5;         // at k = 1
+const AUTHOR_BASE_STROKE = 1;  // at k=1
+const TEXT_BASE_R = 0.7;       // at k=1
+const HOVER_SCALE_DOT = 1.6;   // how much bigger a dot gets on hover
+const HOVER_SCALE_LINE = 1.6;  // how much thicker a line gets on hover
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+/* ===== Tooltip helpers ===== */
+const fmtRange = (s, e) => `${formatYear(s)} – ${formatYear(e)}`;
+const tipHTML = (title, subtitle) => `
+  <div class="tl-tip-title">${title ?? ""}</div>
+  ${subtitle ? `<div class="tl-tip-sub">${subtitle}</div>` : ""}
+`;
 
 /* ===== Small utils ===== */
 const hashString = (str) => {
-  let h = 2166136261 >>> 0; // FNV-ish
+  let h = 2166136261 >>> 0;
   for (let i = 0; i < (str || "").length; i++) {
     h ^= str.charCodeAt(i);
     h = Math.imul(h, 16777619);
   }
-  return (h >>> 0) / 2 ** 32; // 0..1
+  return (h >>> 0) / 2 ** 32;
 };
 function getTextDate(row) {
   const v = Number(row?.["Dataviz date"]);
@@ -85,6 +93,15 @@ export default function Timeline() {
   const segmentsRef = useRef(null);
   const authorsRef = useRef(null);
   const textsRef = useRef(null);
+
+  // current zoom scale
+  const kRef = useRef(1);
+  // current rescaled axes for anchoring tooltips
+  const zxRef = useRef(null);
+  const zyRef = useRef(null);
+  // hover lock counts per segment id
+  const segHoverCounts = useRef(new Map());
+  const activeSegIdRef = useRef(null); 
 
   /* ---- Responsive sizing ---- */
   const [size, setSize] = useState({ width: 800, height: 400 });
@@ -207,7 +224,7 @@ export default function Timeline() {
 
       const authorY = new Map();
 
-      // AUTHORS
+      // AUTHORS → unique lane per author
       for (const a of ds.authors || []) {
         const name = a?.Author ?? a?.author ?? "";
         const birth = Number(a?.Dataviz_birth);
@@ -227,17 +244,17 @@ export default function Timeline() {
         });
       }
 
-      // TEXTS
+      // TEXTS → unique lane per text (not tied to author lane)
       for (const t of ds.texts || []) {
         const authorName = t?.Author ?? t?.author ?? "";
         const title = t?.Title ?? t?.title ?? t?.Name ?? "";
         const when = getTextDate(t);
         if (!Number.isFinite(when)) continue;
         const color = pickSystemColor(t?.["Symbolic System Tags"]);
-        const y =
-          authorName && authorY.has(authorName)
-            ? authorY.get(authorName)
-            : yForKey(authorName || title || `text-${hashString(JSON.stringify(t))}`);
+
+        const textKey = `${authorName || "anon"}::${title || ""}::${when}`;
+        const y = yForKey(textKey);
+
         rowsT.push({
           id: `${ds.durationId}__text__${title || hashString(JSON.stringify(t))}__${when}`,
           durationId: ds.durationId,
@@ -298,7 +315,171 @@ export default function Timeline() {
       d3.select(gridRef.current).select(".domain").attr("display", "none");
     }
 
-    // OUTLINES
+    // --- INITIAL TRANSFORM (compute BEFORE joins) ---
+    const MIN_ZOOM = 0.9;
+    const MAX_ZOOM = 22;
+    const s = MIN_ZOOM;
+    const tx = (innerWidth - innerWidth * s) / 2;
+    const ty = (innerHeight - innerHeight * s) / 2;
+    const t0 = d3.zoomIdentity.translate(tx, ty).scale(s);
+    kRef.current = t0.k; // seed k for initial enter sizes
+
+    // ----- Three tooltip DIVs (inside wrapper, above SVG) -----
+    const wrapEl = wrapRef.current;
+    function makeTip(className) {
+      return d3
+        .select(wrapEl)
+        .selectAll(`div.${className}`)
+        .data([0])
+        .join("div")
+        .attr("class", `tl-tooltip ${className}`)
+        .style("position", "absolute")
+        .style("pointer-events", "none")
+        .style("opacity", 0)
+        .style("display", "none")
+        .style("transform", "translate3d(0,0,0)");
+    }
+    const tipAuthor = makeTip("tl-author");
+    const tipText = makeTip("tl-text");
+    const tipSeg = makeTip("tl-seg");
+
+    // helpers that need access to the tip elements
+function hideTipSel(sel) {
+  sel.style("opacity", 0).style("display", "none");
+}
+
+function hideSegTipIfUnlocked(segId) {
+  const counts = segHoverCounts.current;
+  const c = counts.get(segId) || 0;
+  if (c <= 0 && activeSegIdRef.current === segId) {
+    tipSeg.style("opacity", 0).style("display", "none");
+    activeSegIdRef.current = null;
+  }
+}
+
+    function hideAllTips() {
+      tipAuthor.style("opacity", 0).style("display", "none");
+      tipText.style("opacity", 0).style("display", "none");
+      tipSeg.style("opacity", 0).style("display", "none");
+    }
+
+    function showTip(sel, html, clientX, clientY, accent) {
+      const wrapRect = wrapEl.getBoundingClientRect();
+      sel
+        .html(html)
+        .style("display", "block")
+        .style("opacity", 1)
+        .style("--accent", accent || "");
+
+      const node = sel.node();
+      const tw = node.offsetWidth;
+      const th = node.offsetHeight;
+      const pad = 6;
+
+      // center above cursor if possible; otherwise below
+      let x = clientX - wrapRect.left - tw / 2;
+      let y = clientY - wrapRect.top - th - pad;
+      let below = false;
+      if (y < 0) {
+        y = clientY - wrapRect.top + pad;
+        below = true;
+      }
+
+      // clamp horizontally
+      const maxX = wrapRect.width - tw - 4;
+      x = Math.max(4, Math.min(x, maxX));
+
+      sel.style("left", `${x}px`).style("top", `${y}px`).classed("below", below);
+    }
+
+    // ===== SEGMENT ANCHORING helpers =====
+    function getSegmentAnchorPx(seg) {
+      const zx = zxRef.current;
+      const zy = zyRef.current;
+      if (!zx || !zy) return null;
+
+      const x0 = zx(toAstronomical(seg.start));
+      const x1 = zx(toAstronomical(seg.end));
+      const yTop = zy(seg.y);
+      const hPix = zy(seg.y + seg.h) - zy(seg.y);
+
+      const left = Math.min(x0, x1);
+      const right = Math.max(x0, x1);
+      const xMid = (left + right) / 2;
+
+      return { left, right, xMid, yTop, hPix };
+    }
+
+    // Show the segment tooltip anchored to the segment bar, not the cursor
+    function showSegAnchored(seg) {
+      const anchor = getSegmentAnchorPx(seg);
+      if (!anchor) return;
+
+      const wrapRect = wrapEl.getBoundingClientRect();
+
+      tipSeg
+        .html(tipHTML(seg.label || "", fmtRange(seg.start, seg.end)))
+        .style("display", "block")
+        .style("opacity", 1)
+        .style("--accent", seg.parentColor || "");
+
+        activeSegIdRef.current = seg.id;
+
+      const node = tipSeg.node();
+      const tw = node.offsetWidth;
+      const th = node.offsetHeight;
+      const pad = 8;
+
+      // Prefer below the segment; flip above if it would overflow the wrapper bottom
+      let x = anchor.xMid - tw / 2;
+      let y = anchor.yTop + anchor.hPix + pad;
+      let below = true;
+
+      if (y + th > wrapRect.height) {
+        y = anchor.yTop - th - pad;
+        below = false;
+      }
+
+      // Clamp horizontally inside wrapper
+      const maxX = wrapRect.width - tw - 4;
+      x = Math.max(4, Math.min(x, maxX));
+
+      tipSeg.style("left", `${x}px`).style("top", `${y}px`).classed("below", below);
+    }
+
+    // Get viewport coords for the mid-point of an author line
+function authorAnchorClient(d) {
+  const zx = zxRef.current, zy = zyRef.current;
+  if (!zx || !zy) return null;
+  const svgRect = svgRef.current.getBoundingClientRect();
+
+  const x0 = zx(toAstronomical(d.start));
+  const x1 = zx(toAstronomical(d.end));
+  const xMid = (Math.min(x0, x1) + Math.max(x0, x1)) / 2;
+  const yLine = zy(d.y);
+
+  return {
+    x: svgRect.left + margin.left + xMid,
+    y: svgRect.top  + margin.top  + yLine,
+  };
+}
+
+// Get viewport coords for a text dot (use the rendered cy)
+function textAnchorClient(el, d) {
+  const zx = zxRef.current, zy = zyRef.current;
+  if (!zx || !zy) return null;
+  const svgRect = svgRef.current.getBoundingClientRect();
+
+  const cx = zx(toAstronomical(d.when));
+  const cyAttr = el ? parseFloat(d3.select(el).attr("cy")) : zy(d.y);
+
+  return {
+    x: svgRect.left + margin.left + cx,
+    y: svgRect.top  + margin.top  + cyAttr,
+  };
+}
+
+    // OUTLINES (filled, no borders)
     const outlineSel = gOut
       .selectAll("g.durationOutline")
       .data(outlines, (d) => d.id)
@@ -307,12 +488,9 @@ export default function Timeline() {
 
         g.append("rect")
           .attr("class", "outlineRect")
-          .attr("fill", "none")
-          .attr("stroke", (d) => d.color)
-          .attr("stroke-width", 1.5)
-          .attr("vector-effect", "non-scaling-stroke")
-          .attr("shape-rendering", "geometricPrecision")
-          .attr("opacity", 0.3);
+          .attr("fill", (d) => d.color)
+          .attr("fill-opacity", 0.1)
+          .attr("stroke", "none");
 
         g.append("text")
           .attr("class", "durationLabel")
@@ -339,7 +517,9 @@ export default function Timeline() {
             .attr("vector-effect", "non-scaling-stroke")
             .attr("stroke-linecap", "round")
             .attr("stroke", (d) => d.color || "#222")
-            .attr("opacity", BASE_OPACITY), // NEW
+            .attr("opacity", BASE_OPACITY)
+            .attr("stroke-width", clamp(AUTHOR_BASE_STROKE * kRef.current, 1, 6))
+            .style("transition", "stroke-width 120ms ease"),
         (update) => update,
         (exit) => exit.remove()
       );
@@ -353,47 +533,29 @@ export default function Timeline() {
           enter
             .append("circle")
             .attr("class", "textDot")
-            .attr("stroke", "#fff")
-            .attr("stroke-width", 1)
             .attr("fill", (d) => d.color || "#444")
-            .attr("opacity", BASE_OPACITY), // NEW
+            .attr("opacity", BASE_OPACITY)
+            .attr("r", TEXT_BASE_R * kRef.current)
+            .style("transition", "r 120ms ease"),
         (update) => update,
         (exit) => exit.remove()
       );
 
-    // --- Helpers for hover logic ---
+    // ===== Hover helpers (only segments & labels react; dots/lines stay at 0.3) =====
+    const within = (v, a, b) => v >= Math.min(a, b) && v <= Math.max(a, b);
     const overlaps = (a0, a1, b0, b1) => Math.max(a0, b0) <= Math.min(a1, b1);
 
-    function setHoverForSegment(seg, isOn) {
-      const { start, end, parentId } = seg;
-
-      // highlight only items that land inside the hovered segment's time range
-      authorSel
-        .filter((d) => overlaps(Math.min(d.start, d.end), Math.max(d.start, d.end), start, end))
-        .attr("opacity", isOn ? HOVER_OPACITY : BASE_OPACITY);
-
-      textSel
-        .filter((d) => d.when >= start && d.when <= end)
-        .attr("opacity", isOn ? HOVER_OPACITY : BASE_OPACITY);
-
-      // dim the rest when hovering (optional; comment out if you prefer non-dimming)
-      authorSel
-        .filter((d) => !overlaps(Math.min(d.start, d.end), Math.max(d.start, d.end), start, end))
-        .attr("opacity", isOn ? BASE_OPACITY : BASE_OPACITY);
-
-      textSel
-        .filter((d) => !(d.when >= start && d.when <= end))
-        .attr("opacity", isOn ? BASE_OPACITY : BASE_OPACITY);
-
-      // labels of the parent duration
+    function updateHoverVisuals() {
+      const counts = segHoverCounts.current;
+      const activeSegs = segments.filter((s) => (counts.get(s.id) || 0) > 0);
+      const activeParents = new Set(activeSegs.map((s) => s.parentId));
       gOut
         .selectAll("g.durationOutline")
-        .filter((o) => o.id === parentId)
         .select("text.durationLabel")
-        .attr("opacity", isOn ? 1 : 0.3);
+        .attr("opacity", (d) => (activeParents.has(d.id) ? 1 : 0.3));
     }
 
-    // SEGMENTS (hover hits)
+    // ===== SEGMENTS (hover hits) =====
     const segSel = gSeg
       .selectAll("rect.segmentHit")
       .data(segments, (d) => d.id)
@@ -403,27 +565,152 @@ export default function Timeline() {
           .attr("class", "segmentHit")
           .attr("fill", "transparent")
           .attr("pointer-events", "all")
-          .attr("stroke", "none")
+          .attr("stroke", (d) => d.parentColor)
+          .attr("stroke-opacity", 0.02)
           .attr("stroke-width", 1.5)
           .attr("vector-effect", "non-scaling-stroke")
           .attr("shape-rendering", "geometricPrecision")
-          .on("mouseenter", function (event, d) {
-            d3.select(this).attr("stroke", d.parentColor).attr("opacity", 1);
-            setHoverForSegment(d, true); // NEW
+          .style("transition", "stroke-opacity 140ms ease, stroke-width 140ms ease")
+          .on("mouseenter", function (_ev, seg) {
+            hoverOn(seg);
+            showSegAnchored(seg);
           })
-          .on("mouseleave", function (event, d) {
-            d3.select(this).attr("stroke", "none").attr("opacity", null);
-            setHoverForSegment(d, false); // NEW (restore)
+          .on("mousemove", function (_ev, seg) {
+            // keep it anchored as you move within the segment
+            showSegAnchored(seg);
+          })
+          .on("mouseleave", function (_ev, seg) {
+            hoverOff(seg);
+            
+            setTimeout(() => hideSegTipIfUnlocked(seg.id), 0);
+
           })
       );
 
+    function hoverOn(seg) {
+      const m = segHoverCounts.current;
+      const c = (m.get(seg.id) || 0) + 1;
+      m.set(seg.id, c);
+      if (c === 1) {
+        segSel.filter((s) => s.id === seg.id).attr("stroke-opacity", 1).attr("stroke-width", 2);
+      }
+      updateHoverVisuals();
+    }
+
+    function hoverOff(seg) {
+      setTimeout(() => {
+        const m = segHoverCounts.current;
+        const c = (m.get(seg.id) || 0) - 1;
+        const nc = Math.max(0, c);
+        m.set(seg.id, nc);
+        if (nc === 0) {
+          segSel
+            .filter((s) => s.id === seg.id)
+            .attr("stroke-opacity", 0.02)
+            .attr("stroke-width", 1.5);
+        }
+        updateHoverVisuals();
+      }, 0);
+    }
+
+    const findSegForAuthor = (d) =>
+      segments.find(
+        (s) =>
+          s.parentId === d.durationId &&
+          overlaps(Math.min(d.start, d.end), Math.max(d.start, d.end), s.start, s.end) &&
+          within(d.y, s.y, s.y + s.h)
+      );
+
+    const findSegForText = (d) =>
+      segments.find(
+        (s) =>
+          s.parentId === d.durationId &&
+          d.when >= s.start &&
+          d.when <= s.end &&
+          within(d.y, s.y, s.y + s.h)
+      );
+
+    // Enlarge authors on hover + tooltip (cursor-follow)
+    const authorEnterStroke = clamp(AUTHOR_BASE_STROKE * kRef.current, 1, 6);
+    authorSel
+      .on("mouseenter", function (ev, d) {
+        const k = kRef.current;
+        d3.select(this)
+          .attr("stroke-width", clamp(AUTHOR_BASE_STROKE * k * HOVER_SCALE_LINE, 1, 8))
+          .attr("opacity", 1);
+
+          const seg = findSegForAuthor(d);
+          if (seg) {
+          hoverOn(seg);          // increase lock
+          showSegAnchored(seg);  // keep the segment tooltip visible
+       }
+
+     const html = tipHTML(`Name: ${d.name || ""}`, `Dates: ${fmtRange(d.start, d.end)}`);
+   const a = authorAnchorClient(d);
+   if (a) showTip(tipAuthor, html, a.x, a.y, d.color);})
+ .on("mousemove", function (_ev, d) {
+   const html = tipHTML(`Name: ${d.name || ""}`, `Dates: ${fmtRange(d.start, d.end)}`);
+   const a = authorAnchorClient(d);
+   if (a) showTip(tipAuthor, html, a.x, a.y, d.color);
+ })
+     .on("mouseleave", function (_ev, d) {
+  const k = kRef.current;
+  d3.select(this)
+    .attr("stroke-width", clamp(AUTHOR_BASE_STROKE * k, 1, 6))
+    .attr("opacity", BASE_OPACITY);
+  hideTipSel(tipAuthor);
+  const seg = findSegForAuthor(d);
+  if (seg) {
+    hoverOff(seg);
+    setTimeout(() => hideSegTipIfUnlocked(seg.id), 0);
+  }
+})
+
+      .attr("stroke-width", authorEnterStroke)
+      .attr("opacity", BASE_OPACITY);
+
+    // Enlarge text dots on hover — proportional to zoom (no clamp) + tooltip (cursor-follow)
+    textSel
+      .on("mouseenter", function (ev, d) {
+        const seg = findSegForText(d);
+         if (seg) {
+   hoverOn(seg);          // increase lock
+   showSegAnchored(seg);  // keep the segment tooltip shown
+  }
+        const k = kRef.current;
+        d3.select(this).attr("r", TEXT_BASE_R * k * HOVER_SCALE_DOT).attr("opacity", 1);
+
+         const html = tipHTML(`Name: ${d.title || ""}`, `Approx. Date: ${formatYear(d.when)}`);
+   const a = textAnchorClient(this, d);
+   if (a) showTip(tipText, html, a.x, a.y, d.color);
+      })
+       .on("mousemove", function (_ev, d) {
+   const html = tipHTML(`Name: ${d.title || ""}`, `Approx. Date: ${formatYear(d.when)}`);
+   const a = textAnchorClient(this, d);
+   if (a) showTip(tipText, html, a.x, a.y, d.color);
+ })
+      .on("mouseleave", function (_ev, d) {
+  const seg = findSegForText(d);
+  if (seg) hoverOff(seg);
+  const k = kRef.current;
+  d3.select(this).attr("r", TEXT_BASE_R * k).attr("opacity", BASE_OPACITY);
+  hideTipSel(tipText);
+  if (seg) setTimeout(() => hideSegTipIfUnlocked(seg.id), 0);
+})
+
+      .attr("opacity", BASE_OPACITY);
+
     function apply(zx, zy, k = 1) {
-      // Axis & grid
+      // cache latest rescaled axes for anchored tooltips
+      zxRef.current = zx;
+      zyRef.current = zy;
+
+      // axis & grid
       gAxis.attr("transform", `translate(${margin.left},${margin.top + axisY})`).call(axisFor(zx));
       gGrid.attr("transform", `translate(0,${axisY})`).call(gridFor(zx));
       snapGrid(zx);
 
-      // Outlines
+      // outlines rects
       outlineSel.select("rect.outlineRect").each(function (d) {
         const x0 = zx(toAstronomical(d.start));
         const x1 = zx(toAstronomical(d.end));
@@ -436,7 +723,7 @@ export default function Timeline() {
           .attr("height", hPix);
       });
 
-      // Labels (zoom-relative font size)
+      // labels (zoom-relative font)
       const fontPx = LABEL_BASE_PX * k;
       outlineSel.each(function (d) {
         const g = d3.select(this);
@@ -450,7 +737,7 @@ export default function Timeline() {
           .style("font-size", `${fontPx}px`);
       });
 
-      // Segment hover rects
+      // segment hit rects
       segSel.each(function (d) {
         const x0 = zx(toAstronomical(d.start));
         const x1 = zx(toAstronomical(d.end));
@@ -463,9 +750,9 @@ export default function Timeline() {
           .attr("height", hPix);
       });
 
-      // Authors (lifespan lines) — positions + ZOOMED SIZE
-      const strokeW = clamp(AUTHOR_BASE_STROKE * k, 1, 6); // NEW
-      authorSel.each(function (d) {
+      // authors — positions + zoomed size (base state)
+      const strokeW = clamp(AUTHOR_BASE_STROKE * k, 1, 6);
+      gAuthors.selectAll("line.author").each(function (d) {
         const x0 = zx(toAstronomical(d.start));
         const x1 = zx(toAstronomical(d.end));
         const yPix = zy(d.y);
@@ -474,22 +761,104 @@ export default function Timeline() {
           .attr("x2", Math.max(x0, x1))
           .attr("y1", yPix)
           .attr("y2", yPix)
-          .attr("stroke-width", strokeW); // NEW
+          .attr("stroke-width", strokeW);
       });
 
-      // Texts (dots) — positions + ZOOMED SIZE
-      const r = clamp(TEXT_BASE_R * k, 2, 12); // NEW
-      textSel.each(function (d) {
+      // ===== texts — positions with collision-free vertical adjustment (uses r = TEXT_BASE_R * k) =====
+      const r = TEXT_BASE_R * k;
+
+      // Pads that scale with r
+      const laneStepPad = Math.max(1, Math.round(r * 0.15));
+      const minDX = 2 * r + laneStepPad; // horizontal neighborhood for collision
+      const minDY = 2 * r + laneStepPad; // vertical clearance to avoid overlap
+      const laneStep = 2 * r + laneStepPad;
+
+      // Lookup for band bounds
+      const outlineById = new Map(outlines.map((o) => [o.id, o]));
+
+      // Group texts by band
+      const textsByBand = new Map();
+      textRows.forEach((d) => {
+        const arr = textsByBand.get(d.durationId) || [];
+        arr.push(d);
+        textsByBand.set(d.durationId, arr);
+      });
+
+      // Compute adjusted cy (pixels) per circle id for this zoom frame
+      const adjustedCy = new Map();
+
+      for (const [bandId, items] of textsByBand.entries()) {
+        const band = outlineById.get(bandId);
+        if (!band) continue;
+
+        const bandTop = zy(band.y);
+        const bandBottom = zy(band.y + band.h);
+        const bandHeight = bandBottom - bandTop;
+
+        // Sort by x to check only nearby neighbors
+        const placed = []; // {cx, cy}
+        const sorted = items
+          .map((d) => ({
+            d,
+            cx: zx(toAstronomical(d.when)),
+            baseCy: zy(d.y),
+          }))
+          .sort((a, b) => a.cx - b.cx);
+
+        // Maximum lane attempts that can fit
+        const maxLanes = Math.max(1, Math.floor(bandHeight / laneStep));
+
+        for (const it of sorted) {
+          let chosenCy = it.baseCy;
+          let found = false;
+
+          // Try offsets around baseCy: 0, +1, -1, +2, -2, ...
+          const offsets = [];
+          for (let i = 0; i < maxLanes; i++) {
+            if (i === 0) offsets.push(0);
+            else {
+              offsets.push(i * laneStep);
+              offsets.push(-i * laneStep);
+            }
+          }
+
+          for (const off of offsets) {
+            const trialCy = Math.max(bandTop + r, Math.min(bandBottom - r, it.baseCy + off));
+
+            // Check collision only vs placed points within minDX neighborhood
+            let collides = false;
+            for (let j = placed.length - 1; j >= 0; j--) {
+              const p = placed[j];
+              if (it.cx - p.cx > minDX) break; // too far left to collide
+              if (Math.abs(it.cx - p.cx) < minDX && Math.abs(trialCy - p.cy) < minDY) {
+                collides = true;
+                break;
+              }
+            }
+
+            if (!collides) {
+              chosenCy = trialCy;
+              found = true;
+              break;
+            }
+          }
+
+          if (!found) chosenCy = Math.max(bandTop + r, Math.min(bandBottom - r, it.baseCy));
+
+          adjustedCy.set(it.d.id, chosenCy);
+          placed.push({ cx: it.cx, cy: chosenCy });
+        }
+      }
+
+      // Apply circle positions/sizes
+      gTexts.selectAll("circle.textDot").each(function (d) {
         const cx = zx(toAstronomical(d.when));
-        const cy = zy(d.y);
-        d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", r); // NEW
+        const cy = adjustedCy.get(d.id) ?? zy(d.y);
+        d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", r);
       });
     }
 
-    // Zoom behavior
-    const MIN_ZOOM = 0.9;
-    const MAX_ZOOM = 22;
-
+    // set up zoom
     const zoom = d3
       .zoom()
       .scaleExtent([MIN_ZOOM, MAX_ZOOM])
@@ -503,6 +872,7 @@ export default function Timeline() {
       ])
       .on("zoom", (event) => {
         const t = event.transform;
+        kRef.current = t.k;
         const zx = t.rescaleX(x);
         const zy = t.rescaleY(y0);
         apply(zx, zy, t.k);
@@ -510,13 +880,24 @@ export default function Timeline() {
 
     const svgSel = d3.select(svgRef.current).call(zoom);
 
-    // Initial zoom (centered)
-    const s = MIN_ZOOM;
-    const tx = (innerWidth - innerWidth * s) / 2;
-    const ty = (innerHeight - innerHeight * s) / 2;
-    svgSel.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(s));
+    // Hide all tooltips if mouse leaves the whole svg area
+ svgSel.on("mouseleave.tl-tip", () => {
+    hideTipSel(tipAuthor);
+   hideTipSel(tipText);
+   tipSeg.style("opacity", 0).style("display", "none");
+   activeSegIdRef.current = null;
+ });
 
-    return () => d3.select(svgRef.current).on(".zoom", null);
+    // FIRST DRAW at initial transform
+    apply(t0.rescaleX(x), t0.rescaleY(y0), t0.k);
+
+    // then set the zoom's internal state
+    svgSel.call(zoom.transform, t0);
+
+    return () => {
+      d3.select(svgRef.current).on(".zoom", null);
+      svgSel.on("mouseleave.tl-tip", null);
+    };
   }, [
     outlines,
     segments,
@@ -535,7 +916,7 @@ export default function Timeline() {
   ]);
 
   return (
-    <div ref={wrapRef} className="timelineWrap" style={{ width: "100%", height: "100%" }}>
+    <div ref={wrapRef} className="timelineWrap" style={{ width: "100%", height: "100%", position: "relative" }}>
       <svg ref={svgRef} className="timelineSvg" width={width} height={height}>
         <g className="chart" transform={`translate(${margin.left},${margin.top})`}>
           <g ref={gridRef} className="grid" />
