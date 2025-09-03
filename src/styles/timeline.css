@@ -194,16 +194,14 @@ body {
 /* ===========================================================
    TextCard (click-to-open details panel for a text dot)
    =========================================================== */
-/* ===========================================================
-   TextCard (centered, near-fullscreen modal)
-   =========================================================== */
+
+/* Centered, near-fullscreen modal */
 .textCard {
   position: fixed !important;          /* ignore inline left/top */
   left: 50% !important;
   top: 50% !important;
   transform: translate(-50%, -50%);
   width: min(960px, 92vw); 
-               
   max-width: 96vw;
   max-height: min(92dvh, 100dvh - 32px);
   overflow: auto;
@@ -224,8 +222,30 @@ body {
   font-size: 20px;
   font-weight: 800;
   line-height: 1.2;
-  margin: 2px 36px 12px 0;              /* room for close button */
+  margin: 2px 6px 12px 0;              /* room for close button */
   word-break: break-word;
+}
+
+/* New: title row that places category on the right */
+.textCard-titleCombo {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 1px;
+  text-align: center;
+  margin-bottom: 8px; /* same spacing as before */
+}
+
+.textCard-sep {
+  opacity: 0.6;      /* subtle divider */
+  margin: 0 9px;
+}
+.textCard-category {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.8;
+  white-space: nowrap;
 }
 
 .textCard-close {
@@ -244,16 +264,38 @@ body {
   line-height: 1;
   cursor: pointer;
 }
+
+.textCard-row .textCard-value {
+  display: flex;
+  align-items: center;   /* vertically center plain text with the label */
+}
+
 .textCard-close:hover {
   background: #f3f4f6;
   border-color: #e5e7eb;
 }
 
+.textCard-row.is-tags .textCard-label {
+  display: flex;
+  align-items: center;
+}
+
+.textCard-row.is-tags {
+  align-items: center;
+}
+
 .textCard-row {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 10px;
   padding: 6px 0;
+}
+
+/* Center the description row’s value text */
+.textCard-row.is-centered .textCard-value {
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 .textCard-label {
@@ -269,11 +311,21 @@ body {
   line-height: 1.45;
 }
 
+/* Meta one-liner after description */
+.textCard-meta {
+  margin: 6px 0 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  text-align: center;
+}
+
 /* Tag pills */
 .textCard-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 .textCard-tag {
   display: inline-block;
@@ -282,8 +334,8 @@ body {
   line-height: 1;
   border-radius: 999px;
   background: #f3f4f6;
-  color: #111827;
-  border: 1px solid #e5e7eb;
+  color: #111827;              /* can be overridden inline */
+  border: 1px solid #e5e7eb;   /* can be overridden inline */
 }
 
 /* Divider + toggle */
@@ -382,6 +434,4 @@ body {
     z-index: 1100;
     display: none;
   }
-
-  
 }
