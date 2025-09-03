@@ -2,6 +2,7 @@
   {
     "id": "egyptian-composite",
     "name": "Egyptian",
+    "expanded name": "Egyptian (Ancient Egyptian)",
     "color": "#FF3B30",
     "yRel": 0.167,
     "hRel": 0.02,
@@ -22,6 +23,7 @@
   {
   "id": "mesopotamian-composite",
   "name": "Mesopotamian",
+  "expanded name": "Mesopotamian (Sumero-Akkadian)",
   "color": "#1D4ED8",
   "yRel": 0.189,
   "hRel": 0.02,

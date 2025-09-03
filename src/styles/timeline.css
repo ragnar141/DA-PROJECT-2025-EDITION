@@ -117,13 +117,11 @@ body {
 }
 
 /* Add a readable paragraph block for long notes */
-.tl-tip-note{
-  margin-top: 6px;
-  opacity: 0.95;
+.tl-tip-note {
+  margin-top: 4px;
+  font-size: 12px;
   line-height: 1.35;
-  white-space: normal; /* allow wrapping for long text blocks */
-  text-wrap: pretty;
-  text-align: left;
+  color: var(--muted);
 }
 
 /* ===== TYPE: AUTHOR tooltip ===== */
@@ -154,7 +152,7 @@ body {
   white-space: normal;  /* allow wrapping for longer labels/notes */
   max-width: 320px;
   margin-top: 8px;      /* visual gap from segment bar */
-  text-align: center; 
+  text-align: left; 
 }
 .tl-seg::after {
   width: 12px;
@@ -177,7 +175,8 @@ body {
   white-space: normal;           /* wrap long “broad note” text */
   max-width: 440px;              /* a bit wider for essays */
   text-align: left;              /* paragraphs read better left-aligned */
-  padding: 10px 12px;            /* slightly roomier than base */
+  padding: 10px 12px;
+  margin-top: 8px;           
 }
 .tl-duration .tl-tip-title{
   margin-bottom: 6px;
