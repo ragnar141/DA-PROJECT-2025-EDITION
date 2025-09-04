@@ -63,7 +63,7 @@ const SymbolicTagRow = ({ label, value }) => {
     {/* Meta one-liner after description */}
     {(d.displayDate || metaLocation || d.originalLanguage) && (
       <div className="textCard-meta">
-        {`written in ${d.displayDate || "—"} in ${metaLocation || "—"}, in ${
+        {`composed in ${d.displayDate || "—"} in ${metaLocation || "—"}, in ${
           d.originalLanguage || "—"
         } language`}
         {d.authorName && d.authorName !== "-" && ` and attributed to ${d.authorName}`}
