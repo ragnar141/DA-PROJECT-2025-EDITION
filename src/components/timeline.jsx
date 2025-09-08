@@ -11,10 +11,15 @@ const formatYear = (y) => (y < 0 ? `${Math.abs(y)} BCE` : y > 0 ? `${y} CE` : "�
 
 /* ===== Colors for Symbolic Systems ===== */
 const SymbolicSystemColorPairs = {
-  Sumerian: "#1D4ED8", 
+  Sumerian: "#1D4ED8",
   Akkadian: "#10B981",
   Egyptian: "#FF3B30",
   "Ancient Egyptian": "#FF3B30",
+  Hittite: "#A855F7",
+  Hurrian: "#000000",
+  Yahwistic: "#0000FF",
+  Canaanite: "#FFA500",
+  Aramaic: "#ff00eeff",
 };
 
 /* ===== Label sizing vs zoom ===== */
@@ -24,7 +29,7 @@ const LABEL_BASE_PX = 11;
 const BASE_OPACITY = 0.3;
 const TEXT_BASE_R = 0.7;       // at k=1
 const HOVER_SCALE_DOT = 1.6;   // how much bigger a dot gets on hover
-const ZOOM_THRESHOLD = 2.4;
+const ZOOM_THRESHOLD = 1.7;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 /* --- Opacity/width levels for duration label + border --- */
@@ -56,11 +61,26 @@ function getTextDate(row) {
   const v = Number(row?.["Dataviz date"]);
   return Number.isFinite(v) ? v : NaN;
 }
+function pickSystemColors(tagsStr) {
+  const seen = new Set();
+  const out = [];
+  String(tagsStr)
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .forEach((tag) => {
+      const c = SymbolicSystemColorPairs[tag];
+      if (c && !seen.has(tag)) {
+        seen.add(tag);
+        out.push(c);
+      }
+    });
+  return out;
+}
+
 function pickSystemColor(tagsStr) {
-  if (!tagsStr) return "#444";
-  const parts = String(tagsStr).split(",").map((s) => s.trim());
-  for (const p of parts) if (SymbolicSystemColorPairs[p]) return SymbolicSystemColorPairs[p];
-  return "#444";
+  const arr = pickSystemColors(tagsStr);
+  return arr[0] || "#444";
 }
 
 /* ===== Adaptive tick helpers ===== */
@@ -304,6 +324,7 @@ export default function Timeline() {
         if (!Number.isFinite(when)) continue;
 
         const color = pickSystemColor(symbolicSystemTags);
+        const colors = pickSystemColors(symbolicSystemTags);
         const textKey = `${authorName || "anon"}::${title || ""}::${when}`;
         const y = yForKey(textKey);
         const displayDate = approxDateStr || formatYear(when);
@@ -314,6 +335,7 @@ export default function Timeline() {
           when,
           y,
           color,
+          colors,
           title,
           authorName,
           displayDate,
@@ -621,7 +643,7 @@ export default function Timeline() {
     function clearActiveSegment() {
       activeSegIdRef.current = null;
       hoveredSegIdRef.current = null;          // clear preview too
-      hoveredSegParentIdRef.current = null; 
+      hoveredSegParentIdRef.current = null;
       updateSegmentPreview();
       hideTipSel(tipSeg);
       updateHoverVisuals();
@@ -758,13 +780,91 @@ export default function Timeline() {
           enter
             .append("circle")
             .attr("class", "textDot")
-            .attr("fill", (d) => d.color || "#444")
+            .attr("fill", (d) => (d.colors && d.colors.length > 1 ? "none" : (d.color || "#444")))
             .attr("opacity", BASE_OPACITY)
             .attr("r", TEXT_BASE_R * kRef.current)
             .style("transition", "r 120ms ease"),
-        (update) => update,
+        (update) =>
+          update.attr(
+            "fill",
+            (d) => (d.colors && d.colors.length > 1 ? "none" : (d.color || "#444"))
+          ),
         (exit) => exit.remove()
       );
+
+    // Keep draw order stable to reduce flicker
+    gTexts.selectAll("circle.textDot")
+      .sort((a, b) => (a.when - b.when) || a.durationId.localeCompare(b.durationId));
+
+    // --- PIE SLICES FOR MULTI-COLOR DOTS ---
+    function slicesDataFor(d) {
+      return (d.colors || []).map((color, i) => ({ color, i, n: d.colors.length, id: d.id }));
+    }
+
+    // one group per multi-color text
+    const slicesSel = gTexts
+      .selectAll("g.dotSlices")
+      .data(textRows.filter((d) => (d.colors || []).length > 1), (d) => d.id)
+      .join(
+        (enter) => {
+          const g = enter
+            .append("g")
+            .attr("class", "dotSlices")
+            .attr("data-id", (d) => d.id)
+            .style("pointer-events", "none")
+            .style("opacity", BASE_OPACITY);
+
+          g.selectAll("path.slice")
+            .data((d) => slicesDataFor(d))
+            .join("path")
+            .attr("class", "slice")
+            .attr("fill", (s) => s.color);
+
+          return g;
+        },
+        (update) => {
+          update
+            .selectAll("path.slice")
+            .data((d) => slicesDataFor(d))
+            .join(
+              (e2) => e2.append("path").attr("class", "slice").attr("fill", (s) => s.color),
+              (u2) => u2.attr("fill", (s) => s.color),
+              (x2) => x2.remove()
+            );
+          return update;
+        },
+        (exit) => exit.remove()
+      );
+
+    // Keep draw order stable for pies as well
+    gTexts.selectAll("g.dotSlices")
+      .sort((a, b) => (a.when - b.when) || a.durationId.localeCompare(b.durationId));
+
+    // helper to (re)compute wedge paths at a given radius
+    function drawSlicesAtRadius(selection, r) {
+      const arcGen = d3.arc().innerRadius(0).outerRadius(r);
+
+      selection.each(function (d) {
+        const g = d3.select(this);
+        const n = (d.colors || []).length;
+
+        g.selectAll("path.slice").attr("d", (s) => {
+          if (n === 2) {
+            // First color on the RIGHT, second on the LEFT
+            const halves = [
+              { startAngle: 0, endAngle: Math.PI },               // right half
+              { startAngle: Math.PI, endAngle: 2 * Math.PI },     // left half
+            ];
+            const h = halves[Math.min(s.i, 1)];
+            return arcGen(h);
+          }
+          // Default fan layout (starts at top, clockwise)
+          const a0 = (s.i / n) * 2 * Math.PI - Math.PI / 2;
+          const a1 = ((s.i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+          return arcGen({ startAngle: a0, endAngle: a1 });
+        });
+      });
+    }
 
     const within = (v, a, b) => v >= Math.min(a, b) && v <= Math.max(a, b);
 
@@ -781,7 +881,16 @@ export default function Timeline() {
     textSel
       .on("mouseenter", function (_ev, d) {
         const k = kRef.current;
-        d3.select(this).attr("r", TEXT_BASE_R * k * HOVER_SCALE_DOT).attr("opacity", 1);
+        const newR = TEXT_BASE_R * k * HOVER_SCALE_DOT;
+
+        d3.select(this).attr("r", newR).attr("opacity", 1);
+
+        // Sync the pie slices (if any) to the same radius and opacity
+        const gPie = gTexts.select(`g.dotSlices[data-id='${d.id}']`);
+        if (!gPie.empty()) {
+          gPie.style("opacity", 1);
+          drawSlicesAtRadius(gPie, newR);
+        }
 
         // NEW: derive segment preview from state (no ad-hoc styling)
         const seg = findSegForText(d);
@@ -803,8 +912,17 @@ export default function Timeline() {
       })
       .on("mouseleave", function (_ev, d) {
         const k = kRef.current;
-        d3.select(this).attr("r", TEXT_BASE_R * k).attr("opacity", BASE_OPACITY);
+        const rDraw = TEXT_BASE_R * k;
+
+        d3.select(this).attr("r", rDraw).attr("opacity", BASE_OPACITY);
         hideTipSel(tipText);
+
+        // Shrink/restore pie radius + opacity to match circle
+        const gPie = gTexts.select(`g.dotSlices[data-id='${d.id}']`);
+        if (!gPie.empty()) {
+          gPie.style("opacity", BASE_OPACITY);
+          drawSlicesAtRadius(gPie, rDraw);
+        }
 
         // clear preview if it came from this text
         const seg = findSegForText(d);
@@ -850,7 +968,8 @@ export default function Timeline() {
       const svgRect = svgRef.current.getBoundingClientRect();
 
       const cx = zx(toAstronomical(d.when));
-      const cyAttr = el ? parseFloat(d3.select(el).attr("cy")) : zy(d.y);
+      // Fallback must use band-units -> current zoom
+      const cyAttr = el ? parseFloat(d3.select(el).attr("cy")) : zy(y0(d.y));
 
       return {
         x: svgRect.left + margin.left + cx,
@@ -901,82 +1020,119 @@ export default function Timeline() {
         d3.select(this).attr("x", Math.min(x0, x1)).attr("y", yTop).attr("width", Math.abs(x1 - x0)).attr("height", hPix);
       });
 
-      // texts — positions with collision-free vertical adjustment
-      const r = TEXT_BASE_R * k;
+// === Stable layout across zoom ===
+// Render radius follows current zoom:
+const rDraw = TEXT_BASE_R * k;
 
-      const laneStepPad = Math.max(1, Math.round(r * 0.15));
-      const minDX = 2 * r + laneStepPad;
-      const minDY = 2 * r + laneStepPad;
-      const laneStep = 2 * r + laneStepPad;
+// COLLISION/LAYOUT: compute in DATA units using a FIXED reference scale.
+// This keeps lane decisions identical at every zoom/pan.
+const kRefLayout = ZOOM_THRESHOLD; // constant reference; do NOT tie to current k
 
-      const outlineById = new Map(outlines.map((o) => [o.id, o]));
-      const textsByBand = new Map();
-      textRows.forEach((d) => {
-        const arr = textsByBand.get(d.durationId) || [];
-        arr.push(d);
-        textsByBand.set(d.durationId, arr);
-      });
+// X conversion: pixels per astronomical year at reference scale
+const astroSpan = Math.abs(domainAstro[1] - domainAstro[0]);
+const pxPerYearAt1 = innerWidth / astroSpan;
+const pxPerYearRef = pxPerYearAt1 * kRefLayout;
 
-      const adjustedCy = new Map();
+// Y conversion: use "band units" (y0’s domain); 1 unit = 1px at k=1
+const rRefPx = TEXT_BASE_R * kRefLayout;
+const lanePadPx = Math.max(1, Math.round(rRefPx * 0.15));
 
-      for (const [bandId, items] of textsByBand.entries()) {
-        const band = outlineById.get(bandId);
-        if (!band) continue;
+const rYUnits = rRefPx / kRefLayout;     // px -> units at k=1
+const padYUnits = lanePadPx / kRefLayout;
 
-        const bandTop = zy(band.y);
-        const bandBottom = zy(band.y + band.h);
-        const bandHeight = bandBottom - bandTop;
+// Minimum separations in DATA units (constant across zoom)
+const minDX_years = (2 * rRefPx + lanePadPx) / pxPerYearRef; // years
+const minDY_units = 2 * rYUnits + padYUnits;                  // band units
+const laneStepUnits = minDY_units;
 
-        const placed = [];
-        const sorted = items
-          .map((d) => ({ d, cx: zx(toAstronomical(d.when)), baseCy: zy(d.y) }))
-          .sort((a, b) => a.cx - b.cx);
+// Pre-index texts by band
+const outlineById = new Map(outlines.map((o) => [o.id, o]));
+const textsByBand = new Map();
+textRows.forEach((d) => {
+  const arr = textsByBand.get(d.durationId) || [];
+  arr.push(d);
+  textsByBand.set(d.durationId, arr);
+});
 
-        const maxLanes = Math.max(1, Math.floor(bandHeight / laneStep));
+const adjustedCyUnits = new Map(); // store y in band units (k=1)
 
-        for (const it of sorted) {
-          let chosenCy = it.baseCy;
-          let found = false;
+// Solve collisions in data space (years on X, band units on Y)
+for (const [bandId, items] of textsByBand.entries()) {
+  const band = outlineById.get(bandId);
+  if (!band) continue;
 
-          const offsets = [];
-          for (let i = 0; i < maxLanes; i++) {
-            if (i === 0) offsets.push(0);
-            else {
-              offsets.push(i * laneStep);
-              offsets.push(-i * laneStep);
-            }
-          }
+  // Band limits in band units
+  const bandTopU = y0(band.y);
+  const bandBotU = y0(band.y + band.h);
+  const bandHeightU = bandBotU - bandTopU;
 
-          for (const off of offsets) {
-            const trialCy = Math.max(bandTop + r, Math.min(bandBottom - r, it.baseCy + off));
-            let collides = false;
-            for (let j = placed.length - 1; j >= 0; j--) {
-              const p = placed[j];
-              if (it.cx - p.cx > minDX) break;
-              if (Math.abs(it.cx - p.cx) < minDX && Math.abs(trialCy - p.cy) < minDY) {
-                collides = true;
-                break;
-              }
-            }
-            if (!collides) {
-              chosenCy = trialCy;
-              found = true;
-              break;
-            }
-          }
+  const placed = [];
 
-          if (!found) chosenCy = Math.max(bandTop + r, Math.min(bandBottom - r, it.baseCy));
+  // Sort by astronomical year; pan/zoom won't affect this ordering
+  const sorted = items
+    .map((d) => ({ d, cxYears: toAstronomical(d.when), baseCyU: y0(d.y) }))
+    .sort((a, b) => a.cxYears - b.cxYears);
 
-          adjustedCy.set(it.d.id, chosenCy);
-          placed.push({ cx: it.cx, cy: chosenCy });
+  const maxLanes = Math.max(1, Math.floor(bandHeightU / laneStepUnits));
+
+  for (const it of sorted) {
+    let chosenCyU = it.baseCyU;
+    let found = false;
+
+    const offsetsU = [];
+    for (let i = 0; i < maxLanes; i++) {
+      if (i === 0) offsetsU.push(0);
+      else {
+        offsetsU.push(i * laneStepUnits);
+        offsetsU.push(-i * laneStepUnits);
+      }
+    }
+
+    for (const offU of offsetsU) {
+      const trialCyU = Math.max(bandTopU + rYUnits, Math.min(bandBotU - rYUnits, it.baseCyU + offU));
+      let collides = false;
+
+      // Compare only with near X-neighbors (in YEARS)
+      for (let j = placed.length - 1; j >= 0; j--) {
+        const p = placed[j];
+        if (it.cxYears - p.cxYears > minDX_years) break;
+        if (Math.abs(it.cxYears - p.cxYears) < minDX_years && Math.abs(trialCyU - p.cyU) < minDY_units) {
+          collides = true;
+          break;
         }
       }
+      if (!collides) {
+        chosenCyU = trialCyU;
+        found = true;
+        break;
+      }
+    }
 
-      gTexts.selectAll("circle.textDot").each(function (d) {
-        const cx = zx(toAstronomical(d.when));
-        const cy = adjustedCy.get(d.id) ?? zy(d.y);
-        d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", r);
-      });
+    if (!found) chosenCyU = Math.max(bandTopU + rYUnits, Math.min(bandBotU - rYUnits, it.baseCyU));
+
+    adjustedCyUnits.set(it.d.id, chosenCyU);
+    placed.push({ cxYears: it.cxYears, cyU: chosenCyU });
+  }
+}
+
+// Position circles (render) with current zoom, using the stable layout
+gTexts.selectAll("circle.textDot").each(function (d) {
+  const cx = zx(toAstronomical(d.when));
+  const cyU = adjustedCyUnits.get(d.id) ?? y0(d.y);
+  const cy = zy(cyU);
+  d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", rDraw);
+});
+
+// Position/update pies to match circles (use rDraw)
+gTexts.selectAll("g.dotSlices").each(function (d) {
+  const cx = zx(toAstronomical(d.when));
+  const cyU = adjustedCyUnits.get(d.id) ?? y0(d.y);
+  const cy = zy(cyU);
+  const g = d3.select(this);
+  g.attr("transform", `translate(${cx},${cy})`);
+  drawSlicesAtRadius(g, rDraw);
+});
+
     }
 
     function updateInteractivity(k) {

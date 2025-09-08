@@ -18,10 +18,18 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
     );
 
   // Only the Symbolic System row should pick up the accent color from the dot (d.color)
+// ⬇️ Replace ONLY the SymbolicTagRow in TextCard with this
 const SymbolicTagRow = ({ label, value }) => {
   const tags = splitTags(value);
   if (!tags.length) return null;
-  const accent = d.color || "#444";
+
+  // d.colors comes from Timeline: one color per symbolic system tag
+  const colors = Array.isArray(d.colors) && d.colors.length ? d.colors : [];
+
+  // picks the color for tag i; falls back to last known color, then d.color, then neutral
+  const colorFor = (i) =>
+    colors[i] || colors[colors.length - 1] || d.color || "#444";
+
   return (
     <div className="textCard-row is-tags">
       <span className="textCard-label">{label}</span>
@@ -30,7 +38,7 @@ const SymbolicTagRow = ({ label, value }) => {
           <span
             key={i}
             className="textCard-tag"
-            style={{ borderColor: accent, color: accent }}
+            style={{ borderColor: colorFor(i), color: colorFor(i) }}
           >
             {t}
           </span>
@@ -39,6 +47,7 @@ const SymbolicTagRow = ({ label, value }) => {
     </div>
   );
 };
+
 
 
   const showAuthor = d.authorName && d.authorName !== "-";
@@ -71,7 +80,7 @@ const SymbolicTagRow = ({ label, value }) => {
     )}
 
     {/* Symbolic System uses accent color; ensure its wrapper aligns (class added inside component per earlier change) */}
-    <SymbolicTagRow label="Symbolic System:" value={d.symbolicSystemTags} />
+    <SymbolicTagRow label="Symbolic System(s):" value={d.symbolicSystemTags} />
     <Row label="Comtean framework:" value={d.comteanFramework} />
     <Row label="Access Level:" value={d.accessLevel} />
 

@@ -43,5 +43,145 @@
       { "start": -626, "end": -539, "label": "Neo-Babylonian Period", "note": "The Neo-Babylonian period marked a cultural and political renaissance following Assyria’s collapse, led by Nabopolassar and his son Nebuchadnezzar II. Babylon was transformed into a grand imperial and sacred capital, adorned with monumental architecture and governed through priestly ritual centered on the god Marduk. Scholarship and religious tradition flourished, reflecting a deliberate restoration of Sumerian-Babylonian cosmic order. Yet beneath its splendor, signs of decline persisted—growing elite stratification, disaffection of the priesthood under Nabonidus, and a passive military apparatus—leaving the empire vulnerable to conquest by Cyrus the Great in 539 BCE." },
       { "start": -539, "end": -331, "label": "Achaemenid Period", "note": "The Achaemenid period marked a phase of imperial integration rather than cultural renewal. After Cyrus the Great’s peaceful conquest of Babylon, the Persian administration upheld Mesopotamian religious and bureaucratic traditions, portraying themselves as restorers of divine order under Marduk. Temples remained economically and symbolically central, and local elites were co-opted into the satrapal system. Administrative efficiency and relative tolerance defined Persian rule, beneath this continuity, however, a slow symbolic exhaustion set in—rituals lost generative power, local autonomy waned, and scholarly traditions increasingly served foreign rulers. By 331 BCE Alexander the Great arrived and set the foundation for Hellenistic space, which gradually absorbed Mesopotamian order into a new emergent symbolic structure." }
     ]
-  }
+  },
+
+  {
+  "id": "anatolian-composite",
+  "name": "Anatolian",
+  "expanded name": "Anatolian (Hittite/Luwian/Phrygian/Lydian)",
+  "color": "#A855F7",
+  "yRel": 0.123,
+  "hRel": 0.02,
+  "broad note": "Anatolia’s highland polities—Hattian, Hittite, Luwian, Phrygian, Urartian, and Lydian—interfaced between the Aegean, Levant, and Mesopotamia. Cycles of consolidation and collapse produced distinctive imperial models and literate traditions that later intertwined with Persian and Greek hegemonies.",
+  "broad lifespan": "c. 5500 BCE - 330 BCE",
+  "segments": [
+    {
+      "start": -5500, 
+      "end": -3000,
+      "label": "Chalcolithic Period",
+      "note": "Villages across Anatolia expanded into larger communities linked by metallurgy and exchange. Copper tools and ornaments were first produced alongside traditional stone implements, marking the dawn of metal use. Sites such as Hacılar, Can Hasan, and late Çatalhöyük reveal ritual spaces, painted pottery, and symbolic figurines that anchored social life. Positioned at the crossroads of the Aegean, Caucasus, and Mesopotamia, Anatolia gained access to circulating obsidian, copper, and crafted goods — surplus that flowed in not through slow temple accumulation but through Anatolia's favorable geography. Emerging elites harnessed ritual and metallurgy to consolidate authority, drawing the region into localized competition and laying the foundations for its later warrior-dominated polities."
+    },
+    {
+      "start": -3000,
+      "end": -2000,
+      "label": "Early Bronze Age",
+      "note": "Larger communities grew into fortified towns and proto-cities, with sites such as Troy, Alacahöyük, and Küllüoba showing walls, towers, and organized layouts. Metallurgy advanced from copper to bronze, while elite burials like those at Alacahöyük contained gold, silver, electrum, ceremonial standards, and weapons — symbols of dynastic prestige and ancestor cults. Symbolic life revolved less around temples and more around ritualized burials, solar imagery, and elite display, expressing authority through wealth and martial symbolism. Positioned along trade routes between the Aegean, Caucasus, and Mesopotamia, Anatolia became a crucial corridor for metals and crafted goods, intensifying contact and competition. This period entrenched a warrior-elite order, laying the foundations for the Middle Bronze Age principalities."
+    },
+    {
+      "start": -2000,
+      "end": -1600,
+      "label": "Middle Bronze Age",
+      "note": "Local fortified polities consolidated into stronger principalities, with centers such as Kanesh, Hattusa, Zalpa, and Purushanda rising in prominence. Assyrian merchants established karum trade colonies, most famously at Kanesh/Kültepe, introducing cuneiform writing and drawing Anatolia deeper into long-distance commerce. Archives from these colonies recorded contracts, loans, and disputes, marking the first time Anatolian life and law were preserved in text. Symbolic authority began shifting from purely martial and ancestral display toward formal kingship, sacralized by ritual and supported by written obligations. These developments set the stage for the emergence of the Hittite kingdom in the Late Bronze Age."
+    },
+    {
+      "start": -1600,
+      "end": -1500,
+      "label": "Late Bronze Age – Hittite Old Kingdom",
+      "note": "Founded by kings such as Labarna and Hattusili I, the Hittite Old Kingdom established its capital at Hattusa and extended its influence into central Anatolia and northern Syria. Campaigns under rulers like Mursili I projected Anatolian power as far as Babylon, though internal instability limited lasting control. Kings combined roles as war leaders and high priests, blending Hattian, Hurrian, and Indo-European traditions into a hybrid symbolic system. Written laws, treaties, and rituals were codified, embedding literacy firmly into Anatolian statecraft. Despite frequent dynastic turmoil, the Old Kingdom laid the institutional and symbolic foundations for the later Hittite Empire."
+    },
+    {
+      "start": -1500,
+      "end": -1200,
+      "label": "Late Bronze Age – Hittite Empire",
+      "note": "After a period of instability, the Hittite state resurged under kings like Suppiluliuma I, transforming into an empire that stretched across central Anatolia and deep into northern Syria. The Hittites became one of the Great Powers of the Late Bronze Age, rivaling Egypt, Babylon, and Assyria through warfare, treaties, and diplomacy. Archives from Hattusa preserve thousands of texts, including laws, myths, rituals, and international correspondence, with the Treaty of Kadesh marking history’s first recorded peace treaty. The empire’s symbolic order fused Hattian, Hurrian, and Indo-European traditions into a vast pantheon known as the “land of a thousand gods”, embodied in monumental sites like Yazılıkaya. Around 1200 BCE, however, the empire collapsed amid the wider Late Bronze Age crisis, leaving behind the Neo-Hittite states of the Iron Age."
+    },
+    {
+      "start": -1200,
+      "end": -900,
+      "label": "Iron Age – Post-Hittite States",
+      "note": "With the collapse of the Hittite Empire around 1200 BCE, central Anatolia fragmented and the great capital of Hattusa was abandoned. In southeastern Anatolia and northern Syria, smaller Neo-Hittite kingdoms such as Carchemish, Melid, and Sam’al preserved elements of Hittite kingship, ritual, and Luwian hieroglyphic inscriptions. These city-centered dynasties emphasized continuity through monumental reliefs and ritual performance, though authority was localized and fragile. Meanwhile, the vacuum in central and eastern Anatolia opened space for new groups such as the Phrygians and Urartians, who would rise in the following centuries. This transitional period bridged the collapse of the Bronze Age order and the emergence of new Iron Age polities that redefined Anatolia’s symbolic and political landscape."
+    },
+    {
+      "start": -900,
+      "end": -700,
+      "label": "Iron Age – Phrygian & Urartian Ascendancy",
+      "note": "In central Anatolia, the Phrygians established their capital at Gordion, building citadels, tumuli, and inscriptions that reflected a warrior-elite order remembered in Greek traditions, especially through the legendary King Midas. Their closeness to the Greeks was defined by geographical proximity across the Aegean, shared trade networks, and cultural exchange, which allowed Phrygia to appear in Greek myth and later histories. In the east, the Urartians rose around Lake Van, constructing massive fortresses, irrigation systems, and temples to their chief god Haldi, rivaling Assyria in the highlands. Both kingdoms continued the post-Hittite pattern of fortress-centered states, monumental art, and warrior kingship, each shaping regional identity in distinct ways. Together, Phrygia’s western ties and Urartu’s eastern power framed Anatolia as a cultural crossroads before Lydia and Persia rose to dominance."
+    },
+    {
+      "start": -700,
+      "end": -546,
+      "label": "Iron Age – Lydian & Ionian Period",
+      "note": "In western Anatolia, the Lydians consolidated power with their capital at Sardis, where kings like Gyges and Croesus became legendary for wealth and military strength. Lydia pioneered the invention of coinage, striking electrum pieces that transformed trade and symbolic economies. Along the Aegean coast, the Ionian Greek city-states of Miletus, Ephesus, and Smyrna flourished as commercial and intellectual hubs. It was here that figures such as Thales, Anaximander, and Heraclitus were born, blending Greek heritage with Anatolia’s cosmopolitan networks of Egypt, Mesopotamia, and the East. Together, Lydian kingship and Ionian philosophy made western Anatolia a cultural crossroads, until Persia’s conquest in 546 BCE reshaped the region’s order."
+    },
+    {
+      "start": -546,
+      "end": -330,
+      "label": "Achaemenid Persian Anatolia",
+      "note": "After defeating Croesus of Lydia in 546 BCE, Cyrus the Great brought Anatolia into the Achaemenid Persian Empire. The land was divided into satrapies, with Sardis as a key administrative center on the Royal Road linking Anatolia to the imperial core at Susa. Persian rule allowed local cults and traditions to persist while introducing elements of Zoroastrian practice, creating a layered symbolic order. The Ionian Revolt (499–494 BCE) and the subsequent Greco-Persian Wars made Anatolia a contested frontier between East and West. Persian authority remained until Alexander the Great’s campaigns (334–330 BCE), which drew Anatolia fully into the Hellenistic world."
+    }
+  ]
+},
+
+{
+  "id": "west-semitic-composite",
+  "name": "West Semitic",
+  "expanded name": "West Semitic (Levantine)",
+  "color": "#F59E0B",
+  "yRel": 0.145,
+  "hRel": 0.02,
+  "broad note": "Levantine polities formed at the nexus of Egypt, Anatolia, Cyprus, and Mesopotamia. Across oscillations of town formation, trade, and imperial pressure, Canaanite cults and vernacular traditions evolved into durable West Semitic religious and literary forms, including alphabetic writing and, later, distinct Yahwistic monotheism.",
+  "broad lifespan": "c. 4500 BCE - 332 BCE",
+  "segments": [
+    {
+      "start": -4500,
+      "end": -3300,
+      "label": "Chalcolithic Period",
+      "note": "The period sees southern Levant villages consolidate into a ritual-economy of craft and exchange. Agro-pastoral communities develop copper metallurgy (smelting and lost-wax casting) and specialized workshops, while sanctuary hubs and ossuary cemeteries anchor a shared symbolic life. Long-distance trade in copper, bitumen, shells, obsidian, and prestige objects, facilitated by seasonal farming and mobility, knit communities together. Painted cult rooms (e.g., Teleilat Ghassul) and hoards of ritual metalwork (e.g., Nahal Mishmar) reveal symbolism as a medium of power. By the late 4th millennium BCE, settlement reorganization and competitive display foreshadow the Early Bronze turn to urbanism and more formal political hierarchy."
+    },
+    {
+      "start": -3300,
+      "end": -2300,
+      "label": "Early Bronze Age I–III – Canaanite City-States",
+      "note": "Village networks crystallize into the first urban centers of the southern Levant, with fortified tells, planned quarters, public silos/cisterns, and gate systems. Craft intensification (copper/early bronze metallurgy, mass ceramics, basalt industry) and standardized storage/seals support surplus management and intersite exchange. Temple compounds and elite houses coordinate labor, irrigation, and trade linking the Jordan Valley, Shephelah, and coast to Egypt and north Syria (e.g., the Byblos–Egypt wine/cedar corridor). Stratification is visible in monumental works, weapon burials, and elite precincts, while fortifications and destruction layers point to regular inter-polity conflict. By late EB III (~2300 BCE), many centers contracted or collapsed as climate stress (the 4.2 ka event), disruptions to exchange networks, shifting external power, and episodic conflict undercut urban surplus systems—giving way to more mobile, dispersed landscapes."
+    },
+    {
+      "start": -2300,
+      "end": -2000,
+      "label": "Early Bronze IV / Middle Bronze I",
+      "note": "After the late-EB III contraction, the southern Levant pivots from towns to smaller villages, hamlets, and seasonal agro-pastoral mobility, with many tells reused chiefly as cemetery fields. Exchange thins and reroutes: long-distance goods still move, but more via down-the-line links and donkey pack transport than through urban surplus systems; craft production persists at household/workshop scale. Architecture and ritual life simplify—silo pits, cairn/shaft tombs, modest shrines—yet mortuary display and localized cult keep social identities coherent without palatial coordination. Political authority rolls back to lineage leaders and cult specialists; conflict doesn’t vanish but becomes smaller and more episodic, with fewer massive defenses and more strategic use of highlands/hinterlands. By the end of the phase, re-aggregation at key nodes and reviving interregional corridors set the stage for Middle Bronze fortified towns, palace administrations, and renewed diplomatic horizons."
+    },
+    {
+      "start": -2000,
+      "end": -1550,
+      "label": "Middle Bronze Age – Amorite Dynasties & Palace Economies",
+      "note": "Urban life re-aggregates into fortified cities with massive earthen glacis, gate complexes, palaces, and temples, as Amorite dynasts consolidate authority and run palace–temple administrations. A web of city-states (inland and coastal) practices diplomacy, gift-exchange, and marriage alliances, with Akkadian serving as the regional chancery language; seals, standardized weights, and archives signal bureaucratic depth. Long-distance trade corridors revive and expand—cedar, wine, oil, copper, tin, textiles, and prestige goods move between Egypt (12th/13th Dynasties), the Levantine coast, inland Canaan, and north-Syrian hubs such as Aleppo/Yamhad and Alalakh. Warfare professionalizes: ramparts and siegeworks proliferate; standing forces and early chariotry appear by the later MB, and destruction horizons mark inter-polity rivalry alongside shifting Egyptian influence and the Hyksos rise in the Delta. Scribal schools, codified ritual, and monumental cult center this order, prefiguring the Late Bronze “international age” while bequeathing the political and economic templates later monarchies would inherit."
+    },
+    {
+      "start": -1550,
+      "end": -1200,
+      "label": "Late Bronze Age – Egyptian Hegemony & Canaanite Vassals",
+      "note": "The period sees the Levant operating under Egyptian suzerainty via a web of vassal city-states, documented in Akkadian cuneiform diplomacy (e.g., the Amarna letters), tribute, and garrisons. An “international age” linked Egypt, Hatti, the Levant, Cyprus (Alashiya), and Mesopotamia through elite gift-exchange and bulk trade in copper, tin, glass, cedar, textiles, purple dye, and luxuries. Port cities and court centers—especially Ugarit—flourished as scribal and commercial hubs, where palace–temple economies, standardized weights/seals, and schools produced large archives in cuneiform alongside Ugaritic alphabetic cuneiform. Chariot warfare, large-scale logistics, and dynastic marriages managed rivalry and shifting frontiers, particularly between Egypt and the Hittites. In the late 13th–early 12th centuries BCE, a convergence of shocks—seaborne incursions, internal unrest, earthquakes, and network fragility—triggered the Bronze Age collapse, ushering in Iron I with more dispersed settlements and the wider spread of alphabetic scripts."
+    },
+    {
+      "start": -1200,
+      "end": -1000,
+      "label": "Iron Age I – Early Israelite & Philistine Settlements",
+      "note": "After the Bronze Age collapse, the Levant becomes a mosaic of small communities—highland villages proliferate, coastal towns recover unevenly, and new polities (e.g., Philistines) sit alongside older Canaanite centers. Everyday life shifts to mixed agro-pastoral economies with terracing and household craft; donkey-borne, down-the-line exchange knits regions back together while ironworking spreads (bronze still common). Writing moves from court cuneiform to early alphabetic habits—short Phoenician/Canaanite inscriptions on pots, seals, and stones—seeding later Phoenician, Hebrew, and Aramaic traditions. Religion centers on local shrines and household cults with enduring Canaanite motifs, even as regional emphases diverge. Politically, authority is localized (lineages, elders, warrior bands), but by the end of Iron I coastal city-states and emergent highland monarchies foreshadow Iron II kingdoms and a surge in alphabetic writing."
+    },
+    {
+      "start": -1000,
+      "end": -732,
+      "label": "Iron Age II – Consolidated Monarchies (Israel, Judah, Aram, Phoenicia)",
+      "note": "Regional kingdoms consolidate—Israel, Judah, Aram-Damascus, and the Phoenician cities (Tyre/Sidon)—with fortified capitals, royal administrations, and expanding hinterlands. Prosperity rides on Phoenician maritime networks and inland caravan routes: olive oil, wine, metals, textiles, and luxury crafts circulate under palace–temple oversight. Alphabetic writing booms: monumental and administrative inscriptions in Phoenician, Aramaic, Hebrew, Moabite, Ammonite, and Edomite (e.g., Mesha Stele, Tel Dan) anchor royal memory, law, and commerce. Religious life blends long Canaanite continuities with royal ideology, temple economies, and reform movements; court literature and prophetic traditions begin to crystalize. From the 9th–8th centuries, Neo-Assyrian pressure recasts the map—vassalage, tribute, deportations, and conquests (including Samaria 722 BCE)—ushering in the Neo-Assyrian hegemony that closes the period."
+    },
+    {
+      "start": -732,
+      "end": -612,
+      "label": "Neo-Assyrian Period",
+      "note": "Assyria imposes direct rule and vassalage across the Levant, using a professional army, siegecraft, and a provincial bureaucracy tied together by royal roads and heavy tribute. Mass deportations and resettlements re-map populations and labor, while Imperial Aramaic becomes the chancery lingua franca shaping administration and everyday exchange. Key moments include the fall of Samaria (722 BCE) and Sennacherib’s campaign in Judah (701 BCE)—with Jerusalem spared but the countryside devastated—while Phoenician ports oscillate between punishment and privileged partnerships. Economic integration accelerates (standardized taxes, weights/seals), and West Semitic literatures—royal and prophetic alike—respond to empire; Aramaic and Phoenician epigraphy proliferate from border stelae to receipts. By the late 7th century, revolt and external assault unravel Assyrian power; Nineveh falls in 612 BCE, and the Levant transitions into Neo-Babylonian control."
+    },
+    {
+      "start": -612,
+      "end": -539,
+      "label": "Neo-Babylonian Period",
+      "note": "After Assyria’s collapse, Nabopolassar and Nebuchadnezzar II reassert imperial control over the Levant through campaigns and sieges—most famously the takings of Jerusalem in 597/586 BCE and the prolonged blockade of Tyre—imposing tribute, governors, and deportations that reshaped populations. Coastal Phoenician cities largely kept their maritime commerce and craft industries under Babylonian oversight, while inland polities were reorganized, with Judah reduced to a small governorate centered at Mizpah after Jerusalem’s fall. Administrative practice leaned on Akkadian royal chancery alongside everyday Aramaic, and temple economies continued to anchor local society even as imperial demands extracted surplus. West Semitic cultural life adapted in diaspora and at home. In 539 BCE, Cyrus of Persia took Babylon, and the Levant shifted from Babylonian hegemony into Achaemenid satrapal administration."
+    },
+    {
+      "start": -539,
+      "end": -332,
+      "label": "Achaemenid Persian Period",
+      "note": "The region was folded into satrapies—notably Yehud (Judah), Phoenicia, and Syria—with local elites and temples governing under Persian-appointed officials and regular tribute. Imperial Aramaic served as the administrative lingua franca (alongside local languages), standardizing contracts, seals, and communications across courts, ports, and market towns. Economically, temple estates and city councils managed land, storage, and labor while Persian coinage (e.g., sigloi) and local issues (e.g., Yehud silver) greased maritime-Phoenician and inland caravan trade; roads and post relays tied the coast to the empire. Politically, cities like Tyre and Sidon enjoyed privileges (and fielded fleets for Persian wars) but also staged periodic revolts; inland, Yehud saw the Second Temple rebuilt (515 BCE) and evolving provincial law, identity, and scripture. Overall, the period brought administrative integration and relative stability without deep cultural homogenization—West Semitic scribal and religious traditions persisted and adapted until Alexander’s conquest shifted the Levant into the Hellenistic world."
+    }
+  ]
+}
 ]
