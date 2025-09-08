@@ -3,7 +3,7 @@
     "id": "egyptian-composite",
     "name": "Egyptian",
     "expanded name": "Egyptian (Ancient Egyptian)",
-    "color": "#FF3B30",
+    "color": "#fd0d00ff",
     "yRel": 0.105,
     "hRel": 0.06,
     "broad note": "Ancient Egypt, like many civilizations, began as scattered forager and farming bands along the Nile, which gradually consolidated into early chiefdoms and temple-based economies. Protected by deserts, seas, and cataracts, this geographical insulation fostered unusual stability and enabled the long political dominance of priestly elites. Over three millennia, Egypt developed from egalitarian villages into a centralized state ruled by pharaohs, living embodiments of cosmic order (ma’at). Egypt's symbolic life revolved around death, the afterlife, and the maintenance of cosmic balance, expressed in monumental art, pyramids, temples, and ritual. Though dynasties rose and fell—through cycles of unification, collapse, and foreign rule—the enduring authority of priesthood and sacred kingship defined Egyptian identity until the Hellenistic conquest.",
@@ -24,7 +24,7 @@
     "id": "mesopotamian-composite",
     "name": "Mesopotamian",
     "expanded name": "Mesopotamian (Sumero-Akkadian)",
-    "color": "#1D4ED8",
+    "color": "#000000ff",
     "yRel": 0.209,
     "hRel": 0.08,
     "broad note": "The roots of Mesopotamian civilization emerged with early farmers and foragers along the Tigris and Euphrates, who gradually formed more centralized settlements. First Sumerian city-states like Uruk and Lagash developed economies administered in ziggurats (local temples), each ruled under the patronage of its own deity. Gradually, writing, law, and kingship emerged as new tools of order. Over centuries, this system was repeatedly seized by foreign warrior kings coming from surrounding hills and mountains—Akkadians, Amorites, Kassites, Assyrians, and Babylonians—whose empires rose and fell amidst political turbulence. Despite the upheavals, Sumerian roots remained foundational, influencing neighboring states and sustaining priesthoods and scribal traditions that outlasted dynasties. In 539 BCE Cyrus of Persia conquered Babylon yet preserved its temples and rituals, whose authority endured until Alexander the Great’s conquest.",
@@ -49,7 +49,7 @@
   "id": "anatolian-composite",
   "name": "Anatolian",
   "expanded name": "Anatolian (Hittite/Luwian/Phrygian/Lydian)",
-  "color": "#A855F7",
+  "color": "#d000ffff",
   "yRel": 0.083,
   "hRel": 0.02,
   "broad note": "Anatolian civilization emerged from early farming and metallurgical villages on the central plateau and western coasts, uniquely shaped by its position between Mesopotamia, the Aegean, and the Caucasus. From the beginning, its societies carried a strongly martial character, forged by constant movement of peoples and the need to defend upland fortresses and trade corridors. By the third and second millennia BCE, Hattian, Hittite, Hurrian, and Luwian groups developed fortified capitals, warrior aristocracies, and ritual traditions that blended local cults with Mesopotamian influence. The Hittite Empire became Anatolia’s first great power, ruling through kings who were both warriors and priests, and extending influence across Syria and the Aegean before succumbing to Bronze Age collapse. In the first millennium, Phrygians, Urartians, Lydians, and Ionian Greeks continued this legacy of martial resilience, competing for dominance while serving as intermediaries between East and West. By the mid-6th century BCE, Anatolia fell to the expanding Achaemenid Empire, and after two centuries of Persian rule its warrior traditions were finally drawn into the Hellenistic world.",
@@ -189,7 +189,7 @@
   "id": "1stpersian-composite",
   "name": "Persian",
   "expanded name": "Persian (Elamite/Zoroastrian)",
-  "color": "#00FFFF",
+  "color": "#06930bff",
   "yRel": 0.291,
   "hRel": 0.06,
   "broad note": "Ancient Persia began with Elamite settlements in Susiana, whose craft-ritual economies and urban centers grew in dialogue with neighboring Sumer and Akkad. For centuries, Elamite rulers balanced independence with vulnerability, adopting Mesopotamian writing and monumental forms even as they resisted Akkadian, Babylonian, and Assyrian incursions. Into this layered landscape came Indo-Iranian migrations, bringing fire rituals, warrior traditions, and an oral cosmology of truth and oath that later crystallized in Zarathustra’s teachings of moral dualism. Out of this fusion of Elamite heritage and Indo-Iranian belief, the Median confederation forged a bridge between tribal alliances and territorial authority. In 550 BCE Cyrus the Great transformed this inheritance into the Achaemenid Empire, the first polity to fuse sacred geography, imperial administration, and universal moral order across vast territories. For nearly two centuries it stood as the defining Persian power, until the conquests of Alexander in 330 BCE absorbed its symbolic and political life into the Hellenistic world.",
@@ -244,6 +244,115 @@
       "note": "The Achaemenid Empire emerges as a synthesis of Median authority, Elamite sacred geography, and Zoroastrian moral cosmology. Expanding across Mesopotamia, Anatolia, and Egypt, it sustains an imperial order grounded in tolerance, hierarchy, and law, framing conquest as ethical governance under divine truth. Its symbolic and administrative system endures until Alexander’s campaigns (330 BCE) draw Persia into the Hellenistic world."
     }
   ]
+},
+{
+  "id": "greek-composite",
+  "name": "Greek",
+  "expanded name": "Greek (Minoan/Mycenaean to Classical)",
+  "color": "#1102e7ff",
+  "yRel": 0.021,
+  "hRel": 0.06,
+  "broad note": "Greek civilization began with the Minoans of Crete, a seafaring people led by priestly elites, and the warrior Mycenaeans of the mainland. Around 1450 BCE their worlds violently converged, producing a culture increasingly dominated by fortified citadels, heroic lineages, and martial values. After the Bronze Age collapse, Greece re-emerged in the Archaic and Classical periods as a patchwork of city-states, where competition spurred advances in philosophy, drama, and art. Athens pioneered democracy, balancing popular rule with civic ritual, while Sparta embodied militarized order. United briefly against Persia yet fractured in civil wars, the Greeks left a legacy of inquiry, politics, and aesthetics that reshaped the Mediterranean. Macedon’s rise under Philip II and Alexander the Great carried this warrior-inflected yet intellectually vibrant tradition across the known world, closing the Classical age in 323 BCE.",
+  "broad lifespan": "c. 3000 BCE - 323 BCE",
+  "segments": [
+    {
+      "start": -3000,
+      "end": -2700,
+      "label": "Early Minoan & Helladic Period I",
+      "note": "Crete and mainland Greece began diverging from their early Neolithic roots in both form and function. While the Minoans on Crete developed coastal village societies rooted in maritime exchange and craft specialization, the Helladic mainlanders organized more landlocked communities focused on subsistence agriculture and seasonal cycles. The mainland’s relative isolation and rugged terrain may have fostered a more pronounced emphasis on martial organization. Though both regions saw advances in pottery and architecture, Minoan society moved toward proto-centralized communal structures, while Helladic settlements remained more dispersed and autonomous."
+    },
+    {
+      "start": -2700,
+      "end": -2300,
+      "label": "Early Minoan & Helladic Period II",
+      "note": "Both Minoan Crete and the Helladic mainland saw the consolidation of local communities and an increase in social complexity. On Crete, the Minoans expanded maritime networks and began forming  rather peaceful proto-urban centers with centralized storage facilities, while Helladic societies developed larger settlements inland with the first signs of elite burial practices and localized fortifications, reflecting growing social stratification and perhaps more frequent inter-community conflict. As Minoans were becoming increasingly focused on trade, symbolic art, and ritual spaces, the Helladic mainland emphasized control of land, kin-based authority, and defensive posturing."
+    },
+    {
+      "start": -2300,
+      "end": -2100,
+      "label": "Early Minoan & Helladic Period III",
+      "note": "On Crete, the Minoans refined their economic networks and craft specialization, setting the stage for the island’s first palace structure. On the mainland, the Helladic world saw intensified social stratification, but also instability—archaeological evidence of site abandonments, destruction layers, and shifting burial customs point to migrations or internal disruption, perhaps tied to external pressure from the north (early Indo-European groups?). This divergence created a developmental gap: while Crete moved toward political unification and palatial culture, mainland Greece struggled with fragmentation before its eventual reorganization in the coming Middle Helladic phase."
+    },
+    {
+      "start": -2100,
+      "end": -1900,
+      "label": "Middle Minoan & Helladic Period I",
+      "note": "The Minoans entered a transformative phase with the construction of the first palaces at Knossos, Phaistos, and Mallia—monumental centers that combined storage, administration, and ritual, indicating the rise of centralized authority and sophisticated redistribution systems. These developments reflect a relatively peaceful, prosperous society flourishing through maritime trade and symbolic coordination. In contrast, the Helladic mainland, recovering from the disruptions of the previous period, began to reorganize into more stable agrarian communities marked by megaron-type buildings and tumulus burials that suggest the emergence of regional elites. The mainland’s social order remained clan-based, with a growing emphasis on kinship, martial display, and territorial control."
+    },
+    {
+      "start": -1900,
+      "end": -1700,
+      "label": "Middle Minoan & Helladic Period II",
+      "note": "A golden phase for Minoan Crete, where the first palatial centers at Knossos, Phaistos, and Mallia reached their architectural and administrative maturity, coordinating regional economies through advanced storage systems, road networks, and a complex symbolic-religious culture. Linear A script emerged as a tool of recordkeeping, while vivid Kamares pottery circulated widely—reaching the Helladic mainland, where Cretan goods became objects of elite display. On the mainland, Middle Helladic communities expanded into larger, more stable settlements, developing corridor houses, tumulus graves, and regional hierarchies. Minoan culture emphasized ritual and integration, Helladic elites used foreign goods to signal status and power within clan-based competition. This was a time of mutual recognition but asymmetrical development."
+    },
+    {
+      "start": -1700,
+      "end": -1600,
+      "label": "Middle Minoan & Helladic Period III",
+      "note": "Major Minoan palaces were destroyed—likely by earthquake, though internal conflict or external threat can’t be ruled out—yet they were swiftly rebuilt on an even grander scale, inaugurating the Neopalatial period. Knossos, in particular, became a dazzling hub of artistic innovation, ritual choreography, and political centralization, with new architectural elements like light wells, vibrant frescoes, and multi-story complexes. The Helladic mainland saw the rise of elite graves filled with weapons, gold, and Minoan imports—most famously at Mycenae, where shaft graves reveal growing wealth and authority. Minoan influence deepened: not only were goods exchanged, but also styles, symbols, and possibly even artisans themselves."
+    },
+    {
+      "start": -1600,
+      "end": -1450,
+      "label": "Late Minoan & Helladic Period I",
+      "note": "Crete’s influence reached unprecedented levels: Minoan goods, imagery, and artisans flooded the mainland, where Mycenaean elites at places like Mycenae and Pylos emulated Minoan luxury in burials and domestic architecture. Yet the Helladic world was rapidly transforming—shaft graves gave way to tholos tombs, warrior iconography intensified, and local dynasts began asserting their own autonomous identity. Trade, diplomacy, and symbolic borrowing knit the Aegean into a fragile unity. By c. 1450 BCE, a cataclysm—linked to the Thera eruption, internal unrest, or rising Mycenaean aggression—led to the destruction of most Minoan palaces and the mainland takeover of Knossos, marking the end of Crete’s independence and the rise of Mycenaean dominance."
+    },
+    {
+      "start": -1450,
+      "end": -1400,
+      "label": "Late Minoan & Helladic Period II",
+      "note": "Mycenaean elites assumed control of Knossos, establishing an administrative presence and likely repurposing Minoan institutions for their own ends. The once-dominant Minoan world now served as a cultural reservoir for Mycenaean appropriation, as Helladic rulers absorbed Cretan religious iconography, artistic motifs, and bureaucratic techniques—most notably adopting Linear B, an early Greek adaptation of the Minoan script. While Knossos functioned as a Mycenaean outpost, the mainland surged ahead: palatial centers emerged at Mycenae, Pylos, and Tiryns, each displaying centralized authority, recordkeeping systems, and monumental architecture."
+    },
+    {
+      "start": -1400,
+      "end": -1100,
+      "label": "Late Minoan & Helladic Period III",
+      "note": "The full flowering of Mycenaean civilization, as mainland palatial centers like Mycenae, Pylos, Tiryns, and Thebes reached their greatest scale, overseeing complex economies, hierarchical societies, and expansive diplomatic networks across the eastern Mediterranean. Linear B tablets reveal a rigidly administered world, under the power of warrior-kings. On Crete, a diminished Minoan culture persisted in pockets, but local autonomy faded; by around 1375 BCE, Knossos was abandoned or destroyed, ending the last major Minoan administrative hub. Yet by the late 13th and early 12th centuries BCE, widespread destruction swept through Mycenaean palatial centers—possibly due to internal revolt, systemic overreach, external invasions (possibly the \"Sea Peoples\"), or climate stress. By c. 1100 BCE, both Crete and the mainland had entered the Greek Dark Age, as literacy vanished, central authority disintegrated, and the memory of Bronze Age grandeur receded into myth."
+    },
+    {
+      "start": -1100,
+      "end": -950,
+      "label": "Early Greek Dark Age",
+      "note": "Greece entered a long period of decentralization, where monumental architecture, writing, and complex administration vanished. Populations shrank, cities were abandoned, and people reorganized into small, kin-based settlements that relied on subsistence farming and localized exchange. Though material culture regressed—seen in simpler pottery styles and diminished trade—communities like Lefkandi show that elite memory and ceremonial practices endured in some regions. Oral tradition flourished in the absence of writing, laying the groundwork for the later Homeric epics and the heroic value systems of archaic Greece. Beneath the surface of decline, new social patterns slowly emerged."
+    },
+    {
+      "start": -950,
+      "end": -850,
+      "label": "Middle Greek Dark Age",
+      "note": "Greek communities slowly regained their footing, crafting elegant Protogeometric pottery that reflected a newfound sense of order and symmetry. Though writing remained lost and monumental architecture absent, sites like Lefkandi revealed elite tombs and regional leaders who held sway through kinship, warfare, and prestige. Iron weapons and warrior burials signaled the dominance of martial values, while oral traditions carried the heroic memory of a grander past. Trade routes, once severed, cautiously reopened, bringing foreign goods and faint whispers from the Levant and beyond. It was a time of modest rebirth — restrained, rural, and local."
+    },
+    {
+      "start": -850,
+      "end": -800,
+      "label": "Late Greek Dark Age",
+      "note": "Settlements expanded into more stable urban forms, social hierarchies deepened, and shared sanctuaries emerged as centers of both worship and economic exchange, unifying scattered kin groups into proto-polis structures. Potters adorned their vessels with intricate geometric designs, and for the first time in centuries, human figures — warriors, horses, and mourners — reentered artistic memory, reflecting both the valorization of martial elites and ancestral devotion. Intensifying contact with Phoenician traders brought not only exotic goods but also symbolic systems, including the alphabet, which enabled the recording of myth, oral law, and tribute. Sanctuaries like Olympia and Delphi grew into sacred hubs where gift-giving, competition, and prophecy intertwined — signaling the rise of temple-centered economies."
+    },
+    {
+      "start": -800,
+      "end": -650,
+      "label": "Early Archaic Period",
+      "note": "City-states like Athens, Corinth, Argos, and Sparta developed structured political systems dominated by aristocratic councils and early codified laws. To relieve internal pressures, Greeks launched a sweeping colonization movement, founding new cities across the western Mediterranean, North Africa, and the Black Sea, transforming trade and spreading Greek culture. These settlements intensified cultural exchange with Phoenicia, Egypt, and Assyria, leading to technological and artistic innovation, including the adoption of the alphabet and Near Eastern artistic motifs. Monumental stone temples emerged at sacred sites such as Delphi, Olympia, Delos, and Samos, where worship, wealth storage, and inter-polis diplomacy fused into powerful temple economies that anchored religious and political life. Within the Greek mainland and colonies alike, city-states often engaged in warfare, driven by territorial rivalry, prestige, and shifting alliances."
+    },
+    {
+      "start": -650,
+      "end": -480,
+      "label": "Late Archaic Period",
+      "note": "City-states like Athens and Sparta faced internal tensions as rising merchant classes and hoplite warriors demanded a share of power, leading to tyrannies in some regions and far-reaching reforms in others — Solon’s restructuring of Athenian law and Cleisthenes’ invention of democracy reshaped civic life. Earlier Greek settlements like Syracuse and Cyrene grew powerful, and a shared Hellenic identity began to cohere around common sanctuaries, language, and myths. Monumental temples rose at Olympia, Ephesus, and Samos, while oracles at Delphi and athletic festivals at Panhellenic sites unified city-states in worship, rivalry, and diplomacy. In the East, the first schools of philosophy were estabilished. Persian conquest of Ionia and the failed revolt of 499 BCE signaled a new threat from the east, one that forced the fractured poleis into unprecedented alliance - the Delian League."
+    },
+    {
+      "start": -480,
+      "end": -404,
+      "label": "Early Classical Period",
+      "note": "After the triumph over Persia, Athens rose to dazzling heights and turned the Delian League into a maritime empire. Guided by Pericles, the city adorned itself with marble temples, sculpted gods, and democratic reforms that gave even the poorest citizens a voice in public life. The period saw breathtaking developments in sculpture, theater, philosophy, and public discourse, as thinkers and artists redefined the possibilities of human expression. Yet Sparta, wary of Athenian dominance, led a coalition of land powers into a long and bitter Peloponnesian War. Plague, hubris, and failed ambition — from the Sicilian expedition to the collapse of alliances — brought Athens low. When the city finally surrendered in 404 BCE, its walls were torn down, its empire dismantled, and its democracy briefly overthrown by the Thirty Tyrants."
+    },
+    {
+      "start": -404,
+      "end": -323,
+      "label": "Late Classical Period",
+      "note": "After Athens fell, Sparta claimed supremacy, but its harsh rule sparked resistance and war, leaving the Greek world fractured. Thebes rose briefly in glory, defeating Sparta at Leuctra, yet no city could hold power for long. Amid political decay, Athenian thinkers and sculptors pushed the boundaries of what was possible in philosophy, science, and art. In the north, Philip of Macedon built a new kingdom and brought the quarreling poleis under his shadow. Philip's son — Alexander crossed into Asia, toppling empires, founding cities, and spreading Hellenic thought from Egypt to India. By the time of his death in 323 BCE, Alexander had laid the foundation for Hellenistic space — a vast political and cultural sphere where East and West would meet and mingle for the first time in history."
+    }
+  ]
 }
+
 
 ]

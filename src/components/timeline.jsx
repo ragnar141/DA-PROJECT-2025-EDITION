@@ -11,17 +11,21 @@ const formatYear = (y) => (y < 0 ? `${Math.abs(y)} BCE` : y > 0 ? `${y} CE` : "�
 
 /* ===== Colors for Symbolic Systems ===== */
 const SymbolicSystemColorPairs = {
-  Sumerian: "#1D4ED8",
+  Sumerian: "#000000ff",
   Akkadian: "#10B981",
-  Egyptian: "#FF3B30",
-  "Ancient Egyptian": "#FF3B30",
-  Hittite: "#A855F7",
+  Egyptian: "#fd0d00ff",
+  "Ancient Egyptian": "#fd0d00ff",
+  Hittite: "#d000ffff",
   Hurrian: "#000000",
   Yahwistic: "#0000FF",
   Canaanite: "#FFA500",
   Aramaic: "#ff00eeff",
-  Elamite: "#00FFFF",
+  Elamite: "#06930bff",
   Zoroastrian: "#0000FF",
+  Hellenic: "#1102e7ff",
+  Mycenaean: "#000000ff",
+  Orphic: "#BE185D"
+
 };
 
 /* ===== Label sizing vs zoom ===== */
@@ -93,6 +97,21 @@ function pickSystemColor(tagsStr) {
   const arr = pickSystemColors(tagsStr);
   return arr[0] || "#444";
 }
+
+const normalizeAuthor = (name) =>
+  String(name || "anon").trim().toLowerCase();
+
+/* === NEW: detect placeholder/unknown authors === */
+const isPlaceholderAuthor = (name) => {
+  const raw = String(name || "").trim();
+  if (!raw) return true;
+  const lower = raw.toLowerCase();
+  return (
+    raw === "-" ||
+    raw === "—" 
+  );
+};
+
 
 /* ===== Adaptive tick helpers ===== */
 const formatTick = (a) => (Math.abs(a - 0.5) < 1e-6 ? "0" : formatYear(fromAstronomical(a)));
@@ -349,6 +368,7 @@ export default function Timeline() {
           colors,
           title,
           authorName,
+          authorKey: isPlaceholderAuthor(authorName) ? null : normalizeAuthor(authorName),
           displayDate,
           metaphysicalTags,
           artsAndSciencesTags,
@@ -379,6 +399,62 @@ export default function Timeline() {
 
     return filtT;
   }, [datasetRegistry, outlines]);
+
+  // Map: bandId -> Map(authorKey -> laneY_in_band_units_at_k1)
+const authorLaneMap = useMemo(() => {
+  const map = new Map();
+
+  // Group texts by band
+  const byBand = new Map();
+  for (const t of textRows) {
+    const arr = byBand.get(t.durationId) || [];
+    arr.push(t);
+    byBand.set(t.durationId, arr);
+  }
+
+  // Fast band lookup
+  const bandById = new Map(outlines.map(o => [o.id, o]));
+
+  for (const [bandId, items] of byBand.entries()) {
+    const band = bandById.get(bandId);
+    if (!band) continue;
+
+    // Band height in "band units" (y0 domain where 1 unit = 1px at k=1)
+    const bandTopU = y0(band.y);
+    const bandBotU = y0(band.y + band.h);
+    const bandHeightU = bandBotU - bandTopU;
+
+// Unique, non-placeholder authors present in this band (deterministic order)
+const authors = Array.from(
+  new Set(items.filter(t => t.authorKey).map(t => t.authorKey))
+).sort();
+
+if (authors.length === 0) {            // no real authors in this band
+  map.set(bandId, new Map());          // still set an empty map
+  continue;
+}
+
+
+    // Even spacing with padding
+    const padU = Math.max(1, bandHeightU * 0.08);
+    const usableU = Math.max(1, bandHeightU - 2 * padU);
+    const n = Math.max(1, authors.length);
+    const stepU = n > 1 ? usableU / (n - 1) : 0;
+
+    const lanes = new Map();
+    authors.forEach((ak, i) => {
+      const yLaneU = n === 1
+        ? bandTopU + bandHeightU / 2
+        : bandTopU + padU + i * stepU;
+      lanes.set(ak, yLaneU);
+    });
+
+    map.set(bandId, lanes);
+  }
+
+  return map;
+}, [textRows, outlines, y0]);
+
 
   // Close with ESC when a card is open
   useEffect(() => {
@@ -1039,118 +1115,43 @@ gOut.selectAll("g.durationOutline").each(function (d) {
         d3.select(this).attr("x", Math.min(x0, x1)).attr("y", yTop).attr("width", Math.abs(x1 - x0)).attr("height", hPix);
       });
 
-// === Stable layout across zoom ===
-// Render radius follows current zoom:
+// === Author-lane layout (stable across zoom) ===
 const rDraw = TEXT_BASE_R * k;
 
-// COLLISION/LAYOUT: compute in DATA units using a FIXED reference scale.
-// This keeps lane decisions identical at every zoom/pan.
-const kRefLayout = ZOOM_THRESHOLD; // constant reference; do NOT tie to current k
-
-// X conversion: pixels per astronomical year at reference scale
-const astroSpan = Math.abs(domainAstro[1] - domainAstro[0]);
-const pxPerYearAt1 = innerWidth / astroSpan;
-const pxPerYearRef = pxPerYearAt1 * kRefLayout;
-
-// Y conversion: use "band units" (y0’s domain); 1 unit = 1px at k=1
-const rRefPx = TEXT_BASE_R * kRefLayout;
-const lanePadPx = Math.max(1, Math.round(rRefPx * 0.15));
-
-const rYUnits = rRefPx / kRefLayout;     // px -> units at k=1
-const padYUnits = lanePadPx / kRefLayout;
-
-// Minimum separations in DATA units (constant across zoom)
-const minDX_years = (2 * rRefPx + lanePadPx) / pxPerYearRef; // years
-const minDY_units = 2 * rYUnits + padYUnits;                  // band units
-const laneStepUnits = minDY_units;
-
-// Pre-index texts by band
-const outlineById = new Map(outlines.map((o) => [o.id, o]));
-const textsByBand = new Map();
-textRows.forEach((d) => {
-  const arr = textsByBand.get(d.durationId) || [];
-  arr.push(d);
-  textsByBand.set(d.durationId, arr);
-});
-
-const adjustedCyUnits = new Map(); // store y in band units (k=1)
-
-// Solve collisions in data space (years on X, band units on Y)
-for (const [bandId, items] of textsByBand.entries()) {
-  const band = outlineById.get(bandId);
-  if (!band) continue;
-
-  // Band limits in band units
-  const bandTopU = y0(band.y);
-  const bandBotU = y0(band.y + band.h);
-  const bandHeightU = bandBotU - bandTopU;
-
-  const placed = [];
-
-  // Sort by astronomical year; pan/zoom won't affect this ordering
-  const sorted = items
-    .map((d) => ({ d, cxYears: toAstronomical(d.when), baseCyU: y0(d.y) }))
-    .sort((a, b) => a.cxYears - b.cxYears);
-
-  const maxLanes = Math.max(1, Math.floor(bandHeightU / laneStepUnits));
-
-  for (const it of sorted) {
-    let chosenCyU = it.baseCyU;
-    let found = false;
-
-    const offsetsU = [];
-    for (let i = 0; i < maxLanes; i++) {
-      if (i === 0) offsetsU.push(0);
-      else {
-        offsetsU.push(i * laneStepUnits);
-        offsetsU.push(-i * laneStepUnits);
-      }
-    }
-
-    for (const offU of offsetsU) {
-      const trialCyU = Math.max(bandTopU + rYUnits, Math.min(bandBotU - rYUnits, it.baseCyU + offU));
-      let collides = false;
-
-      // Compare only with near X-neighbors (in YEARS)
-      for (let j = placed.length - 1; j >= 0; j--) {
-        const p = placed[j];
-        if (it.cxYears - p.cxYears > minDX_years) break;
-        if (Math.abs(it.cxYears - p.cxYears) < minDX_years && Math.abs(trialCyU - p.cyU) < minDY_units) {
-          collides = true;
-          break;
-        }
-      }
-      if (!collides) {
-        chosenCyU = trialCyU;
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) chosenCyU = Math.max(bandTopU + rYUnits, Math.min(bandBotU - rYUnits, it.baseCyU));
-
-    adjustedCyUnits.set(it.d.id, chosenCyU);
-    placed.push({ cxYears: it.cxYears, cyU: chosenCyU });
-  }
-}
-
-// Position circles (render) with current zoom, using the stable layout
+// Position circles using per-band author lanes
 gTexts.selectAll("circle.textDot").each(function (d) {
   const cx = zx(toAstronomical(d.when));
-  const cyU = adjustedCyUnits.get(d.id) ?? y0(d.y);
+
+  // Default to the original hashed Y (what you had before lanes)
+  let cyU = y0(d.y);
+
+  if (d.authorKey) { // only lane-align if real author
+    const lanes = authorLaneMap.get(d.durationId);
+    const laneU = lanes?.get(d.authorKey);
+    if (Number.isFinite(laneU)) cyU = laneU;
+  }
+
   const cy = zy(cyU);
-  d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", rDraw);
+  d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", TEXT_BASE_R * k);
 });
 
-// Position/update pies to match circles (use rDraw)
+// Position pies to match circles (same cy rule)
 gTexts.selectAll("g.dotSlices").each(function (d) {
   const cx = zx(toAstronomical(d.when));
-  const cyU = adjustedCyUnits.get(d.id) ?? y0(d.y);
+
+  let cyU = y0(d.y);
+  if (d.authorKey) {
+    const lanes = authorLaneMap.get(d.durationId);
+    const laneU = lanes?.get(d.authorKey);
+    if (Number.isFinite(laneU)) cyU = laneU;
+  }
+
   const cy = zy(cyU);
   const g = d3.select(this);
   g.attr("transform", `translate(${cx},${cy})`);
-  drawSlicesAtRadius(g, rDraw);
+  drawSlicesAtRadius(g, TEXT_BASE_R * k);
 });
+
 
     }
 
