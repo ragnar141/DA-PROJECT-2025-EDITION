@@ -4,8 +4,8 @@
     "name": "Egyptian",
     "expanded name": "Egyptian (Ancient Egyptian)",
     "color": "#FF3B30",
-    "yRel": 0.167,
-    "hRel": 0.02,
+    "yRel": 0.105,
+    "hRel": 0.06,
     "broad note": "Ancient Egypt, like many civilizations, began as scattered forager and farming bands along the Nile, which gradually consolidated into early chiefdoms and temple-based economies. Protected by deserts, seas, and cataracts, this geographical insulation fostered unusual stability and enabled the long political dominance of priestly elites. Over three millennia, Egypt developed from egalitarian villages into a centralized state ruled by pharaohs, living embodiments of cosmic order (ma’at). Egypt's symbolic life revolved around death, the afterlife, and the maintenance of cosmic balance, expressed in monumental art, pyramids, temples, and ritual. Though dynasties rose and fell—through cycles of unification, collapse, and foreign rule—the enduring authority of priesthood and sacred kingship defined Egyptian identity until the Hellenistic conquest.",
     "broad lifespan": "c. 5000 BCE - 332 BCE",
     "segments": [
@@ -25,8 +25,8 @@
     "name": "Mesopotamian",
     "expanded name": "Mesopotamian (Sumero-Akkadian)",
     "color": "#1D4ED8",
-    "yRel": 0.189,
-    "hRel": 0.02,
+    "yRel": 0.209,
+    "hRel": 0.08,
     "broad note": "The roots of Mesopotamian civilization emerged with early farmers and foragers along the Tigris and Euphrates, who gradually formed more centralized settlements. First Sumerian city-states like Uruk and Lagash developed economies administered in ziggurats (local temples), each ruled under the patronage of its own deity. Gradually, writing, law, and kingship emerged as new tools of order. Over centuries, this system was repeatedly seized by foreign warrior kings coming from surrounding hills and mountains—Akkadians, Amorites, Kassites, Assyrians, and Babylonians—whose empires rose and fell amidst political turbulence. Despite the upheavals, Sumerian roots remained foundational, influencing neighboring states and sustaining priesthoods and scribal traditions that outlasted dynasties. In 539 BCE Cyrus of Persia conquered Babylon yet preserved its temples and rituals, whose authority endured until Alexander the Great’s conquest.",
     "broad lifespan": "c. 5500 BCE - 330 BCE",
     "segments": [
@@ -50,9 +50,9 @@
   "name": "Anatolian",
   "expanded name": "Anatolian (Hittite/Luwian/Phrygian/Lydian)",
   "color": "#A855F7",
-  "yRel": 0.123,
+  "yRel": 0.083,
   "hRel": 0.02,
-  "broad note": "Anatolia’s highland polities—Hattian, Hittite, Luwian, Phrygian, Urartian, and Lydian—interfaced between the Aegean, Levant, and Mesopotamia. Cycles of consolidation and collapse produced distinctive imperial models and literate traditions that later intertwined with Persian and Greek hegemonies.",
+  "broad note": "Anatolian civilization emerged from early farming and metallurgical villages on the central plateau and western coasts, uniquely shaped by its position between Mesopotamia, the Aegean, and the Caucasus. From the beginning, its societies carried a strongly martial character, forged by constant movement of peoples and the need to defend upland fortresses and trade corridors. By the third and second millennia BCE, Hattian, Hittite, Hurrian, and Luwian groups developed fortified capitals, warrior aristocracies, and ritual traditions that blended local cults with Mesopotamian influence. The Hittite Empire became Anatolia’s first great power, ruling through kings who were both warriors and priests, and extending influence across Syria and the Aegean before succumbing to Bronze Age collapse. In the first millennium, Phrygians, Urartians, Lydians, and Ionian Greeks continued this legacy of martial resilience, competing for dominance while serving as intermediaries between East and West. By the mid-6th century BCE, Anatolia fell to the expanding Achaemenid Empire, and after two centuries of Persian rule its warrior traditions were finally drawn into the Hellenistic world.",
   "broad lifespan": "c. 5500 BCE - 330 BCE",
   "segments": [
     {
@@ -117,9 +117,9 @@
   "name": "West Semitic",
   "expanded name": "West Semitic (Levantine)",
   "color": "#F59E0B",
-  "yRel": 0.145,
-  "hRel": 0.02,
-  "broad note": "Levantine polities formed at the nexus of Egypt, Anatolia, Cyprus, and Mesopotamia. Across oscillations of town formation, trade, and imperial pressure, Canaanite cults and vernacular traditions evolved into durable West Semitic religious and literary forms, including alphabetic writing and, later, distinct Yahwistic monotheism.",
+  "yRel": 0.167,
+  "hRel": 0.04,
+  "broad note": "West Semitic civilization arose along the Levantine coast and highlands, where early farming villages and ritual centers gradually coalesced into towns linked by trade and seafaring. Its position between Egypt, Mesopotamia, and Anatolia made it a crossroads of empires, forcing local communities to cultivate resilience and adaptability. From Canaanite city-states and Ugaritic scribal schools to Phoenician mariners and Hebrew tribes, Levantine societies forged distinctive religious and literary traditions that combined local cults with borrowed imperial forms. Warrior chieftains, temple priesthoods, and mercantile elites shared authority, while the alphabet—an invention of profound durability—spread across the Mediterranean from these shores. Over the first millennium BCE, Phoenician colonies, Israelite prophets, and Aramean kingdoms carried West Semitic voices far beyond the Levant, even as Assyrian, Babylonian, and Persian conquerors imposed their rule. By 332 BCE, Alexander’s arrival marked the Levant’s absorption into the Hellenistic world, but its maritime commerce, sacred texts, and alphabetic script remained enduring legacies.",
   "broad lifespan": "c. 4500 BCE - 332 BCE",
   "segments": [
     {
@@ -183,5 +183,67 @@
       "note": "The region was folded into satrapies—notably Yehud (Judah), Phoenicia, and Syria—with local elites and temples governing under Persian-appointed officials and regular tribute. Imperial Aramaic served as the administrative lingua franca (alongside local languages), standardizing contracts, seals, and communications across courts, ports, and market towns. Economically, temple estates and city councils managed land, storage, and labor while Persian coinage (e.g., sigloi) and local issues (e.g., Yehud silver) greased maritime-Phoenician and inland caravan trade; roads and post relays tied the coast to the empire. Politically, cities like Tyre and Sidon enjoyed privileges (and fielded fleets for Persian wars) but also staged periodic revolts; inland, Yehud saw the Second Temple rebuilt (515 BCE) and evolving provincial law, identity, and scripture. Overall, the period brought administrative integration and relative stability without deep cultural homogenization—West Semitic scribal and religious traditions persisted and adapted until Alexander’s conquest shifted the Levant into the Hellenistic world."
     }
   ]
+},
+
+{
+  "id": "1stpersian-composite",
+  "name": "Persian",
+  "expanded name": "Persian (Elamite/Zoroastrian)",
+  "color": "#00FFFF",
+  "yRel": 0.291,
+  "hRel": 0.06,
+  "broad note": "Ancient Persia began with Elamite settlements in Susiana, whose craft-ritual economies and urban centers grew in dialogue with neighboring Sumer and Akkad. For centuries, Elamite rulers balanced independence with vulnerability, adopting Mesopotamian writing and monumental forms even as they resisted Akkadian, Babylonian, and Assyrian incursions. Into this layered landscape came Indo-Iranian migrations, bringing fire rituals, warrior traditions, and an oral cosmology of truth and oath that later crystallized in Zarathustra’s teachings of moral dualism. Out of this fusion of Elamite heritage and Indo-Iranian belief, the Median confederation forged a bridge between tribal alliances and territorial authority. In 550 BCE Cyrus the Great transformed this inheritance into the Achaemenid Empire, the first polity to fuse sacred geography, imperial administration, and universal moral order across vast territories. For nearly two centuries it stood as the defining Persian power, until the conquests of Alexander in 330 BCE absorbed its symbolic and political life into the Hellenistic world.",
+  "broad lifespan": "c. 5200 BCE - 330 BCE",
+  "segments": [
+    {
+      "start": -5200,
+      "end": -4000,
+      "label": "Archaic Susiana / Susa 0",
+      "note": "This period marks the emergence of stable, agricultural settlements in Susiana (southwest Iran), with distinctive painted ceramics and early public buildings. Local craft specialization expands, and storage/redistribution practices grow around sanctuary-elite households. Interaction with the Ubaid/Uruk worlds remains limited but present along indirect corridors; by the late phase, Mesopotamian influence begins to appear near the end of the period."
+    },
+    {
+      "start": -4000,
+      "end": -3700,
+      "label": "Susa I period",
+      "note": "A formative phase marked by local innovation and the development of ceremonial architecture and administrative practices. Pottery remains diverse, and stamp/cylinder seals begin to appear more widely; elite households and sanctuaries exercise greater control over labor and storage. Exchange intensifies with neighboring regions, and settlement organization begins to exhibit signs of standardization and local central planning."
+    },
+    {
+      "start": -3700,
+      "end": -3100,
+      "label": "Susa II period",
+      "note": "Defined by intensive interaction with the southern Mesopotamian Uruk culture: bevel-rim bowls, administrative tokens, and proto-writing spread into Susiana. Large ceremonial buildings and craft workshops expand, indicating strong temple-household economies. Elite display increases as Susiana becomes a node in wider exchange networks connecting the plateau, Mesopotamia, and the Gulf."
+    },
+    {
+      "start": -3100,
+      "end": -2700,
+      "label": "Proto-Elamite Period",
+      "note": "Shortly after the urban florescence of Susa, a distinct Proto-Elamite administrative tradition emerges eastward on the Iranian plateau (Anshan and beyond), using a non-cuneiform script for accounting. Rural and highland centers expand, linking Susiana to plateau resource zones (metals, stone). While the script remains undeciphered, the spread of tablets and seals indicates a complex redistributive economy and local elite consolidation."
+    },
+    {
+      "start": -2700,
+      "end": -1600,
+      "label": "Old Elamite Period",
+      "note": "Elamite civilization re-emerges with fortified centers, dynastic titles, and intensified interaction with Mesopotamia. Royal inscriptions (in Akkadian) and monumental projects reflect growing kingship ideology. Elam participates in shifting rivalries with Sumerian, Akkadian, and later Babylonian polities, at times asserting power deep into Mesopotamia while also absorbing foreign administrative and symbolic forms."
+    },
+    {
+      "start": -1600,
+      "end": -539,
+      "label": "Later Elamite Period",
+      "note": "From the Middle Elamite apex (Kidinuid/Shutrukid dynasties) through the Neo-Elamite finale, Elam consolidates power, renovates temples/palaces, and adopts Akkadian cuneiform for royal authority. Warrior-kings like Shutruk-Nakhunte seize Mesopotamian monuments (e.g., Hammurabi’s stele) to refract foreign prestige into Elamite legitimacy. After 1100 BCE, Assyrian pressure and regional crises fragment the order; temple/ancestral cults persist until Cyrus the Great’s conquest of Susa (539 BCE) ends independent Elamite rule."
+    },
+    {
+      "start": -1400,
+      "end": -550,
+      "label": "Indo-Iranian Transformation",
+      "note": "From 1400 BCE, Indo-Iranian tribes enter the plateau with fire-centered ritual, warrior traditions, and an oral cosmology of truth and oath. Zarathustra reframes belief into a moral dualism (asha/druj), planting seeds for later Zoroastrian practice. By the 7th–6th centuries, the Median Confederation translates tribal power into territorial kingship, preparing the ground for imperial synthesis under Cyrus."
+    },
+    {
+      "start": -550,
+      "end": -330,
+      "label": "Achaemenid Empire",
+      "note": "The Achaemenid Empire emerges as a synthesis of Median authority, Elamite sacred geography, and Zoroastrian moral cosmology. Expanding across Mesopotamia, Anatolia, and Egypt, it sustains an imperial order grounded in tolerance, hierarchy, and law, framing conquest as ethical governance under divine truth. Its symbolic and administrative system endures until Alexander’s campaigns (330 BCE) draw Persia into the Hellenistic world."
+    }
+  ]
 }
+
 ]

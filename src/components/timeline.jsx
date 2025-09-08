@@ -20,10 +20,21 @@ const SymbolicSystemColorPairs = {
   Yahwistic: "#0000FF",
   Canaanite: "#FFA500",
   Aramaic: "#ff00eeff",
+  Elamite: "#00FFFF",
+  Zoroastrian: "#0000FF",
 };
 
 /* ===== Label sizing vs zoom ===== */
 const LABEL_BASE_PX = 11;
+
+// Label sizing vs band height (works for hRel or absolute heights)
+// Label size as a fraction of the rendered band height (post-zoom)
+const LABEL_TO_BAND = 0.7;     // 0.30–0.45 works well
+const LABEL_FONT_MIN = 8;       // px clamp (tiny bands)
+const LABEL_FONT_MAX_ABS = 160; // px safety cap for extreme zoom
+const LABEL_FONT_MAX_REL = 0.9; // never exceed 90% of band height
+   // px clamp
+
 
 /* ===== Render + hover constants ===== */
 const BASE_OPACITY = 0.3;
@@ -998,18 +1009,26 @@ export default function Timeline() {
       });
 
       // labels (zoom-relative font)
-      const fontPx = LABEL_BASE_PX * k;
-      gOut.selectAll("g.durationOutline").each(function (d) {
-        const g = d3.select(this);
-        const x0 = zx(toAstronomical(d.start));
-        const x1 = zx(toAstronomical(d.end));
-        const yTop = zy(d.y);
-        const hPix = zy(d.y + d.h) - zy(d.y);
-        g.select("text.durationLabel")
-          .attr("x", Math.min(x0, x1) + 4)
-          .attr("y", yTop + hPix / 3)
-          .style("font-size", `${fontPx}px`);
-      });
+// labels (font scales with band height and zoom)
+// labels (font scales with the band's rendered height)
+gOut.selectAll("g.durationOutline").each(function (d) {
+  const g = d3.select(this);
+  const x0 = zx(toAstronomical(d.start));
+  const x1 = zx(toAstronomical(d.end));
+  const yTop = zy(d.y);
+  const hPix = zy(d.y + d.h) - zy(d.y);
+
+  // Base font size = fraction of band height; clamp for readability
+  const maxByBand = hPix * LABEL_FONT_MAX_REL;
+  const fontPx = clamp(hPix * LABEL_TO_BAND, LABEL_FONT_MIN, Math.min(LABEL_FONT_MAX_ABS, maxByBand));
+
+  g.select("text.durationLabel")
+    .attr("x", Math.min(x0, x1) + 4)
+    .attr("y", yTop + hPix / 3)
+    .style("font-size", `${fontPx}px`);
+});
+
+
 
       // segment hit rects
       gSeg.selectAll("rect.segmentHit").each(function (d) {
