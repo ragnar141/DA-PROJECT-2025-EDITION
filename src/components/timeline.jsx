@@ -25,7 +25,6 @@ const SymbolicSystemColorPairs = {
   Hellenic: "#1102e7ff",
   Mycenaean: "#000000ff",
   Orphic: "#BE185D"
-
 };
 
 /* ===== Label sizing vs zoom ===== */
@@ -37,12 +36,10 @@ const LABEL_TO_BAND = 0.7;     // 0.30–0.45 works well
 const LABEL_FONT_MIN = 8;       // px clamp (tiny bands)
 const LABEL_FONT_MAX_ABS = 160; // px safety cap for extreme zoom
 const LABEL_FONT_MAX_REL = 0.9; // never exceed 90% of band height
-   // px clamp
-
 
 /* ===== Render + hover constants ===== */
 const BASE_OPACITY = 0.3;
-const TEXT_BASE_R = 0.7;       // at k=1
+const TEXT_BASE_R = 0.4;       // at k=1
 const HOVER_SCALE_DOT = 1.6;   // how much bigger a dot gets on hover
 const ZOOM_THRESHOLD = 1.7;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -53,6 +50,21 @@ const DUR_STROKE = {
   baseOpacity: 0.08, hoverOpacity: 0.45, activeOpacity: 0.9,
   baseWidth: 1.5,    hoverWidth: 2.0,    activeWidth: 2.5,
 };
+
+/* ===== Label visibility policy ===== */
+const LABEL_ALLOWLIST = new Set([
+  "egyptian-composite", "mesopotamian-composite", "anatolian-composite", "west-semitic-composite", "1stpersian-composite", 
+  "greek-composite"
+]);
+
+const LABEL_BLOCKLIST = new Set([
+  "customgroup-hellenistic"
+]);
+
+const MIN_BAND_HEIGHT_FOR_LABEL = 14;  // px
+const MIN_BAND_WIDTH_FOR_LABEL  = 48;  // px
+const ZOOM_TO_FORCE_LABEL       = 3.0; // non-allowlisted labels show only past this zoom
+
 
 /* ===== Tooltip helpers ===== */
 const fmtRange = (s, e) => `${formatYear(s)} – ${formatYear(e)}`;
@@ -112,6 +124,46 @@ const isPlaceholderAuthor = (name) => {
   );
 };
 
+/* ===== Custom-group helpers ===== */
+// custom ids look like: custom-<groupKey>-<anything>-composite
+function parseCustomId(id = "") {
+  if (!id.startsWith("custom-")) return null;
+  const parts = id.split("-");
+  if (parts.length < 3) return null;
+  return { groupKey: parts[1] };
+}
+
+// Build a vertical envelope along time using all member bars/segments
+function buildGroupIntervals(members) {
+  const stops = new Set();
+  for (const m of members) {
+    if (Array.isArray(m.segments) && m.segments.length) {
+      for (const s of m.segments) {
+        stops.add(s.start);
+        stops.add(s.end);
+      }
+    } else {
+      stops.add(m.start);
+      stops.add(m.end);
+    }
+  }
+  const xs = Array.from(stops).sort((a, b) => a - b);
+  if (xs.length < 2) return [];
+  const intervals = [];
+  for (let i = 0; i < xs.length - 1; i++) {
+    const a = xs[i], b = xs[i + 1];
+    const mid = (a + b) / 2;
+    const active = members.filter((m) => {
+      const mStart = m.start, mEnd = m.end;
+      return mid >= Math.min(mStart, mEnd) && mid <= Math.max(mStart, mEnd);
+    });
+    if (!active.length) continue;
+    const top = Math.min(...active.map(m => m.y));
+    const bottom = Math.max(...active.map(m => m.y + m.h));
+    intervals.push({ start: a, end: b, top, bottom });
+  }
+  return intervals;
+}
 
 /* ===== Adaptive tick helpers ===== */
 const formatTick = (a) => (Math.abs(a - 0.5) < 1e-6 ? "0" : formatYear(fromAstronomical(a)));
@@ -150,6 +202,65 @@ function makeAdaptiveTicks(zx) {
   return ticksAstro;
 }
 
+// Convert group intervals to a rectilinear (H/V only) envelope path in screen space.
+function groupIntervalsToPath(intervals, zx, zy) {
+  if (!intervals || intervals.length === 0) return "";
+
+  // Map to screen coords; ensure left<=right; keep chronological order
+  const iv = intervals.map((iv) => {
+    const xA = zx(toAstronomical(iv.start));
+    const xB = zx(toAstronomical(iv.end));
+    return {
+      xL: Math.min(xA, xB),
+      xR: Math.max(xA, xB),
+      yT: zy(iv.top),
+      yB: zy(iv.bottom),
+    };
+  });
+
+  // Top chain: left -> right with vertical steps at boundaries
+  let d = `M ${iv[0].xL} ${iv[0].yT} H ${iv[0].xR}`;
+  for (let i = 1; i < iv.length; i++) {
+    if (iv[i - 1].yT !== iv[i].yT) d += ` V ${iv[i].yT}`;  // vertical step at shared x
+    d += ` H ${iv[i].xR}`;
+  }
+
+  // Right edge down to bottom of last interval
+  d += ` V ${iv[iv.length - 1].yB}`;
+
+  // Bottom chain: right -> left with vertical steps at boundaries
+  for (let i = iv.length - 1; i >= 0; i--) {
+    d += ` H ${iv[i].xL}`;
+    if (i > 0 && iv[i - 1].yB !== iv[i].yB) d += ` V ${iv[i - 1].yB}`;
+  }
+
+  // Close (back to top-left of first interval)
+  d += " Z";
+  return d;
+}
+
+function shouldShowDurationLabel({ d, k, bandW, bandH, labelSel }) {
+  // Always show custom group labels unless explicitly blocked
+  if (d._isCustomGroup && !LABEL_BLOCKLIST.has(d.id)) return true;
+
+  if (LABEL_BLOCKLIST.has(d.id)) return false;
+  if (LABEL_ALLOWLIST.has(d.id)) return true;
+
+  // Default: hide unless zoomed in enough and there's space
+  if (k < ZOOM_TO_FORCE_LABEL) return false;
+  if (bandH < MIN_BAND_HEIGHT_FOR_LABEL || bandW < MIN_BAND_WIDTH_FOR_LABEL) return false;
+
+  // Only show if the rendered text actually fits in the band width
+  const node = labelSel.node();
+  if (node && node.getComputedTextLength) {
+    const tw = node.getComputedTextLength();
+    return tw + 8 <= bandW; // ~4px padding on each side
+  }
+  return true; // fallback if measurement not available
+}
+
+
+
 /* ===== Dynamic dataset discovery (TEXTS ONLY) ===== */
 function useDiscoveredDatasets() {
   const textModules =
@@ -178,6 +289,7 @@ export default function Timeline() {
 
   const axisRef = useRef(null);
   const gridRef = useRef(null);
+  const customPolysRef = useRef(null); // NEW: group polygons layer
   const outlinesRef = useRef(null);
   const segmentsRef = useRef(null);
   const textsRef = useRef(null);
@@ -246,10 +358,11 @@ export default function Timeline() {
     [innerHeight]
   );
 
-  /* ---- Prepare composite OUTLINES ---- */
+  /* ---- Prepare composite OUTLINES (with custom groups) ---- */
   const DEFAULT_BAR_PX = 24;
   const outlines = useMemo(() => {
-    const rows = durations
+    // 1) Build raw outlines from durations
+    const raw = durations
       .filter(
         (d) =>
           d &&
@@ -279,14 +392,76 @@ export default function Timeline() {
           expandedName: d["expanded name"] || d.name || "",
           broadLifespan: d["broad lifespan"] || "",
           broadNote: d["broad note"] || "",
+          segments: Array.isArray(d.segments) ? d.segments.map((s) => ({ ...s })) : [],
+          _isCustomMember: !!parseCustomId(d.id),
         };
       });
-    return rows;
+
+    // 2) Group custom members by groupKey
+    const byGroup = new Map();
+    for (const row of raw) {
+      const parsed = parseCustomId(row.id);
+      if (!parsed) continue;
+      const arr = byGroup.get(parsed.groupKey) || [];
+      arr.push(row);
+      byGroup.set(parsed.groupKey, arr);
+    }
+
+    // 3) Build group outlines
+    const groupOutlines = [];
+    for (const [groupKey, members] of byGroup.entries()) {
+      const start = d3.min(members, (m) => m.start);
+      const end = d3.max(members, (m) => m.end);
+      const top = d3.min(members, (m) => m.y);
+      const bot = d3.max(members, (m) => m.y + m.h);
+      const y = top;
+      const h = bot - top;
+      const first = members[0] || {};
+
+      groupOutlines.push({
+        id: `customgroup-${groupKey}`,
+        name: first.name || `Custom ${groupKey}`,
+        expandedName: `${groupKey[0]?.toUpperCase() || ""}${groupKey.slice(1)}`,
+        color: first.color || "#999",
+        start,
+        end,
+        y,
+        h,
+        broadLifespan: first.broadLifespan || "",
+        broadNote: first.broadNote || "",
+        _isCustomGroup: true,
+        _groupKey: groupKey,
+        _groupMembers: members.map((m) => ({
+          id: m.id, start: m.start, end: m.end, y: m.y, h: m.h, segments: m.segments
+        })),
+        _groupIntervals: buildGroupIntervals(
+          members.map((m) => ({
+            id: m.id, start: m.start, end: m.end, y: m.y, h: m.h, segments: m.segments
+          }))
+        ),
+      });
+    }
+
+    // 4) Keep non-custom members; drop custom members themselves
+    const baseOutlines = raw.filter((r) => !r._isCustomMember);
+
+    // 5) Append group outlines (so groups replace their members at zoomed-out levels)
+    return [...baseOutlines, ...groupOutlines];
   }, [durations, innerHeight]);
 
   /* ---- Segment hover rects ---- */
   const segments = useMemo(() => {
     const rows = [];
+
+    // Map custom member id -> group id (for parent remap)
+    const customMemberIdToGroupId = new Map();
+    outlines.forEach((o) => {
+      if (!o._isCustomGroup) return;
+      for (const m of o._groupMembers || []) {
+        customMemberIdToGroupId.set(m.id, o.id);
+      }
+    });
+
     for (const d of durations) {
       if (!Array.isArray(d.segments)) continue;
       const color = d.color || "#999";
@@ -294,10 +469,13 @@ export default function Timeline() {
       const h =
         d.hRel != null ? d.hRel * innerHeight : d.height != null ? d.height : DEFAULT_BAR_PX;
 
+      const parsed = parseCustomId(d.id);
+      const parentId = parsed ? (customMemberIdToGroupId.get(d.id) || d.id) : d.id;
+
       d.segments.forEach((s, i) => {
         rows.push({
           id: `${d.id}__seg_${i}`,
-          parentId: d.id,
+          parentId,
           parentColor: color,
           start: s.start,
           end: s.end,
@@ -309,7 +487,7 @@ export default function Timeline() {
       });
     }
     return rows;
-  }, [durations, innerHeight]);
+  }, [durations, innerHeight, outlines]);
 
   /* ---- Datasets (TEXTS ONLY) ---- */
   const datasetRegistry = useDiscoveredDatasets();
@@ -401,60 +579,58 @@ export default function Timeline() {
   }, [datasetRegistry, outlines]);
 
   // Map: bandId -> Map(authorKey -> laneY_in_band_units_at_k1)
-const authorLaneMap = useMemo(() => {
-  const map = new Map();
+  const authorLaneMap = useMemo(() => {
+    const map = new Map();
 
-  // Group texts by band
-  const byBand = new Map();
-  for (const t of textRows) {
-    const arr = byBand.get(t.durationId) || [];
-    arr.push(t);
-    byBand.set(t.durationId, arr);
-  }
+    // Group texts by band
+    const byBand = new Map();
+    for (const t of textRows) {
+      const arr = byBand.get(t.durationId) || [];
+      arr.push(t);
+      byBand.set(t.durationId, arr);
+    }
 
-  // Fast band lookup
-  const bandById = new Map(outlines.map(o => [o.id, o]));
+    // Fast band lookup
+    const bandById = new Map(outlines.map(o => [o.id, o]));
 
-  for (const [bandId, items] of byBand.entries()) {
-    const band = bandById.get(bandId);
-    if (!band) continue;
+    for (const [bandId, items] of byBand.entries()) {
+      const band = bandById.get(bandId);
+      if (!band) continue;
 
-    // Band height in "band units" (y0 domain where 1 unit = 1px at k=1)
-    const bandTopU = y0(band.y);
-    const bandBotU = y0(band.y + band.h);
-    const bandHeightU = bandBotU - bandTopU;
+      // Band height in "band units" (y0 domain where 1 unit = 1px at k=1)
+      const bandTopU = y0(band.y);
+      const bandBotU = y0(band.y + band.h);
+      const bandHeightU = bandBotU - bandTopU;
 
-// Unique, non-placeholder authors present in this band (deterministic order)
-const authors = Array.from(
-  new Set(items.filter(t => t.authorKey).map(t => t.authorKey))
-).sort();
+      // Unique, non-placeholder authors present in this band (deterministic order)
+      const authors = Array.from(
+        new Set(items.filter(t => t.authorKey).map(t => t.authorKey))
+      ).sort();
 
-if (authors.length === 0) {            // no real authors in this band
-  map.set(bandId, new Map());          // still set an empty map
-  continue;
-}
+      if (authors.length === 0) {            // no real authors in this band
+        map.set(bandId, new Map());          // still set an empty map
+        continue;
+      }
 
+      // Even spacing with padding
+      const padU = Math.max(1, bandHeightU * 0.08);
+      const usableU = Math.max(1, bandHeightU - 2 * padU);
+      const n = Math.max(1, authors.length);
+      const stepU = n > 1 ? usableU / (n - 1) : 0;
 
-    // Even spacing with padding
-    const padU = Math.max(1, bandHeightU * 0.08);
-    const usableU = Math.max(1, bandHeightU - 2 * padU);
-    const n = Math.max(1, authors.length);
-    const stepU = n > 1 ? usableU / (n - 1) : 0;
+      const lanes = new Map();
+      authors.forEach((ak, i) => {
+        const yLaneU = n === 1
+          ? bandTopU + bandHeightU / 2
+          : bandTopU + padU + i * stepU;
+        lanes.set(ak, yLaneU);
+      });
 
-    const lanes = new Map();
-    authors.forEach((ak, i) => {
-      const yLaneU = n === 1
-        ? bandTopU + bandHeightU / 2
-        : bandTopU + padU + i * stepU;
-      lanes.set(ak, yLaneU);
-    });
+      map.set(bandId, lanes);
+    }
 
-    map.set(bandId, lanes);
-  }
-
-  return map;
-}, [textRows, outlines, y0]);
-
+    return map;
+  }, [textRows, outlines, y0]);
 
   // Close with ESC when a card is open
   useEffect(() => {
@@ -480,6 +656,7 @@ if (authors.length === 0) {            // no real authors in this band
     const gRoot = svg.select("g.chart");
     const gAxis = d3.select(axisRef.current);
     const gGrid = d3.select(gridRef.current);
+    const gCustom = d3.select(customPolysRef.current); // NEW
     const gOut = d3.select(outlinesRef.current);
     const gSeg = d3.select(segmentsRef.current);
     const gTexts = d3.select(textsRef.current);
@@ -690,18 +867,28 @@ if (authors.length === 0) {            // no real authors in this band
       const ignoreHoverBecauseActive = !!activeDurationId;
 
       // Borders (outlineRect)
-      d3.select(outlinesRef.current)
-        .selectAll("rect.outlineRect")
-        .attr("stroke-opacity", (d) => {
-          if (d.id === activeDurationId) return DUR_STROKE.activeOpacity;
-          if (!ignoreHoverBecauseActive && d.id === hoveredDurationId) return DUR_STROKE.hoverOpacity;
-          return DUR_STROKE.baseOpacity;
-        })
-        .attr("stroke-width", (d) => {
-          if (d.id === activeDurationId) return DUR_STROKE.activeWidth;
-          if (!ignoreHoverBecauseActive && d.id === hoveredDurationId) return DUR_STROKE.hoverWidth;
-          return DUR_STROKE.baseWidth;
-        });
+      // Borders (outlineRect) — never draw stroke for custom groups
+d3.select(outlinesRef.current)
+  .selectAll("rect.outlineRect")
+  .attr("stroke-opacity", (d) => {
+    const isGroup = !!d._isCustomGroup;
+    if (isGroup) return 0; // <- keep group rect invisible, even on hover/active
+    const isActive = d.id === activeDurationId;
+    const isHover  = !ignoreHoverBecauseActive && d.id === hoveredDurationId;
+    if (isActive) return DUR_STROKE.activeOpacity;
+    if (isHover)  return DUR_STROKE.hoverOpacity;
+    return DUR_STROKE.baseOpacity;
+  })
+  .attr("stroke-width", (d) => {
+    const isGroup = !!d._isCustomGroup;
+    if (isGroup) return DUR_STROKE.baseWidth; // value irrelevant since opacity is 0
+    const isActive = d.id === activeDurationId;
+    const isHover  = !ignoreHoverBecauseActive && d.id === hoveredDurationId;
+    if (isActive) return DUR_STROKE.activeWidth;
+    if (isHover)  return DUR_STROKE.hoverWidth;
+    return DUR_STROKE.baseWidth;
+  });
+
 
       // Labels (durationLabel)
       d3.select(outlinesRef.current)
@@ -714,7 +901,22 @@ if (authors.length === 0) {            // no real authors in this band
           }
           return DUR_LABEL_OPACITY.base;
         });
-    }
+
+        // Also style custom group polygons (borders) the same way
+      d3.select(customPolysRef.current)
+        .selectAll("path.customGroup")
+        .attr("stroke-opacity", (d) => {
+          if (d.id === activeDurationId) return DUR_STROKE.activeOpacity;
+          if (!ignoreHoverBecauseActive && d.id === hoveredDurationId) return DUR_STROKE.hoverOpacity;
+            return 0.22; // base opacity for polygons
+        })
+        .attr("stroke-width", (d) => {
+          if (d.id === activeDurationId) return DUR_STROKE.activeWidth;
+          if (!ignoreHoverBecauseActive && d.id === hoveredDurationId) return DUR_STROKE.hoverWidth;
+        return 1.5; // base width for polygons
+        });
+
+      }
 
     // NEW: centralized segment preview updater
     function updateSegmentPreview() {
@@ -763,19 +965,31 @@ if (authors.length === 0) {            // no real authors in this band
     }
 
     // Sync hovered duration from pointer while zooming (zoomed-out mode)
-    function syncDurationHoverFromPointer(se) {
-      if (!se || !("clientX" in se) || kRef.current >= ZOOM_THRESHOLD) return;
-      const el = document.elementFromPoint(se.clientX, se.clientY);
-      let newId = null;
-      if (el && el.classList && el.classList.contains("outlineRect")) {
-        const d = d3.select(el.parentNode).datum();
-        newId = d?.id ?? null;
-      }
-      if (hoveredDurationIdRef.current !== newId) {
-        hoveredDurationIdRef.current = newId;
-        updateHoverVisuals();
-      }
+  function syncDurationHoverFromPointer(se) {
+  // Only track duration hover while zoomed OUT
+  if (!se || !("clientX" in se) || kRef.current >= ZOOM_THRESHOLD) return;
+
+  const el = document.elementFromPoint(se.clientX, se.clientY);
+  let newId = null;
+
+  if (el && el.classList) {
+    if (el.classList.contains("outlineRect")) {
+      // Rect lives inside a <g.durationOutline> that holds the datum
+      const d = d3.select(el.parentNode).datum();
+      newId = d?.id ?? null;
+    } else if (el.classList.contains("customGroup")) {
+      // Polygon path has the datum directly bound
+      const d = d3.select(el).datum();
+      newId = d?.id ?? null;
     }
+  }
+
+  if (hoveredDurationIdRef.current !== newId) {
+    hoveredDurationIdRef.current = newId;
+    updateHoverVisuals();
+  }
+}
+
 
     // NEW: Sync hovered segment from pointer while zooming (zoomed-in mode)
     function syncSegmentHoverFromPointer(se) {
@@ -827,6 +1041,12 @@ if (authors.length === 0) {            // no real authors in this band
         return g;
       });
 
+    // Hide the rectangle if this is a custom GROUP (polygon handles visuals)
+    outlineSel.select("rect.outlineRect")
+      .attr("fill-opacity", (d) => d._isCustomGroup ? 0 : 0.1)
+      .attr("stroke-opacity", (d) => d._isCustomGroup ? 0 : DUR_STROKE.baseOpacity)
+      .style("pointer-events", (d) => d._isCustomGroup ? "none" : "all");
+
     // Whole-duration hover/click (zoomed-out only)
     outlineSel.select("rect.outlineRect")
       .on("mouseenter", function (_ev, d) {
@@ -857,6 +1077,59 @@ if (authors.length === 0) {            // no real authors in this band
         awaitingCloseClickRef.current = true;
         ev.stopPropagation();
       });
+
+    // CUSTOM GROUP POLYGONS (drawn under labels)
+    gCustom
+      .selectAll("path.customGroup")
+      .data(outlines.filter((o) => o._isCustomGroup), (d) => d.id)
+      .join(
+        (enter) =>
+          enter
+            .append("path")
+            .attr("class", "customGroup")
+            .attr("fill", (d) => d.color)
+            .attr("fill-opacity", 0.08)
+            .attr("stroke", (d) => d.color)
+            .attr("stroke-opacity", 0.22)
+            .attr("stroke-width", 1.5)
+            .attr("vector-effect", "non-scaling-stroke")
+            .attr("shape-rendering", "geometricPrecision"),
+        (update) => update,
+        (exit) => exit.remove()
+      );
+
+      // Hover/click on the polygon itself (zoomed-out only)
+gCustom.selectAll("path.customGroup")
+  .style("pointer-events", "all")
+  .on("mouseenter", function (_ev, d) {
+    if (kRef.current >= ZOOM_THRESHOLD) return;
+    if (activeDurationIdRef.current) return;
+    hoveredDurationIdRef.current = d.id;
+    updateHoverVisuals();
+  })
+  .on("mouseleave", function () {
+    if (kRef.current >= ZOOM_THRESHOLD) return;
+    if (zoomDraggingRef.current) return;
+    if (activeDurationIdRef.current) return;
+    hoveredDurationIdRef.current = null;
+    updateHoverVisuals();
+  })
+  .on("click", function (ev, d) {
+    if (kRef.current >= ZOOM_THRESHOLD) return;
+
+    if (awaitingCloseClickRef.current) {
+      awaitingCloseClickRef.current = false;
+      clearActiveDuration();
+      ev.stopPropagation();
+      return;
+    }
+
+    clearActiveSegment();
+    setActiveDuration(d, { showCard: true });
+    awaitingCloseClickRef.current = true;
+    ev.stopPropagation();
+  });
+
 
     // TEXTS (dots)
     const textSel = gTexts
@@ -889,7 +1162,7 @@ if (authors.length === 0) {            // no real authors in this band
     }
 
     // one group per multi-color text
-    const slicesSel = gTexts
+    gTexts
       .selectAll("g.dotSlices")
       .data(textRows.filter((d) => (d.colors || []).length > 1), (d) => d.id)
       .join(
@@ -1084,8 +1357,7 @@ if (authors.length === 0) {            // no real authors in this band
         d3.select(this).attr("x", Math.min(x0, x1)).attr("y", yTop).attr("width", Math.abs(x1 - x0)).attr("height", hPix);
       });
 
-      // labels (zoom-relative font)
-// labels (font scales with band height and zoom)
+      // labels (font scales with the band's rendered height)
 // labels (font scales with the band's rendered height)
 gOut.selectAll("g.durationOutline").each(function (d) {
   const g = d3.select(this);
@@ -1094,16 +1366,30 @@ gOut.selectAll("g.durationOutline").each(function (d) {
   const yTop = zy(d.y);
   const hPix = zy(d.y + d.h) - zy(d.y);
 
-  // Base font size = fraction of band height; clamp for readability
   const maxByBand = hPix * LABEL_FONT_MAX_REL;
-  const fontPx = clamp(hPix * LABEL_TO_BAND, LABEL_FONT_MIN, Math.min(LABEL_FONT_MAX_ABS, maxByBand));
+  const fontPx = clamp(
+    hPix * LABEL_TO_BAND,
+    LABEL_FONT_MIN,
+    Math.min(LABEL_FONT_MAX_ABS, maxByBand)
+  );
 
-  g.select("text.durationLabel")
+  const labelSel = g.select("text.durationLabel")
     .attr("x", Math.min(x0, x1) + 4)
     .attr("y", yTop + hPix / 3)
     .style("font-size", `${fontPx}px`);
-});
 
+  // NEW: decide visibility after sizing
+  const bandW = Math.abs(x1 - x0);
+  const show = shouldShowDurationLabel({
+    d,
+    k,
+    bandW,
+    bandH: hPix,
+    labelSel
+  });
+
+  labelSel.style("display", show ? null : "none");
+});
 
 
       // segment hit rects
@@ -1115,44 +1401,60 @@ gOut.selectAll("g.durationOutline").each(function (d) {
         d3.select(this).attr("x", Math.min(x0, x1)).attr("y", yTop).attr("width", Math.abs(x1 - x0)).attr("height", hPix);
       });
 
-// === Author-lane layout (stable across zoom) ===
-const rDraw = TEXT_BASE_R * k;
-
-// Position circles using per-band author lanes
-gTexts.selectAll("circle.textDot").each(function (d) {
-  const cx = zx(toAstronomical(d.when));
-
-  // Default to the original hashed Y (what you had before lanes)
-  let cyU = y0(d.y);
-
-  if (d.authorKey) { // only lane-align if real author
-    const lanes = authorLaneMap.get(d.durationId);
-    const laneU = lanes?.get(d.authorKey);
-    if (Number.isFinite(laneU)) cyU = laneU;
+      // Draw/update custom group polygons
+      // Draw/update custom group polygons (rectilinear envelope, no diagonals)
+gCustom.selectAll("path.customGroup").each(function (o) {
+  const intervals = o._groupIntervals || [];
+  if (!intervals.length) {
+    // Fallback: simple rectangle
+    const x0 = zx(toAstronomical(o.start));
+    const x1 = zx(toAstronomical(o.end));
+    const yTop = zy(o.y);
+    const hPix = zy(o.y + o.h) - zy(o.y);
+    const d = `M ${Math.min(x0, x1)} ${yTop} H ${Math.max(x0, x1)} V ${yTop + hPix} H ${Math.min(x0, x1)} Z`;
+    d3.select(this).attr("d", d);
+    return;
   }
-
-  const cy = zy(cyU);
-  d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", TEXT_BASE_R * k);
-});
-
-// Position pies to match circles (same cy rule)
-gTexts.selectAll("g.dotSlices").each(function (d) {
-  const cx = zx(toAstronomical(d.when));
-
-  let cyU = y0(d.y);
-  if (d.authorKey) {
-    const lanes = authorLaneMap.get(d.durationId);
-    const laneU = lanes?.get(d.authorKey);
-    if (Number.isFinite(laneU)) cyU = laneU;
-  }
-
-  const cy = zy(cyU);
-  const g = d3.select(this);
-  g.attr("transform", `translate(${cx},${cy})`);
-  drawSlicesAtRadius(g, TEXT_BASE_R * k);
+  d3.select(this).attr("d", groupIntervalsToPath(intervals, zx, zy));
 });
 
 
+      // === Author-lane layout (stable across zoom) ===
+      const rDraw = TEXT_BASE_R * k;
+
+      // Position circles using per-band author lanes
+      gTexts.selectAll("circle.textDot").each(function (d) {
+        const cx = zx(toAstronomical(d.when));
+
+        // Default to the original hashed Y (what you had before lanes)
+        let cyU = y0(d.y);
+
+        if (d.authorKey) { // only lane-align if real author
+          const lanes = authorLaneMap.get(d.durationId);
+          const laneU = lanes?.get(d.authorKey);
+          if (Number.isFinite(laneU)) cyU = laneU;
+        }
+
+        const cy = zy(cyU);
+        d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", TEXT_BASE_R * k);
+      });
+
+      // Position pies to match circles (same cy rule)
+      gTexts.selectAll("g.dotSlices").each(function (d) {
+        const cx = zx(toAstronomical(d.when));
+
+        let cyU = y0(d.y);
+        if (d.authorKey) {
+          const lanes = authorLaneMap.get(d.durationId);
+          const laneU = lanes?.get(d.authorKey);
+          if (Number.isFinite(laneU)) cyU = laneU;
+        }
+
+        const cy = zy(cyU);
+        const g = d3.select(this);
+        g.attr("transform", `translate(${cx},${cy})`);
+        drawSlicesAtRadius(g, TEXT_BASE_R * k);
+      });
     }
 
     function updateInteractivity(k) {
@@ -1161,6 +1463,8 @@ gTexts.selectAll("g.dotSlices").each(function (d) {
       gOut.selectAll("rect.outlineRect").style("pointer-events", zoomedIn ? "none" : "all");
       gSeg.selectAll("rect.segmentHit").style("pointer-events", zoomedIn ? "all" : "none");
       gTexts.selectAll("circle.textDot").style("pointer-events", zoomedIn ? "all" : "none");
+      gCustom.selectAll("path.customGroup").style("pointer-events", zoomedIn ? "none" : "all");
+
 
       if (!zoomedIn) {
         clearActiveSegment();
@@ -1292,20 +1596,29 @@ gTexts.selectAll("g.dotSlices").each(function (d) {
     updateInteractivity(initT.k);
 
     // Click-away to close cards / one-shot close for durations
-    svgSel.on("click.clearActive", (ev) => {
-      if (awaitingCloseClickRef.current) {
-        awaitingCloseClickRef.current = false;
-        clearActiveDuration();
-        return;
-      }
-      const el = ev.target;
-      const isSeg = el && el.classList && el.classList.contains("segmentHit");
-      const isOutline = el && el.classList && el.classList.contains("outlineRect");
-      if (!isSeg && !isOutline) {
-        clearActiveSegment();
-        clearActiveDuration();
-      }
-    });
+svgSel.on("click.clearActive", (ev) => {
+  // One-shot close for an open duration card
+  if (awaitingCloseClickRef.current) {
+    awaitingCloseClickRef.current = false;
+    clearActiveDuration();
+    return;
+  }
+
+  const el = ev.target;
+  const cl = el && el.classList;
+
+  const isSeg       = cl && cl.contains("segmentHit");
+  const isOutline   = cl && cl.contains("outlineRect");
+  const isGroupPoly = cl && cl.contains("customGroup");
+
+  // Only clear if the click was NOT on a segment, NOT on a duration rect,
+  // and NOT on a custom group polygon.
+  if (!isSeg && !isOutline && !isGroupPoly) {
+    clearActiveSegment();
+    clearActiveDuration();
+  }
+});
+
 
     // Mark that we've initialized at least once
     didInitRef.current = true;
@@ -1350,6 +1663,7 @@ gTexts.selectAll("g.dotSlices").each(function (d) {
       >
         <g className="chart" transform={`translate(${margin.left},${margin.top})`}>
           <g ref={gridRef} className="grid" />
+          <g ref={customPolysRef} className="customPolys" /> {/* NEW: polygon layer under labels */}
           <g ref={outlinesRef} className="durations" />
           <g ref={segmentsRef} className="segments" />
           <g ref={textsRef} className="texts" />

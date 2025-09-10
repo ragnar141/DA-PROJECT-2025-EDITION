@@ -4,7 +4,7 @@
     "name": "Egyptian",
     "expanded name": "Egyptian (Ancient Egyptian)",
     "color": "#fd0d00ff",
-    "yRel": 0.105,
+    "yRel": 0.101,
     "hRel": 0.06,
     "broad note": "Ancient Egypt, like many civilizations, began as scattered forager and farming bands along the Nile, which gradually consolidated into early chiefdoms and temple-based economies. Protected by deserts, seas, and cataracts, this geographical insulation fostered unusual stability and enabled the long political dominance of priestly elites. Over three millennia, Egypt developed from egalitarian villages into a centralized state ruled by pharaohs, living embodiments of cosmic order (ma’at). Egypt's symbolic life revolved around death, the afterlife, and the maintenance of cosmic balance, expressed in monumental art, pyramids, temples, and ritual. Though dynasties rose and fell—through cycles of unification, collapse, and foreign rule—the enduring authority of priesthood and sacred kingship defined Egyptian identity until the Hellenistic conquest.",
     "broad lifespan": "c. 5000 BCE - 332 BCE",
@@ -25,7 +25,7 @@
     "name": "Mesopotamian",
     "expanded name": "Mesopotamian (Sumero-Akkadian)",
     "color": "#000000ff",
-    "yRel": 0.209,
+    "yRel": 0.201,
     "hRel": 0.08,
     "broad note": "The roots of Mesopotamian civilization emerged with early farmers and foragers along the Tigris and Euphrates, who gradually formed more centralized settlements. First Sumerian city-states like Uruk and Lagash developed economies administered in ziggurats (local temples), each ruled under the patronage of its own deity. Gradually, writing, law, and kingship emerged as new tools of order. Over centuries, this system was repeatedly seized by foreign warrior kings coming from surrounding hills and mountains—Akkadians, Amorites, Kassites, Assyrians, and Babylonians—whose empires rose and fell amidst political turbulence. Despite the upheavals, Sumerian roots remained foundational, influencing neighboring states and sustaining priesthoods and scribal traditions that outlasted dynasties. In 539 BCE Cyrus of Persia conquered Babylon yet preserved its temples and rituals, whose authority endured until Alexander the Great’s conquest.",
     "broad lifespan": "c. 5500 BCE - 330 BCE",
@@ -50,7 +50,7 @@
   "name": "Anatolian",
   "expanded name": "Anatolian (Hittite/Luwian/Phrygian/Lydian)",
   "color": "#d000ffff",
-  "yRel": 0.083,
+  "yRel": 0.081,
   "hRel": 0.02,
   "broad note": "Anatolian civilization emerged from early farming and metallurgical villages on the central plateau and western coasts, uniquely shaped by its position between Mesopotamia, the Aegean, and the Caucasus. From the beginning, its societies carried a strongly martial character, forged by constant movement of peoples and the need to defend upland fortresses and trade corridors. By the third and second millennia BCE, Hattian, Hittite, Hurrian, and Luwian groups developed fortified capitals, warrior aristocracies, and ritual traditions that blended local cults with Mesopotamian influence. The Hittite Empire became Anatolia’s first great power, ruling through kings who were both warriors and priests, and extending influence across Syria and the Aegean before succumbing to Bronze Age collapse. In the first millennium, Phrygians, Urartians, Lydians, and Ionian Greeks continued this legacy of martial resilience, competing for dominance while serving as intermediaries between East and West. By the mid-6th century BCE, Anatolia fell to the expanding Achaemenid Empire, and after two centuries of Persian rule its warrior traditions were finally drawn into the Hellenistic world.",
   "broad lifespan": "c. 5500 BCE - 330 BCE",
@@ -117,7 +117,7 @@
   "name": "West Semitic",
   "expanded name": "West Semitic (Levantine)",
   "color": "#F59E0B",
-  "yRel": 0.167,
+  "yRel": 0.161,
   "hRel": 0.04,
   "broad note": "West Semitic civilization arose along the Levantine coast and highlands, where early farming villages and ritual centers gradually coalesced into towns linked by trade and seafaring. Its position between Egypt, Mesopotamia, and Anatolia made it a crossroads of empires, forcing local communities to cultivate resilience and adaptability. From Canaanite city-states and Ugaritic scribal schools to Phoenician mariners and Hebrew tribes, Levantine societies forged distinctive religious and literary traditions that combined local cults with borrowed imperial forms. Warrior chieftains, temple priesthoods, and mercantile elites shared authority, while the alphabet—an invention of profound durability—spread across the Mediterranean from these shores. Over the first millennium BCE, Phoenician colonies, Israelite prophets, and Aramean kingdoms carried West Semitic voices far beyond the Levant, even as Assyrian, Babylonian, and Persian conquerors imposed their rule. By 332 BCE, Alexander’s arrival marked the Levant’s absorption into the Hellenistic world, but its maritime commerce, sacred texts, and alphabetic script remained enduring legacies.",
   "broad lifespan": "c. 4500 BCE - 332 BCE",
@@ -190,7 +190,7 @@
   "name": "Persian",
   "expanded name": "Persian (Elamite/Zoroastrian)",
   "color": "#06930bff",
-  "yRel": 0.291,
+  "yRel": 0.281,
   "hRel": 0.06,
   "broad note": "Ancient Persia began with Elamite settlements in Susiana, whose craft-ritual economies and urban centers grew in dialogue with neighboring Sumer and Akkad. For centuries, Elamite rulers balanced independence with vulnerability, adopting Mesopotamian writing and monumental forms even as they resisted Akkadian, Babylonian, and Assyrian incursions. Into this layered landscape came Indo-Iranian migrations, bringing fire rituals, warrior traditions, and an oral cosmology of truth and oath that later crystallized in Zarathustra’s teachings of moral dualism. Out of this fusion of Elamite heritage and Indo-Iranian belief, the Median confederation forged a bridge between tribal alliances and territorial authority. In 550 BCE Cyrus the Great transformed this inheritance into the Achaemenid Empire, the first polity to fuse sacred geography, imperial administration, and universal moral order across vast territories. For nearly two centuries it stood as the defining Persian power, until the conquests of Alexander in 330 BCE absorbed its symbolic and political life into the Hellenistic world.",
   "broad lifespan": "c. 5200 BCE - 330 BCE",
@@ -248,7 +248,7 @@
 {
   "id": "greek-composite",
   "name": "Greek",
-  "expanded name": "Greek (Minoan/Mycenaean to Classical)",
+  "expanded name": "Greek (Minoan/Mycenaean/Hellenic)",
   "color": "#1102e7ff",
   "yRel": 0.021,
   "hRel": 0.06,
@@ -352,7 +352,187 @@
       "note": "After Athens fell, Sparta claimed supremacy, but its harsh rule sparked resistance and war, leaving the Greek world fractured. Thebes rose briefly in glory, defeating Sparta at Leuctra, yet no city could hold power for long. Amid political decay, Athenian thinkers and sculptors pushed the boundaries of what was possible in philosophy, science, and art. In the north, Philip of Macedon built a new kingdom and brought the quarreling poleis under his shadow. Philip's son — Alexander crossed into Asia, toppling empires, founding cities, and spreading Hellenic thought from Egypt to India. By the time of his death in 323 BCE, Alexander had laid the foundation for Hellenistic space — a vast political and cultural sphere where East and West would meet and mingle for the first time in history."
     }
   ]
-}
+},
+{
+    "id": "custom-hellenistic-greek-composite",
+    "name": "Hellenistic",
+    "expanded name": "Hellenistic",
+    "color": "#fd0d00ff",
+    "yRel": 0.021,
+    "hRel": 0.06,
+    "broad note": "The Hellenistic world emerged from Alexander the Great’s deliberate reshaping of empire after 323 BCE. Unlike Cyrus of Persia, who largely ruled through tribute and local elites, Alexander founded new cities, libraries, and cultural centers to integrate diverse peoples into a shared Greek oikoumene. In doing so, he created a blueprint for global society: unlike earlier conquerors of similar scale, he bridged civilizations even as he conquered them, fusing traditions into a cosmopolitan horizon. This policy fostered a cultural space stretching from Egypt and the Levant to Anatolia, Mesopotamia, and as far as Bactria and India, where Greek language, civic forms, and philosophy mingled with older traditions. Monumental centers like Alexandria became hubs of scholarship, commerce, and religious experimentation, while scientific inquiry and schools of thought such as Stoicism and Epicureanism flourished. The autonomy of most Hellenistic kingdoms ended with Rome’s conquest, which itself banked on the Hellenistic synthesis—a legacy that continued to shape philosophy, science, art, and governance across the Mediterranean.",
+    "broad lifespan": "c. 323 BCE - 146 BCE",
+    "segments": [
+    {
+      "start": -323,
+      "end": -301,
+      "label": "Early Hellenistic Greece",
+      "note": "The death of Alexander in 323 BCE plunged Greece into uncertainty. The Lamian War (323–322 BCE) showed Athens and its allies still had the will to fight for freedom, but Macedonian forces quickly reasserted dominance. Over the next decades, Greece became a contested space in the wars of the Diadochi. Athens saw periods of occupation and brief revivals, while Sparta remained stubbornly independent but isolated. The traditional polis system could not withstand the military and financial power of the successor kingdoms. Culturally, however, the spirit of Classical Greece endured: oratory, philosophy, and civic inscriptions continued, reflecting a society grappling with lost autonomy but clinging to identity."
+    },
+    {
+      "start": -301,
+      "end": -200,
+      "label": "Middle Hellenistic Greece",
+      "note": "Once Antigonus II Gonatas secured the Macedonian throne (276 BCE), the mainland entered a period of relative stability. Macedonia remained the dominant power, but new forms of collective self-government emerged in the Aetolian League and the Achaean League, which allowed city-states to participate in broader political structures. These leagues could sometimes resist Macedonian control and even project power, though their unity was fragile. Athens and other cultural centers remained active in philosophy, rhetoric, and science, participating in the broader Hellenistic intellectual network. This stage reflects adaptation: the polis no longer sovereign, but still central in defining Greek culture, values, and communal life."
+    },
+    {
+      "start": -200,
+      "end": -146,
+      "label": "Late Hellenistic Greece",
+      "note": "From the early 2nd century BCE, Rome became the decisive arbiter of Greek affairs. The defeat of Philip V at Cynoscephalae (197 BCE) gave many Greeks hope of renewed freedom, but Roman “protection” soon hardened into control. The destruction of the Macedonian monarchy after the battle of Pydna (168 BCE) and the brutal suppression of the Achaean League in 146 BCE, culminating in the sack of Corinth, ended any illusion of autonomy. Yet even in political decline, Greek culture thrived. Stoic and Epicurean philosophy shaped new generations, poets and scientists continued to produce, and inscriptions testify to vibrant local religious and civic life. Greece became politically subordinate, but its cultural prestige expanded, influencing Rome itself."
+    }
+  ]
+  },
 
+  {
+    "id": "custom-hellenistic-anatolian-composite",
+    "name": "Hellenistic",
+    "expanded name": "Hellenistic Anatolian",
+    "color": "#fd0d00ff",
+    "yRel": 0.081,
+    "hRel": 0.02,
+    "broad note": "The Hellenistic world emerged from Alexander the Great’s deliberate reshaping of empire after 323 BCE. Unlike Cyrus of Persia, who largely ruled through tribute and local elites, Alexander founded new cities, libraries, and cultural centers to integrate diverse peoples into a shared Greek oikoumene. In doing so, he created a blueprint for global society: unlike earlier conquerors of similar scale, he bridged civilizations even as he conquered them, fusing traditions into a cosmopolitan horizon. This policy fostered a cultural space stretching from Egypt and the Levant to Anatolia, Mesopotamia, and as far as Bactria and India, where Greek language, civic forms, and philosophy mingled with older traditions. Monumental centers like Alexandria became hubs of scholarship, commerce, and religious experimentation, while scientific inquiry and schools of thought such as Stoicism and Epicureanism flourished. The autonomy of most Hellenistic kingdoms ended with Rome’s conquest, which itself banked on the Hellenistic synthesis—a legacy that continued to shape philosophy, science, art, and governance across the Mediterranean.",
+    "broad lifespan": "c. 330 BCE - 30 BCE",
+    "segments": [
+    {
+      "start": -330,
+      "end": -250,
+      "label": "Early Hellenistic Anatolia",
+      "note": "Alexander’s campaigns dismantled Achaemenid satrapal authority in Asia Minor. He and his successors founded new cities, installed Greek civic institutions, and encouraged the settlement of Macedonian veterans. The coast, long Hellenized, integrated quickly, while the interior (Phrygia, Cappadocia) remained culturally resistant. The early Seleucid kings and the Attalids of Pergamon began carving out spheres of influence. Symbolically, Anatolia became a patchwork frontier, where Greek poleis thrived along the coast while indigenous cults and priestly structures persisted inland."
+    },
+    {
+      "start": -250,
+      "end": -150,
+      "label": "Middle Hellenistic Anatolia",
+      "note": "This period saw the rise of the Attalid dynasty in Pergamon, which turned western Anatolia into a model Hellenistic kingdom. Pergamon’s rulers built monumental temples, issued edicts regulating sacred space, and fostered learning rivaling Alexandria. Elsewhere, Cappadocia and Bithynia emerged as independent kingdoms. Greek cultural influence deepened, but Phrygian and local Anatolian traditions endured in hybrid forms. Symbolically, this was a period of consolidation and hybridization, with Hellenistic urban culture expanding inland while older Anatolian identities reshaped themselves within the Greek framework."
+    },
+    {
+      "start": -150,
+      "end": -30,
+      "label": "Late Hellenistic Anatolia",
+      "note": "By the mid-2nd century BCE, Anatolia was increasingly drawn into Rome’s orbit. The Attalids bequeathed Pergamon to Rome in 133 BCE, forming the province of Asia. The Mithridatic Kingdom of Pontus resisted fiercely but was eventually subdued. Cappadocia and other client kingdoms survived in diminished form. Despite political subordination, Anatolia remained culturally vibrant: monumental sanctuaries, inscriptions, and scientific works (e.g., Apollonius of Perga’s Conics) testify to a lasting Hellenistic cultural space. By 30 BCE, with Rome’s annexation of Egypt, the Hellenistic age closed, and Anatolia was firmly a Roman domain. This final stage was one of transition, as Greek symbolic forms remained central even under Rome’s political supremacy."
+    }
+    ]
+  },
 
+  {
+    "id": "custom-hellenistic-egyptian-composite",
+    "name": "Hellenistic",
+    "expanded name": "Hellenistic Egyptian (Ptolemaic Egypt)",
+    "color": "#fd0d00ff",
+    "yRel": 0.101,
+    "hRel": 0.06,
+    "broad note": "The Hellenistic world emerged from Alexander the Great’s deliberate reshaping of empire after 323 BCE. Unlike Cyrus of Persia, who largely ruled through tribute and local elites, Alexander founded new cities, libraries, and cultural centers to integrate diverse peoples into a shared Greek oikoumene. In doing so, he created a blueprint for global society: unlike earlier conquerors of similar scale, he bridged civilizations even as he conquered them, fusing traditions into a cosmopolitan horizon. This policy fostered a cultural space stretching from Egypt and the Levant to Anatolia, Mesopotamia, and as far as Bactria and India, where Greek language, civic forms, and philosophy mingled with older traditions. Monumental centers like Alexandria became hubs of scholarship, commerce, and religious experimentation, while scientific inquiry and schools of thought such as Stoicism and Epicureanism flourished. The autonomy of most Hellenistic kingdoms ended with Rome’s conquest, which itself banked on the Hellenistic synthesis—a legacy that continued to shape philosophy, science, art, and governance across the Mediterranean.",
+    "broad lifespan": "c. 332 BCE - 30 BCE",
+    "segments": [
+    {
+      "start": -332,
+      "end": -200,
+      "label": "Early Ptolemaic Egypt",
+      "note": "Alexander’s entry into Egypt in 332 BCE ended Persian rule and inaugurated a new symbolic order. He founded Alexandria, which under Ptolemy I Soter and his successors became the political and intellectual capital of the dynasty. The early Ptolemies projected themselves both as Hellenistic kings and as pharaohs, building grand temples in traditional Egyptian style while introducing Greek administrative structures. The Library and Museum of Alexandria signaled Egypt’s role as the intellectual heart of the Hellenistic world, attracting scholars, poets, and scientists. This was a time of fusion and consolidation, when Greek civic and scholarly institutions coexisted with and drew legitimacy from enduring Egyptian priestly and religious traditions."
+    },
+    {
+      "start": -200,
+      "end": -146,
+      "label": "Middle Ptolemaic Egypt",
+      "note": "In the 3rd and early 2nd centuries BCE, Ptolemaic Egypt reached the height of its wealth and influence. Its agricultural surplus, commercial dominance, and prestige institutions made it the richest kingdom in the Mediterranean. Works like Euclid’s Elements and Eratosthenes’ geography reflect the extraordinary intellectual activity of Alexandria, while poets like Callimachus and Theocritus cultivated a new literary style. Yet cracks began to show: repeated wars with the Seleucids, especially over Coele-Syria, drained resources, and uprisings in Upper Egypt revealed resentment of Greek dominance. This stage captures Egypt’s duality — outwardly the cosmopolitan jewel of the Hellenistic world, but internally increasingly unstable."
+    },
+    {
+      "start": -146,
+      "end": -30,
+      "label": "Late Ptolemaic Egypt",
+      "note": "After the Roman conquest of Greece in 146 BCE, Egypt stood as the last great Hellenistic kingdom. But it entered this period weakened by dynastic feuds, heavy taxation, and declining territorial influence. The priesthood continued to produce religious and funerary texts such as the Books of Breathing and the Tale of Setne, showing that native traditions still pulsed beneath Hellenistic rule, while Alexandria remained a center of science, philosophy, and literature. Political independence, however, grew increasingly fragile as Rome intervened more directly. The reign of Cleopatra VII symbolized both a final flowering and the endgame: her alliance with Julius Caesar and later Mark Antony briefly revived Egypt’s status, but Octavian’s victory in 30 BCE brought Alexandria under Roman control. The fall of Cleopatra marked the symbolic end of the Hellenistic world as a whole."
+    }
+  ]
+  },
+  {
+    "id": "custom-hellenistic-westsemitic-composite",
+    "name": "Hellenistic",
+    "expanded name": "Hellenistic West Semitic (Levantine)",
+    "color": "#fd0d00ff",
+    "yRel": 0.161,
+    "hRel": 0.04,
+    "broad note": "The Hellenistic world emerged from Alexander the Great’s deliberate reshaping of empire after 323 BCE. Unlike Cyrus of Persia, who largely ruled through tribute and local elites, Alexander founded new cities, libraries, and cultural centers to integrate diverse peoples into a shared Greek oikoumene. In doing so, he created a blueprint for global society: unlike earlier conquerors of similar scale, he bridged civilizations even as he conquered them, fusing traditions into a cosmopolitan horizon. This policy fostered a cultural space stretching from Egypt and the Levant to Anatolia, Mesopotamia, and as far as Bactria and India, where Greek language, civic forms, and philosophy mingled with older traditions. Monumental centers like Alexandria became hubs of scholarship, commerce, and religious experimentation, while scientific inquiry and schools of thought such as Stoicism and Epicureanism flourished. The autonomy of most Hellenistic kingdoms ended with Rome’s conquest, which itself banked on the Hellenistic synthesis—a legacy that continued to shape philosophy, science, art, and governance across the Mediterranean.",
+    "broad lifespan": "c. 330 BCE - 30 BCE",
+    "segments": [
+    {
+      "start": -330,
+      "end": -200,
+      "label": "Early Hellenistic Levant",
+      "note": "After Alexander’s death, the Levant (Phoenicia, Judea, Coele-Syria) became a key battleground in the wars of the Diadochi. Control shifted repeatedly between the Ptolemaic dynasty of Egypt and the Seleucid Empire, with cities and communities often caught in between. Phoenician ports like Tyre and Sidon thrived as naval and commercial bases, while Judea oscillated between rulers, navigating foreign domination through local priestly authority. This period is marked by imperial tug-of-war and the entrenchment of Greek influence through garrisons, colonies, and cultural institutions, yet local traditions — Canaanite-derived cults, Yahwistic religion — persisted beneath the surface."
+    },
+    {
+      "start": -200,
+      "end": -167,
+      "label": "Middle Hellenistic Levant",
+      "note": "Following the Battle of Panium in 200 BCE, the Seleucids secured control over the Levant. Cities such as Antioch (in Syria) became flourishing Hellenistic centers, blending Greek civic institutions with local traditions. In Judea, however, Seleucid religious and political interference generated deep unrest, especially when Antiochus IV Epiphanes imposed Hellenizing reforms. This culminated in the Maccabean Revolt (167 BCE), which demonstrated the limits of imperial integration and the strength of local religious identity. The Levant in this period embodied a tense coexistence of Greek and indigenous traditions, with cosmopolitan trade in Phoenician cities alongside fierce resistance in rural Judea."
+    },
+    {
+      "start": -167,
+      "end": -30,
+      "label": "Late Hellenistic Levant",
+      "note": "The Maccabean Revolt (167 BCE) marked a turning point, giving rise to the Hasmonean dynasty in Judea. For the first time in centuries, Jewish leaders achieved a substantial measure of autonomy, even as they maneuvered within the power struggles of the weakening Seleucid Empire. Across the coast, Phoenician cities such as Tyre and Sidon continued to flourish as maritime and commercial hubs, maintaining Greek civic forms while adapting to the growing influence of Rome. After Pompey’s campaigns in 63 BCE, Syria and Judea were formally drawn into Rome’s orbit, yet Hellenistic culture remained prevailing throughout the Levant. This final stage was thus one of fragmentation and hybrid sovereignty: Jewish monotheism consolidated, older Canaanite-Phoenician cults waned, and Greek institutions persisted, until the fall of Ptolemaic Egypt in 30 BCE closed the Hellenistic era across the eastern Mediterranean."
+    }
+  ]
+  },
+  {
+    "id": "custom-hellenistic-mesopotamian-composite",
+    "name": "Hellenistic",
+    "expanded name": "Hellenistic Mesopotamian (Sumero-Akkadian)",
+    "color": "#fd0d00ff",
+    "yRel": 0.201,
+    "hRel": 0.08,
+    "broad note": "The Hellenistic world emerged from Alexander the Great’s deliberate reshaping of empire after 323 BCE. Unlike Cyrus of Persia, who largely ruled through tribute and local elites, Alexander founded new cities, libraries, and cultural centers to integrate diverse peoples into a shared Greek oikoumene. In doing so, he created a blueprint for global society: unlike earlier conquerors of similar scale, he bridged civilizations even as he conquered them, fusing traditions into a cosmopolitan horizon. This policy fostered a cultural space stretching from Egypt and the Levant to Anatolia, Mesopotamia, and as far as Bactria and India, where Greek language, civic forms, and philosophy mingled with older traditions. Monumental centers like Alexandria became hubs of scholarship, commerce, and religious experimentation, while scientific inquiry and schools of thought such as Stoicism and Epicureanism flourished. The autonomy of most Hellenistic kingdoms ended with Rome’s conquest, which itself banked on the Hellenistic synthesis—a legacy that continued to shape philosophy, science, art, and governance across the Mediterranean.",
+    "broad lifespan": "c. 331 BCE - 141 BCE",
+    "segments": [
+    {
+      "start": -331,
+      "end": -250,
+      "label": "Early Hellenistic Mesopotamia",
+      "note": "Alexander’s victory at Gaugamela in 331 BCE opened Mesopotamia to Macedonian control, and his dramatic entry into Babylon was staged as a continuation of ancient kingship. He honored Marduk, restored temples, and presented himself as a legitimate ruler within Mesopotamian traditions. After his death, the Seleucids formalized this arrangement, founding new Greek centers like Seleucia-on-the-Tigris while still relying on the authority of Babylonian priesthoods. Temples in Uruk, Sippar, and Borsippa remained vibrant, producing texts continuing the omen and dream traditions. This was a time of dual accommodation, when Greek political power fused with Sumero-Akkadian priestly legitimacy."
+    },
+    {
+      "start": -250,
+      "end": -190,
+      "label": "Middle Hellenistic Mesopotamia",
+      "note": "By the mid-3rd century BCE, Seleucid Mesopotamia reached its height. Greek-founded Seleucia prospered as a major trade hub, while Babylonian scholarly traditions thrived under Seleucid patronage. Temples continued to compile astronomical diaries, king lists, and omen literature, ensuring the survival of centuries-old knowledge. At the same time, Seleucid coinage, Greek festivals, and civic institutions reshaped urban life along Hellenistic lines. The result was a hybrid symbolic order: the polis and the temple, the coin and the cuneiform tablet, existing side by side. This was not a replacement but a layering of traditions, where Hellenistic kingship coexisted with priestly science, each reinforcing its own vision of cosmic order."
+    },
+    {
+      "start": -190,
+      "end": -141,
+      "label": "Late Hellenistic Mesopotamia",
+      "note": "Rome’s victory over the Seleucids at Magnesia in 190 BCE triggered a long decline. In Mesopotamia, Seleucid control weakened as revolts broke out and Parthian power advanced from the east. Temples in Babylon and Uruk still functioned, but their resources dwindled, and by the mid-2nd century BCE their activity began to wane. Yet even in decline, texts such as the Uruk King List and the Borsippa Inscription testify to a priesthood that continued to interpret history and ritual through ancient frameworks. In 141 BCE, the Parthians captured Seleucia and Babylon, ending the Seleucid era. This was a period of transition and survival, as the Mesopotamian scholarly tradition flickered in its final cuneiform expressions while the political horizon shifted decisively toward Arsacid rule."
+    }
+  ]
+  },
+   {
+    "id": "custom-hellenistic-persian-composite",
+    "name": "Hellenistic",
+    "expanded name": "Hellenistic Persian",
+    "color": "#fd0d00ff",
+    "yRel": 0.281,
+    "hRel": 0.06,
+    "broad note": "The Hellenistic world emerged from Alexander the Great’s deliberate reshaping of empire after 323 BCE. Unlike Cyrus of Persia, who largely ruled through tribute and local elites, Alexander founded new cities, libraries, and cultural centers to integrate diverse peoples into a shared Greek oikoumene. In doing so, he created a blueprint for global society: unlike earlier conquerors of similar scale, he bridged civilizations even as he conquered them, fusing traditions into a cosmopolitan horizon. This policy fostered a cultural space stretching from Egypt and the Levant to Anatolia, Mesopotamia, and as far as Bactria and India, where Greek language, civic forms, and philosophy mingled with older traditions. Monumental centers like Alexandria became hubs of scholarship, commerce, and religious experimentation, while scientific inquiry and schools of thought such as Stoicism and Epicureanism flourished. The autonomy of most Hellenistic kingdoms ended with Rome’s conquest, which itself banked on the Hellenistic synthesis—a legacy that continued to shape philosophy, science, art, and governance across the Mediterranean.",
+    "broad lifespan": "c. 330 BCE - 140 BCE",
+    "segments": [
+    {
+      "start": -330,
+      "end": -250,
+      "label": "Early Hellenistic Persia",
+      "note": "Alexander’s conquest toppled the Achaemenids but did not erase Persia’s symbolic legacy overnight. His dramatic destruction of Persepolis signaled the end of the old imperial order, even as he adopted elements of Persian kingship. The Macedonians took over satrapal structures, founded new cities like Seleucia-on-the-Tigris, and introduced Greek civic institutions. Persian elites survived in reduced form, while Aramaic continued as an administrative language alongside Greek. Culturally, this was a period of overlap and adaptation, with Seleucid rulers trying to graft Hellenistic kingship onto Persian imperial traditions."
+    },
+    {
+      "start": -250,
+      "end": -190,
+      "label": "Middle Hellenistic Persia",
+      "note": "Under the Seleucids, Persia was drawn deeply into the Hellenistic network of cities, coinage, and commerce. Greek and Mesopotamian religious practices blended in sanctuaries and inscriptions, while Babylonian omen texts and temple archives were still maintained under Seleucid patronage. Persian aristocracy served within the Seleucid system, though resentments simmered. This stage reflects a hybrid symbolic order: Greek urban culture and monarchy coexisted uneasily with older Mesopotamian priestly traditions and lingering Persian aristocratic memory."
+    },
+    {
+      "start": -190,
+      "end": -140,
+      "label": "Late Hellenistic Persia",
+      "note": "After Rome’s victory at Magnesia (190 BCE), the Seleucid Empire weakened. In Iran and Mesopotamia, Seleucid authority eroded rapidly under local revolts and the expansion of the Parthians, who positioned themselves as heirs to both Persian and Hellenistic traditions. By 140 BCE, the Seleucids had lost Persia, retreating westward. Symbolically, this was the waning of the Hellenistic order in Persia: Greek cities persisted, but the dominant narrative shifted to Arsacid kingship, marking the transition from Hellenistic to Parthian Iran."
+    }
+  ]
+  }
 ]
