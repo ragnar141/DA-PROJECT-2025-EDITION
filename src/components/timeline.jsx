@@ -3,6 +3,7 @@ import * as d3 from "d3";
 import durations from "../data/durations.json";
 import "../styles/timeline.css";
 import TextCard from "./textCard";
+import FatherCard from "./fatherCard";
 
 /* ===== BCE/CE helpers (no year 0) ===== */
 const toAstronomical = (y) => (y <= 0 ? y + 1 : y);
@@ -28,7 +29,6 @@ const SymbolicSystemColorPairs = {
 };
 
 /* ===== Label sizing vs zoom ===== */
-const LABEL_BASE_PX = 11;
 
 // Label sizing vs band height (works for hRel or absolute heights)
 // Label size as a fraction of the rendered band height (post-zoom)
@@ -38,14 +38,14 @@ const LABEL_FONT_MAX_ABS = 160; // px safety cap for extreme zoom
 const LABEL_FONT_MAX_REL = 0.9; // never exceed 90% of band height
 
 /* ===== Render + hover constants ===== */
-const BASE_OPACITY = 0.3;
+const BASE_OPACITY = 0.7;
 const TEXT_BASE_R = 0.4;       // at k=1
 const HOVER_SCALE_DOT = 1.6;   // how much bigger a dot gets on hover
 const ZOOM_THRESHOLD = 1.7;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 /* --- Opacity/width levels for duration label + border --- */
-const DUR_LABEL_OPACITY = { base: 0.3, hover: 0.75, active: 1 };
+const DUR_LABEL_OPACITY = { base: 0.5, hover: 0.7, active: 0.7 };
 const DUR_STROKE = {
   baseOpacity: 0.08, hoverOpacity: 0.45, activeOpacity: 0.9,
   baseWidth: 1.5,    hoverWidth: 2.0,    activeWidth: 2.5,
@@ -109,6 +109,15 @@ function getTextDate(row) {
   const v = Number(row?.["Dataviz date"]);
   return Number.isFinite(v) ? v : NaN;
 }
+// put this near getTextDate()
+function getDatavizNumber(row) {
+  for (const k of ["Dataviz", "Dataviz column", "Dataviz date"]) {
+    const v = Number(row?.[k]);
+    if (Number.isFinite(v)) return v;
+  }
+  return NaN;
+}
+
 function pickSystemColors(tagsStr) {
   const seen = new Set();
   const out = [];
@@ -129,6 +138,14 @@ function pickSystemColors(tagsStr) {
 function pickSystemColor(tagsStr) {
   const arr = pickSystemColors(tagsStr);
   return arr[0] || "#444";
+}
+
+function getLooseField(obj, targetKey) {
+  const want = String(targetKey).trim().toLowerCase();
+  for (const k of Object.keys(obj || {})) {
+    if (k && k.trim().toLowerCase() === want) return obj[k];
+  }
+  return undefined;
 }
 
 const normalizeAuthor = (name) =>
@@ -219,9 +236,9 @@ function makeAdaptiveTicks(zx) {
   if (hMin < 0 && hMax > 0) ticksHuman.push(0.5); // BCE/CE marker
 
   const ticksAstro = ticksHuman.map((y) => (y === 0.5 ? 0.5 : toAstronomical(y)));
- ticksAstro.sort((a, b) => a - b);
- // Drop 5500 BCE and 2500 CE ticks (=-5499 and =2500 in astronomical years)
- return ticksAstro.filter(t => !FORBIDDEN_TICKS_ASTRO.has(t));
+  ticksAstro.sort((a, b) => a - b);
+  // Drop 5500 BCE and 2500 CE ticks (=-5499 and =2500 in astronomical years)
+  return ticksAstro.filter(t => !FORBIDDEN_TICKS_ASTRO.has(t));
 }
 
 // Convert group intervals to a rectilinear (H/V only) envelope path in screen space.
@@ -261,6 +278,16 @@ function groupIntervalsToPath(intervals, zx, zy) {
   return d;
 }
 
+// === Geometry helpers (screen-space rectangles & anchors)
+function bandRectPx({ start, end, y, h }, zx, zy) {
+  const x0 = zx(toAstronomical(start)), x1 = zx(toAstronomical(end));
+  const yTop = zy(y), hPix = zy(y + h) - zy(y);
+  return { x: Math.min(x0, x1), y: yTop, w: Math.abs(x1 - x0), h: hPix };
+}
+function anchorForRange(r) {
+  return { xMid: r.x + r.w / 2, yTop: r.y, hPix: r.h };
+}
+
 function shouldShowDurationLabel({ d, k, bandW, bandH, labelSel }) {
   // Always show custom group labels unless explicitly blocked
   if (d._hiddenCustom) return false;
@@ -282,6 +309,9 @@ function shouldShowDurationLabel({ d, k, bandW, bandH, labelSel }) {
   return true; // fallback if measurement not available
 }
 
+
+
+
 function deriveGroupTitles(groupKey, members) {
   const first = members[0] || {};
   const anchorId = CUSTOM_GROUP_LABEL_MEMBER[groupKey];
@@ -299,9 +329,6 @@ function deriveGroupTitles(groupKey, members) {
 
   return { shortLabel, longTitle, anchor };
 }
-
-
-
 
 /* ===== Dynamic dataset discovery (TEXTS ONLY) ===== */
 function useDiscoveredDatasets() {
@@ -325,6 +352,28 @@ function useDiscoveredDatasets() {
   return registry;
 }
 
+/* ===== FATHERS: discovery for *_fathers.json ===== */
+function useDiscoveredFatherSets() {
+  const fatherModules =
+    import.meta.glob("../data/**/*_fathers.json", { eager: true, import: "default" }) || {};
+  const folderOf = (p) => {
+    const m = p.match(/\/data\/([^/]+)\//);
+    return m ? m[1] : null;
+  };
+  const folders = new Set(Object.keys(fatherModules).map(folderOf));
+
+  const registry = [];
+  folders.forEach((folder) => {
+    if (!folder) return;
+    const durationId = `${folder}-composite`;
+    const fathers = Object.entries(fatherModules)
+      .filter(([p]) => folderOf(p) === folder)
+      .flatMap(([, data]) => (Array.isArray(data) ? data : []));
+    registry.push({ folder, durationId, fathers });
+  });
+  return registry;
+}
+
 export default function Timeline() {
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
@@ -335,12 +384,15 @@ export default function Timeline() {
   const outlinesRef = useRef(null);
   const segmentsRef = useRef(null);
   const textsRef = useRef(null);
+  const fathersRef = useRef(null);      // FATHERS: new layer ref
   const prevZoomedInRef = useRef(false);
   const hoveredDurationIdRef = useRef(null);
   const zoomDraggingRef = useRef(false);
 
   // NEW: single source of truth for hovered segment
   const hoveredSegIdRef = useRef(null);
+  const clearActiveSegmentRef = useRef(() => {});
+  const clearActiveDurationRef = useRef(() => {});
 
   // current zoom scale
   const kRef = useRef(1);
@@ -355,17 +407,21 @@ export default function Timeline() {
   const hoveredSegParentIdRef = useRef(null);
   // One-shot close for duration cards (the next click closes)
   const awaitingCloseClickRef = useRef(false);
+  const lastVisibleLogTsRef = useRef(0);
 
   /* ---- Responsive sizing ---- */
   const [size, setSize] = useState({ width: 800, height: 400 });
   const [selectedText, setSelectedText] = useState(null);
   const [showMore, setShowMore] = useState(false);
   const [cardPos, setCardPos] = useState({ left: 16, top: 16 });
+  const [selectedFather, setSelectedFather] = useState(null);
+  const [fatherCardPos, setFatherCardPos] = useState({ left: 16, top: 16 });
   const closeAll = () => {
     setSelectedText(null);
+    setSelectedFather(null);
     setShowMore(false);
   };
-  const modalOpen = !!selectedText;
+  const modalOpen = !!selectedText || !!selectedFather;
   const lastTransformRef = useRef(null);  // remembers latest d3.zoom transform
   const didInitRef = useRef(false);       // tracks first-time init
 
@@ -461,43 +517,39 @@ export default function Timeline() {
       const first = members[0] || {};
 
       // NEW: choose which member anchors the label (via config; fallback to first)
-const { shortLabel, longTitle, anchor } = deriveGroupTitles(groupKey, members);
+      const { shortLabel, longTitle, anchor } = deriveGroupTitles(groupKey, members);
 
-// NEW: choose which member anchors the *duration box*
-const tipCfg        = CUSTOM_GROUP_TIP_POLICY[groupKey] || {};
-const tipAnchorId   = tipCfg.anchorMemberId || CUSTOM_GROUP_LABEL_MEMBER[groupKey];
-const tipAnchor     = members.find(m => m.id === tipAnchorId) || anchor || members[0] || {};
-const tipMaxWidthPx = Number.isFinite(tipCfg.maxWidth) ? tipCfg.maxWidth : null;
+      // NEW: choose which member anchors the *duration box*
+      const tipCfg        = CUSTOM_GROUP_TIP_POLICY[groupKey] || {};
+      const tipAnchorId   = tipCfg.anchorMemberId || CUSTOM_GROUP_LABEL_MEMBER[groupKey];
+      const tipAnchor     = members.find(m => m.id === tipAnchorId) || anchor || members[0] || {};
+      const tipMaxWidthPx = Number.isFinite(tipCfg.maxWidth) ? tipCfg.maxWidth : null;
 
-groupOutlines.push({
-  id: `customgroup-${groupKey}`,
-  name: first.name || `Custom ${groupKey}`,
-  expandedName: longTitle,
-  color: first.color || "#999",
-  start, end, y, h,
-  broadLifespan: first.broadLifespan || "",
-  broadNote: first.broadNote || "",
-  _isCustomGroup: true,
-  _groupKey: groupKey,
+      groupOutlines.push({
+        id: `customgroup-${groupKey}`,
+        name: first.name || `Custom ${groupKey}`,
+        expandedName: longTitle,
+        color: first.color || "#999",
+        start, end, y, h,
+        broadLifespan: first.broadLifespan || "",
+        broadNote: first.broadNote || "",
+        _isCustomGroup: true,
+        _groupKey: groupKey,
 
-  // keep your existing fields...
-  _groupMembers: members.map(m => ({ id: m.id, start: m.start, end: m.end, y: m.y, h: m.h, segments: m.segments })),
-  _groupIntervals: buildGroupIntervals(members.map(m => ({ id: m.id, start: m.start, end: m.end, y: m.y, h: m.h, segments: m.segments }))),
+        // keep your existing fields...
+        _groupMembers: members.map(m => ({ id: m.id, start: m.start, end: m.end, y: m.y, h: m.h, segments: m.segments })),
+        _groupIntervals: buildGroupIntervals(members.map(m => ({ id: m.id, start: m.start, end: m.end, y: m.y, h: m.h, segments: m.segments }))),
 
-  // label (unchanged)
-  _labelText: shortLabel,
-  _labelAnchorY: anchor?.y ?? y,
-  _labelAnchorH: anchor?.h ?? h,
+        // label (unchanged)
+        _labelText: shortLabel,
+        _labelAnchorY: anchor?.y ?? y,
+        _labelAnchorH: anchor?.h ?? h,
 
-  // NEW: duration box anchor + sizing
-  _tipAnchorY: tipAnchor?.y ?? y,
-  _tipAnchorH: tipAnchor?.h ?? h,
-  _tipMaxWidth: tipMaxWidthPx,
-});
-
-
-
-
+        // NEW: duration box anchor + sizing
+        _tipAnchorY: tipAnchor?.y ?? y,
+        _tipAnchorH: tipAnchor?.h ?? h,
+        _tipMaxWidth: tipMaxWidthPx,
+      });
     }
     // Keep everyone; mark custom members hidden so they act as layout bands
     const baseOutlines = raw.map((r) => ({ ...r, _hiddenCustom: !!r._isCustomMember }));
@@ -549,6 +601,9 @@ groupOutlines.push({
   /* ---- Datasets (TEXTS ONLY) ---- */
   const datasetRegistry = useDiscoveredDatasets();
 
+  /* ---- FATHERS: registry ---- */
+  const fatherRegistry = useDiscoveredFatherSets();
+
   /* ---- Texts rows ---- */
   const textRows = useMemo(() => {
     const outlinesById = new Map(outlines.map((o) => [o.id, o]));
@@ -567,6 +622,7 @@ groupOutlines.push({
       };
 
       for (const t of ds.texts || []) {
+        
         const title = (t["Name"] || "").trim();
         const authorName = (t["Author"] || "").trim();
         const approxDateStr = (t["Approx. Date"] || "").trim();
@@ -584,6 +640,8 @@ groupOutlines.push({
         const literaryFormsTags = (t["Literary Forms Tags"] || "").trim();
         const literaryContentTags = (t["Literary Content Tags"] || "").trim();
         const symbolicSystemTags = (t["Symbolic System Tags"] || "").trim();
+        const textIndex = ((getLooseField(t, "Index") ?? "") + "").trim();
+
 
         const when = getTextDate(t);
         if (!Number.isFinite(when)) continue;
@@ -593,6 +651,7 @@ groupOutlines.push({
         const textKey = `${authorName || "anon"}::${title || ""}::${when}`;
         const y = yForKey(textKey);
         const displayDate = approxDateStr || formatYear(when);
+       
 
         rowsT.push({
           id: `${ds.durationId}__text__${title || hashString(JSON.stringify(t))}__${when}`,
@@ -619,6 +678,7 @@ groupOutlines.push({
           literaryFormsTags,
           literaryContentTags,
           symbolicSystemTags,
+          textIndex,  
         });
       }
     }
@@ -634,6 +694,80 @@ groupOutlines.push({
 
     return filtT;
   }, [datasetRegistry, outlines]);
+
+  // FATHERS: rows (right-pointing triangles; no author lanes)
+  const fatherRows = useMemo(() => {
+    const outlinesById = new Map(outlines.map((o) => [o.id, o]));
+    const rowsF = [];
+
+    for (const ds of fatherRegistry) {
+      const band = outlinesById.get(ds.durationId);
+      if (!band) continue;
+
+      const bandY = band.y;
+      const bandH = band.h;
+      const pad = Math.min(6, Math.max(2, bandH * 0.15));
+      const yForKey = (key) => {
+        const r = hashString(`${ds.durationId}::father::${key || "anon"}`);
+        return bandY + pad + r * Math.max(1, bandH - 2 * pad);
+      };
+
+      for (const f of ds.fathers || []) {
+        const name = String(f["Name"] || "").trim();
+        const when = getDatavizNumber(f);
+        if (!Number.isFinite(when)) continue;
+
+const index = f["Index"] != null ? f["Index"] : null;
+const dob = (f["D.O.B"] || "").trim();                     // string; keep as-is if you want to parse later
+const dod = (f["D.O.D"] || "").trim();
+const location = (f["Location"] || "").trim();
+const description = (f["Description"] || "").trim();
+const historicMythicStatusTags = (f["Historic-Mythic Status Tags"] || "").trim();
+const foundingFigure = (f["Founding Figure?"] || "").trim();
+const jungianArchetypesTags = (f["Jungian Archetypes Tags"] || "").trim();
+const neumannStagesTags = (f["Neumann Stages Tags"] || "").trim();
+const comteanFramework = (f["Comtean framework"] || "").trim();
+const category = (f["Category"] || "").trim();
+const socioPoliticalTags = (f["Socio-political Tags"] || "").trim();
+
+        const y = yForKey(name || "anon");
+        const symbolicSystem =
+  (f["Symbolic System"] || f["Symbolic System Tags"] || "").trim();
+const color = pickSystemColor(symbolicSystem);
+
+        rowsF.push({
+          id: `${ds.durationId}__father__${name || hashString(JSON.stringify(f))}__${when}`,
+          durationId: ds.durationId,
+          when,
+          y,
+          color,
+          name,
+          index,
+  dob,
+  dod,
+  location,
+  description,
+  historicMythicStatusTags,
+  foundingFigure,
+  jungianArchetypesTags,
+  neumannStagesTags,
+  comteanFramework,
+  category,
+  socioPoliticalTags,
+  symbolicSystem,
+        });
+      }
+    }
+
+    // Clamp to band extent
+    const bandExtent = new Map(
+      outlines.map((o) => [o.id, { min: Math.min(o.start, o.end), max: Math.max(o.start, o.end) }])
+    );
+    return rowsF.filter((r) => {
+      const e = bandExtent.get(r.durationId);
+      return e ? r.when >= e.min && r.when <= e.max : true;
+    });
+  }, [fatherRegistry, outlines]);
 
   // Map: bandId -> Map(authorKey -> laneY_in_band_units_at_k1)
   const authorLaneMap = useMemo(() => {
@@ -689,15 +823,43 @@ groupOutlines.push({
     return map;
   }, [textRows, outlines, y0]);
 
-  // Close with ESC when a card is open
+  // Close segment or duration boxes with ESC
   useEffect(() => {
-    if (!modalOpen) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") closeAll();
+    const onKeyDown = (e) => {
+      const key = e.key || e.code;               // safety for older browsers
+      if (key !== "Escape" && key !== "Esc") return;
+
+      let did = false;
+
+      // Close the text card (modal)
+      if (selectedText || selectedFather) {
+        closeAll();
+        did = true;
+      }
+
+      // Close segment box
+      if (activeSegIdRef.current) {
+        clearActiveSegmentRef.current?.();
+        did = true;
+      }
+
+      // Close duration box
+      if (activeDurationIdRef.current) {
+        clearActiveDurationRef.current?.();
+        awaitingCloseClickRef.current = false;
+        did = true;
+      }
+
+      if (did) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [modalOpen]);
+
+    // capture:true helps if something inside stops propagation
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
+  }, [selectedText]); // we only need this state to decide to close the TextCard
 
   // Hide any tooltips the moment a modal opens
   useEffect(() => {
@@ -717,6 +879,7 @@ groupOutlines.push({
     const gOut = d3.select(outlinesRef.current);
     const gSeg = d3.select(segmentsRef.current);
     const gTexts = d3.select(textsRef.current);
+    const gFathers = d3.select(fathersRef.current);   // FATHERS: layer
 
     gRoot.attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -854,81 +1017,79 @@ groupOutlines.push({
     }
 
     // ===== DURATION ANCHORING helpers =====
-   function getDurationAnchorPx(outline) {
-  const zx = zxRef.current, zy = zyRef.current;
-  if (!zx || !zy) return null;
+    function getDurationAnchorPx(outline) {
+      const zx = zxRef.current, zy = zyRef.current;
+      if (!zx || !zy) return null;
 
-  // Default to the whole outline
-  let yTopData = outline.y;
-  let hData    = outline.h;
+      // Default to the whole outline
+      let yTopData = outline.y;
+      let hData    = outline.h;
 
-  // For custom groups, use the per-group tip anchor band if provided
-  if (outline._isCustomGroup &&
-      Number.isFinite(outline._tipAnchorY) &&
-      Number.isFinite(outline._tipAnchorH)) {
-    yTopData = outline._tipAnchorY;
-    hData    = outline._tipAnchorH;
-  }
+      // For custom groups, use the per-group tip anchor band if provided
+      if (outline._isCustomGroup &&
+          Number.isFinite(outline._tipAnchorY) &&
+          Number.isFinite(outline._tipAnchorH)) {
+        yTopData = outline._tipAnchorY;
+        hData    = outline._tipAnchorH;
+      }
 
-  const x0 = zx(toAstronomical(outline.start));
-  const x1 = zx(toAstronomical(outline.end));
-  const yTop = zy(yTopData);
-  const hPix = zy(yTopData + hData) - zy(yTopData);
+      const x0 = zx(toAstronomical(outline.start));
+      const x1 = zx(toAstronomical(outline.end));
+      const yTop = zy(yTopData);
+      const hPix = zy(yTopData + hData) - zy(yTopData);
 
-  const left  = Math.min(x0, x1);
-  const right = Math.max(x0, x1);
-  const xMid  = (left + right) / 2;
+      const left  = Math.min(x0, x1);
+      const right = Math.max(x0, x1);
+      const xMid  = (left + right) / 2;
 
-  return { left, right, xMid, yTop, hPix };
-}
-
+      return { left, right, xMid, yTop, hPix };
+    }
 
     function showDurationAnchored(outline) {
-  const anchor = getDurationAnchorPx(outline);
-  if (!anchor) return;
+      const anchor = getDurationAnchorPx(outline);
+      if (!anchor) return;
 
-  const wrapRect = wrapRef.current.getBoundingClientRect();
+      const wrapRect = wrapRef.current.getBoundingClientRect();
 
-  tipDur
-    .html(
-      tipHTML(
-        outline.expandedName || outline.name || "",
-        outline.broadLifespan || fmtRange(outline.start, outline.end),
-        outline.broadNote || ""
-      )
-    )
-    .style("display", "block")
-    .style("opacity", 1)
-    .style("--accent", outline.color || "");
+      tipDur
+        .html(
+          tipHTML(
+            outline.expandedName || outline.name || "",
+            outline.broadLifespan || fmtRange(outline.start, outline.end),
+            outline.broadNote || ""
+          )
+        )
+        .style("display", "block")
+        .style("opacity", 1)
+        .style("--accent", outline.color || "");
 
-// NEW: set max-width for custom groups if provided
-  if (outline._isCustomGroup && Number.isFinite(outline._tipMaxWidth)) {
-    tipDur.style("max-width", `${outline._tipMaxWidth}px`);
-  } else {
-    tipDur.style("max-width", null);
-  }
+      // NEW: set max-width for custom groups if provided
+      if (outline._isCustomGroup && Number.isFinite(outline._tipMaxWidth)) {
+        tipDur.style("max-width", `${outline._tipMaxWidth}px`);
+      } else {
+        tipDur.style("max-width", null);
+      }
 
-  const node = tipDur.node();
-  const tw = node.offsetWidth;
-  const th = node.offsetHeight;
-  const pad = 8;
+      const node = tipDur.node();
+      const tw = node.offsetWidth;
+      const th = node.offsetHeight;
+      const pad = 8;
 
-  // Default positioning: centered below the *anchoring band*
-  let x = anchor.xMid - tw / 2;
-  let y = anchor.yTop + anchor.hPix + pad;
-  let below = true;
+      // Default positioning: centered below the *anchoring band*
+      let x = anchor.xMid - tw / 2;
+      let y = anchor.yTop + anchor.hPix + pad;
+      let below = true;
 
-  if (y + th > wrapRect.height) {
-    y = anchor.yTop - th - pad;
-    below = false;
-  }
+      if (y + th > wrapRect.height) {
+        y = anchor.yTop - th - pad;
+        below = false;
+      }
 
-  const maxX = wrapRect.width - tw - 4;
-  x = Math.max(4, Math.min(x, maxX));
+      const maxX = wrapRect.width - tw - 4;
+      x = Math.max(4, Math.min(x, maxX));
 
-  tipDur.style("left", `${x}px`).style("top", `${y}px`).classed("below", below);
-}
-
+      tipDur.style("left", `${x}px`).style("top", `${y}px`).classed("below", below);
+    }
 
     // ===== Label + border visuals (3 states) =====
     function updateHoverVisuals() {
@@ -943,57 +1104,54 @@ groupOutlines.push({
 
       const ignoreHoverBecauseActive = !!activeDurationId;
 
-      // Borders (outlineRect)
       // Borders (outlineRect) — never draw stroke for custom groups
-d3.select(outlinesRef.current)
-  .selectAll("rect.outlineRect")
-  .attr("stroke-opacity", (d) => {
-    const suppress = d._isCustomGroup || d._hiddenCustom;
-    if (suppress) return 0; // <- keep group rect invisible, even on hover/active
-    const isActive = d.id === activeDurationId;
-    const isHover  = !ignoreHoverBecauseActive && d.id === hoveredDurationId;
-    if (isActive) return DUR_STROKE.activeOpacity;
-    if (isHover)  return DUR_STROKE.hoverOpacity;
-    return DUR_STROKE.baseOpacity;
-  })
-  .attr("stroke-width", (d) => {
-    const suppress = d._isCustomGroup || d._hiddenCustom;
-    if (suppress) return DUR_STROKE.baseWidth; // value irrelevant since opacity is 0
-    const isActive = d.id === activeDurationId;
-    const isHover  = !ignoreHoverBecauseActive && d.id === hoveredDurationId;
-    if (isActive) return DUR_STROKE.activeWidth;
-    if (isHover)  return DUR_STROKE.hoverWidth;
-    return DUR_STROKE.baseWidth;
-  });
-
+      d3.select(outlinesRef.current)
+        .selectAll("rect.outlineRect")
+        .attr("stroke-opacity", (d) => {
+          const suppress = d._isCustomGroup || d._hiddenCustom;
+          if (suppress) return 0; // keep group rect invisible
+          const isActive = d.id === activeDurationId;
+          const isHover  = !ignoreHoverBecauseActive && d.id === hoveredDurationId;
+          if (isActive) return DUR_STROKE.activeOpacity;
+          if (isHover)  return DUR_STROKE.hoverOpacity;
+          return DUR_STROKE.baseOpacity;
+        })
+        .attr("stroke-width", (d) => {
+          const suppress = d._isCustomGroup || d._hiddenCustom;
+          if (suppress) return DUR_STROKE.baseWidth; // value irrelevant since opacity is 0
+          const isActive = d.id === activeDurationId;
+          const isHover  = !ignoreHoverBecauseActive && d.id === hoveredDurationId;
+          if (isActive) return DUR_STROKE.activeWidth;
+          if (isHover)  return DUR_STROKE.hoverWidth;
+          return DUR_STROKE.baseWidth;
+        });
 
       // Labels (durationLabel)
       d3.select(outlinesRef.current)
         .selectAll("text.durationLabel")
         .attr("opacity", (d) => {
-          if (d.id === activeDurationId || d.id === activeParentFromSeg) return DUR_LABEL_OPACITY.active;
-          if (!ignoreHoverBecauseActive &&
-              (d.id === hoveredDurationId || d.id === hoveredSegParentId)) {
-            return DUR_LABEL_OPACITY.hover;
-          }
-          return DUR_LABEL_OPACITY.base;
+          const isActive = d.id === activeDurationId || d.id === activeParentFromSeg;
+          const isHoverDuration = !ignoreHoverBecauseActive && d.id === hoveredDurationId;
+
+          if (isActive) return DUR_LABEL_OPACITY.active;   // clicked/locked
+          if (isHoverDuration) return DUR_LABEL_OPACITY.hover; // fade to 0.1 on duration hover
+          return DUR_LABEL_OPACITY.base;                   // base
         });
 
-        // Also style custom group polygons (borders) the same way
+      // Also style custom group polygons (borders) the same way
       d3.select(customPolysRef.current)
         .selectAll("path.customGroup")
         .attr("stroke-opacity", (d) => {
           if (d.id === activeDurationId) return DUR_STROKE.activeOpacity;
           if (!ignoreHoverBecauseActive && d.id === hoveredDurationId) return DUR_STROKE.hoverOpacity;
-            return 0.22; // base opacity for polygons
+          return 0.08; // base opacity for polygons
         })
         .attr("stroke-width", (d) => {
           if (d.id === activeDurationId) return DUR_STROKE.activeWidth;
           if (!ignoreHoverBecauseActive && d.id === hoveredDurationId) return DUR_STROKE.hoverWidth;
-        return 1.5; // base width for polygons
+          return 1.5; // base width for polygons
         });
-
-      }
+    }
 
     // NEW: centralized segment preview updater
     function updateSegmentPreview() {
@@ -1022,6 +1180,9 @@ d3.select(outlinesRef.current)
       updateHoverVisuals();
     }
 
+    clearActiveSegmentRef.current = clearActiveSegment;
+    clearActiveDurationRef.current = clearActiveDuration;
+
     // Only set active + (optionally) show card on demand (segment)
     function setActiveSegment(seg, { showCard = false } = {}) {
       if (!seg) return clearActiveSegment();
@@ -1042,31 +1203,30 @@ d3.select(outlinesRef.current)
     }
 
     // Sync hovered duration from pointer while zooming (zoomed-out mode)
-  function syncDurationHoverFromPointer(se) {
-  // Only track duration hover while zoomed OUT
-  if (!se || !("clientX" in se) || kRef.current >= ZOOM_THRESHOLD) return;
+    function syncDurationHoverFromPointer(se) {
+      // Only track duration hover while zoomed OUT
+      if (!se || !("clientX" in se) || kRef.current >= ZOOM_THRESHOLD) return;
 
-  const el = document.elementFromPoint(se.clientX, se.clientY);
-  let newId = null;
+      const el = document.elementFromPoint(se.clientX, se.clientY);
+      let newId = null;
 
-  if (el && el.classList) {
-    if (el.classList.contains("outlineRect")) {
-      // Rect lives inside a <g.durationOutline> that holds the datum
-      const d = d3.select(el.parentNode).datum();
-      newId = d?.id ?? null;
-    } else if (el.classList.contains("customGroup")) {
-      // Polygon path has the datum directly bound
-      const d = d3.select(el).datum();
-      newId = d?.id ?? null;
+      if (el && el.classList) {
+        if (el.classList.contains("outlineRect")) {
+          // Rect lives inside a <g.durationOutline> that holds the datum
+          const d = d3.select(el.parentNode).datum();
+          newId = d?.id ?? null;
+        } else if (el.classList.contains("customGroup")) {
+          // Polygon path has the datum directly bound
+          const d = d3.select(el).datum();
+          newId = d?.id ?? null;
+        }
+      }
+
+      if (hoveredDurationIdRef.current !== newId) {
+        hoveredDurationIdRef.current = newId;
+        updateHoverVisuals();
+      }
     }
-  }
-
-  if (hoveredDurationIdRef.current !== newId) {
-    hoveredDurationIdRef.current = newId;
-    updateHoverVisuals();
-  }
-}
-
 
     // NEW: Sync hovered segment from pointer while zooming (zoomed-in mode)
     function syncSegmentHoverFromPointer(se) {
@@ -1088,8 +1248,6 @@ d3.select(outlinesRef.current)
       }
     }
 
-    
-
     // OUTLINES (filled, faint stroke)
     const outlineSel = gOut
       .selectAll("g.durationOutline")
@@ -1099,15 +1257,14 @@ d3.select(outlinesRef.current)
 
         g.append("rect")
           .attr("class", "outlineRect")
-          .attr("fill", (d) => d.color)
-          .attr("fill-opacity", 0.1)
+          .attr("fill", "transparent")
           .attr("stroke", (d) => d.color)
           .attr("stroke-opacity", DUR_STROKE.baseOpacity)
           .attr("stroke-width", DUR_STROKE.baseWidth)
           .attr("vector-effect", "non-scaling-stroke")
           .attr("shape-rendering", "geometricPrecision");
 
-       g.append("text")
+        g.append("text")
           .attr("class", "durationLabel")
           .attr("dy", "0.32em")
           .style("dominant-baseline", "middle")
@@ -1122,21 +1279,19 @@ d3.select(outlinesRef.current)
 
     // Hide the rectangle if this is a custom GROUP (polygon handles visuals)
     outlineSel.select("rect.outlineRect")
-        .attr("fill-opacity", (d) => (d._isCustomGroup || d._hiddenCustom) ? 0 : 0.1)
-        .attr("stroke-opacity", (d) => (d._isCustomGroup || d._hiddenCustom) ? 0 : DUR_STROKE.baseOpacity)
-        .style("pointer-events", d => (d._isCustomGroup || d._hiddenCustom) ? "none" : "all");
+      .attr("fill-opacity", (d) => (d._isCustomGroup || d._hiddenCustom) ? 0 : 0.1)
+      .attr("stroke-opacity", (d) => (d._isCustomGroup || d._hiddenCustom) ? 0 : DUR_STROKE.baseOpacity)
+      .style("pointer-events", d => (d._isCustomGroup || d._hiddenCustom) ? "none" : "all");
 
     // Whole-duration hover/click (zoomed-out only)
     outlineSel.select("rect.outlineRect")
       .on("mouseenter", function (_ev, d) {
-        
         if (kRef.current >= ZOOM_THRESHOLD) return;
         if (activeDurationIdRef.current) return; // ignore hover while a duration is active
         hoveredDurationIdRef.current = d.id;
         updateHoverVisuals();
       })
       .on("mouseleave", function () {
-        
         if (kRef.current >= ZOOM_THRESHOLD) return;
         if (zoomDraggingRef.current) return;
         if (activeDurationIdRef.current) return; // keep active styles
@@ -1168,10 +1323,9 @@ d3.select(outlinesRef.current)
           enter
             .append("path")
             .attr("class", "customGroup")
-            .attr("fill", (d) => d.color)
-            .attr("fill-opacity", 0.08)
+            .attr("fill", "transparent")
             .attr("stroke", (d) => d.color)
-            .attr("stroke-opacity", 0.22)
+            .attr("stroke-opacity", 0.08)
             .attr("stroke-width", 1.5)
             .attr("vector-effect", "non-scaling-stroke")
             .attr("shape-rendering", "geometricPrecision"),
@@ -1179,41 +1333,37 @@ d3.select(outlinesRef.current)
         (exit) => exit.remove()
       );
 
-      // Hover/click on the polygon itself (zoomed-out only)
-gCustom.selectAll("path.customGroup")
-  .style("pointer-events", "visibleFill")
-  .on("mouseenter", function (_ev, d) {
-    
-    if (kRef.current >= ZOOM_THRESHOLD) return;
-    if (activeDurationIdRef.current) return;
-    hoveredDurationIdRef.current = d.id;
-    updateHoverVisuals();
-  })
-  .on("mouseleave", function () {
-    
-    if (kRef.current >= ZOOM_THRESHOLD) return;
-    if (zoomDraggingRef.current) return;
-    if (activeDurationIdRef.current) return;
-    hoveredDurationIdRef.current = null;
-    updateHoverVisuals();
-  })
-  .on("click", function (ev, d) {
-    
-    if (kRef.current >= ZOOM_THRESHOLD) return;
+    // Hover/click on the polygon itself (zoomed-out only)
+    gCustom.selectAll("path.customGroup")
+      .style("pointer-events", "visibleFill")
+      .on("mouseenter", function (_ev, d) {
+        if (kRef.current >= ZOOM_THRESHOLD) return;
+        if (activeDurationIdRef.current) return;
+        hoveredDurationIdRef.current = d.id;
+        updateHoverVisuals();
+      })
+      .on("mouseleave", function () {
+        if (kRef.current >= ZOOM_THRESHOLD) return;
+        if (zoomDraggingRef.current) return;
+        if (activeDurationIdRef.current) return;
+        hoveredDurationIdRef.current = null;
+        updateHoverVisuals();
+      })
+      .on("click", function (ev, d) {
+        if (kRef.current >= ZOOM_THRESHOLD) return;
 
-    if (awaitingCloseClickRef.current) {
-      awaitingCloseClickRef.current = false;
-      clearActiveDuration();
-      ev.stopPropagation();
-      return;
-    }
+        if (awaitingCloseClickRef.current) {
+          awaitingCloseClickRef.current = false;
+          clearActiveDuration();
+          ev.stopPropagation();
+          return;
+        }
 
-    clearActiveSegment();
-    setActiveDuration(d, { showCard: true });
-    awaitingCloseClickRef.current = true;
-    ev.stopPropagation();
-  });
-
+        clearActiveSegment();
+        setActiveDuration(d, { showCard: true });
+        awaitingCloseClickRef.current = true;
+        ev.stopPropagation();
+      });
 
     // TEXTS (dots)
     const textSel = gTexts
@@ -1245,16 +1395,17 @@ gCustom.selectAll("path.customGroup")
       return (d.colors || []).map((color, i) => ({ color, i, n: d.colors.length, id: d.id }));
     }
 
-    // one group per multi-color text
-    gTexts
-      .selectAll("g.dotSlices")
+    // Keep a stable selection handle for later filtering by data
+    const piesSel = gTexts.selectAll("g.dotSlices");
+
+    // Data join for pie groups (only for multi-color texts)
+    piesSel
       .data(textRows.filter((d) => (d.colors || []).length > 1), (d) => d.id)
       .join(
         (enter) => {
           const g = enter
             .append("g")
             .attr("class", "dotSlices")
-            .attr("data-id", (d) => d.id)
             .style("pointer-events", "none")
             .style("opacity", BASE_OPACITY);
 
@@ -1281,7 +1432,8 @@ gCustom.selectAll("path.customGroup")
       );
 
     // Keep draw order stable for pies as well
-    gTexts.selectAll("g.dotSlices")
+    gTexts
+      .selectAll("g.dotSlices")
       .sort((a, b) => (a.when - b.when) || a.durationId.localeCompare(b.durationId));
 
     // helper to (re)compute wedge paths at a given radius
@@ -1296,8 +1448,8 @@ gCustom.selectAll("path.customGroup")
           if (n === 2) {
             // First color on the RIGHT, second on the LEFT
             const halves = [
-              { startAngle: 0, endAngle: Math.PI },               // right half
-              { startAngle: Math.PI, endAngle: 2 * Math.PI },     // left half
+              { startAngle: 0, endAngle: Math.PI },           // right half
+              { startAngle: Math.PI, endAngle: 2 * Math.PI }, // left half
             ];
             const h = halves[Math.min(s.i, 1)];
             return arcGen(h);
@@ -1313,17 +1465,40 @@ gCustom.selectAll("path.customGroup")
     const within = (v, a, b) => v >= Math.min(a, b) && v <= Math.max(a, b);
 
     const findSegForText = (d) => {
-   const ids = new Set([d.durationId]);
-   const parsed = parseCustomId(d.durationId);
-   if (parsed) ids.add(`customgroup-${parsed.groupKey}`);
-   return segments.find(
-     (s) =>
-       ids.has(s.parentId) &&
-       d.when >= s.start &&
-       d.when <= s.end &&
-       within(d.y, s.y, s.y + s.h)
-   );
- };
+      const ids = new Set([d.durationId]);
+      const parsed = parseCustomId(d.durationId);
+      if (parsed) ids.add(`customgroup-${parsed.groupKey}`);
+      return segments.find(
+        (s) =>
+          ids.has(s.parentId) &&
+          d.when >= s.start &&
+          d.when <= s.end &&
+          within(d.y, s.y, s.y + s.h)
+      );
+    };
+
+    // === Log how many text dots are currently visible on screen ===
+    (function logVisibleTextsThrottled() {
+      const now = performance.now();
+      if (now - (lastVisibleLogTsRef.current || 0) < 200) return; // throttle ~5/s
+      lastVisibleLogTsRef.current = now;
+
+      // We’re in the inner chart coords, so use innerWidth/innerHeight bounds
+      const visibleCount = d3.select(textsRef.current)
+        .selectAll("circle.textDot")
+        .filter(function () {
+          const sel = d3.select(this);
+          const cx = +sel.attr("cx") || 0;
+          const cy = +sel.attr("cy") || 0;
+          const r  = +sel.attr("r")  || 0;
+          // visible if any part of the circle overlaps the viewport
+          return (cx + r) >= 0 && (cx - r) <= innerWidth &&
+                 (cy + r) >= 0 && (cy - r) <= innerHeight;
+        })
+        .size();
+
+      console.log(`[Timeline] Visible text dots: ${visibleCount}`);
+    })();
 
     // Text dots hover/click (zoomed-in only via pointer-events toggle)
     textSel
@@ -1334,7 +1509,7 @@ gCustom.selectAll("path.customGroup")
         d3.select(this).attr("r", newR).attr("opacity", 1);
 
         // Sync the pie slices (if any) to the same radius and opacity
-        const gPie = gTexts.select(`g.dotSlices[data-id='${d.id}']`);
+        const gPie = piesSel.filter((p) => p.id === d.id);
         if (!gPie.empty()) {
           gPie.style("opacity", 1);
           drawSlicesAtRadius(gPie, newR);
@@ -1349,14 +1524,20 @@ gCustom.selectAll("path.customGroup")
           updateHoverVisuals();
         }
 
-        const html = tipHTML(d.title || "", d.displayDate || formatYear(d.when));
-        const a = textAnchorClient(this, d);
-        if (a) showTip(tipText, html, a.x, a.y, d.color);
+// --- inside textSel.on("mouseenter", ...) ---
+const titleLine = [d.textIndex, d.title].filter(Boolean).join(" "); // e.g., "12 Hymn to Amun"
+const html = tipHTML(titleLine, d.displayDate || formatYear(d.when));
+const a = textAnchorClient(this, d);
+if (a) showTip(tipText, html, a.x, a.y, d.color);
+
       })
       .on("mousemove", function (_ev, d) {
-        const html = tipHTML(d.title || "", d.displayDate || formatYear(d.when));
-        const a = textAnchorClient(this, d);
-        if (a) showTip(tipText, html, a.x, a.y, d.color);
+// --- inside textSel.on("mousemove", ...) ---
+const titleLine = [d.textIndex, d.title].filter(Boolean).join(" ");
+const html = tipHTML(titleLine, d.displayDate || formatYear(d.when));
+const a = textAnchorClient(this, d);
+if (a) showTip(tipText, html, a.x, a.y, d.color);
+
       })
       .on("mouseleave", function (_ev, d) {
         const k = kRef.current;
@@ -1366,7 +1547,7 @@ gCustom.selectAll("path.customGroup")
         hideTipSel(tipText);
 
         // Shrink/restore pie radius + opacity to match circle
-        const gPie = gTexts.select(`g.dotSlices[data-id='${d.id}']`);
+        const gPie = piesSel.filter((p) => p.id === d.id);
         if (!gPie.empty()) {
           gPie.style("opacity", BASE_OPACITY);
           drawSlicesAtRadius(gPie, rDraw);
@@ -1425,6 +1606,129 @@ gCustom.selectAll("path.customGroup")
       };
     }
 
+    /* ---------- FATHERS: triangles ---------- */
+    // --- Founding-figure size helpers ---
+const FATHER_R_FOUNDING = 0.5;   // YES
+const FATHER_R_NONFOUND = 0.25;  // NO
+
+function isYesish(v) {
+  const s = String(v || "").trim().toLowerCase();
+  // be generous about truthy "yes"
+  return s === "yes" || s === "y" || s === "true" || s === "1";
+}
+
+function getFatherBaseR(fatherRow) {
+  return isYesish(fatherRow?.foundingFigure) ? FATHER_R_FOUNDING : FATHER_R_NONFOUND;
+}
+
+function hasHistoricTag(tags) {
+  return String(tags || "")
+    .toLowerCase()
+    .split(",")
+    .map(s => s.trim())
+    .includes("historic");
+}
+
+
+
+    function triPathRight(cx, cy, r) {
+      // right-pointing triangle: left-top -> left-bottom -> right-mid
+      const xL = cx - r, xR = cx + r, yT = cy - r, yB = cy + r, yM = cy;
+      return `M ${xL} ${yT} L ${xL} ${yB} L ${xR} ${yM} Z`;
+    }
+
+    // Data join for fathers
+    const fathersSel = gFathers
+      .selectAll("path.fatherMark")
+      .data(fatherRows, (d) => d.id)
+      .join(
+        (enter) =>
+          enter
+            .append("path")
+            .attr("class", "fatherMark")
+            .attr("fill", (d) => d.color || "#666")
+            .attr("opacity", BASE_OPACITY)
+            .style("transition", "opacity 120ms ease"),
+        (update) => update,
+        (exit) => exit.remove()
+      );
+
+      const fatherMidSel = gFathers
+  .selectAll("line.fatherMid")
+  .data(fatherRows, d => d.id)
+  .join(
+    enter => enter
+      .append("line")
+      .attr("class", "fatherMid")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 1.5)
+      .attr("stroke-linecap", "round")
+      .attr("vector-effect", "non-scaling-stroke")
+      .style("pointer-events", "none"), // never capture events
+    update => update,
+    exit => exit.remove()
+  );
+
+    // Lightweight hover tooltip for fathers (zoomed-in like texts)
+    fathersSel
+  .on("mouseenter", function (_ev, d) {
+    if (kRef.current < ZOOM_THRESHOLD) return;
+    d3.select(this).attr("opacity", 1);
+
+    const a = fatherAnchorClient(this, d);
+    if (!a) return;
+
+    const title = [d.index, d.name].filter(Boolean).join(" "); // "Index, Name"
+    const subtitle = d.dob || "";                               // D.O.B. (empty if missing)
+
+    showTip(tipText, tipHTML(title, subtitle, null), a.x, a.y, d.color);
+  })
+  .on("mousemove", function (_ev, d) {
+    if (kRef.current < ZOOM_THRESHOLD) return;
+
+    const a = fatherAnchorClient(this, d);
+    if (!a) return;
+
+    const title = [d.index, d.name].filter(Boolean).join(" ");
+    const subtitle = d.dob || "";
+
+    showTip(tipText, tipHTML(title, subtitle, null), a.x, a.y, d.color);
+  })
+  .on("mouseleave", function () {
+    d3.select(this).attr("opacity", BASE_OPACITY);
+    hideTipSel(tipText);
+  })
+  .on("click", function (ev, d) {
+     // anchor near the triangle
+     const a = fatherAnchorClient(this, d);
+     const wrapRect = wrapRef.current.getBoundingClientRect();
+     const CARD_W = 360, CARD_H = 320, PAD = 12;
+
+     let left = a ? a.x - wrapRect.left + PAD : PAD;
+     let top = a ? a.y - wrapRect.top + PAD : PAD;
+     left = Math.max(4, Math.min(left, wrapRect.width - CARD_W - 4));
+     top = Math.max(4, Math.min(top, wrapRect.height - CARD_H - 4));
+
+     // hide any floating tips
+     d3.select(wrapRef.current).selectAll(".tl-tooltip")
+       .style("opacity", 0).style("display", "none");
+
+     setFatherCardPos({ left, top });
+     setSelectedFather(d);
+     setShowMore(false);
+     ev.stopPropagation();
+   });
+
+
+    function fatherAnchorClient(el, d) {
+      const zx = zxRef.current, zy = zyRef.current;
+      if (!zx || !zy) return null;
+      const svgRect = svgRef.current.getBoundingClientRect();
+      const cx = zx(toAstronomical(d.when));
+      const cyAttr = el ? parseFloat(d3.select(el).attr("data-cy")) : zy(y0(d.y));
+      return { x: svgRect.left + margin.left + cx, y: svgRect.top + margin.top + cyAttr };
+    }
+
     function apply(zx, zy, k = 1) {
       // cache latest rescaled axes for anchored tooltips
       zxRef.current = zx;
@@ -1438,97 +1742,86 @@ gCustom.selectAll("path.customGroup")
 
       // outlines rects
       gOut.selectAll("rect.outlineRect").each(function (d) {
-        const x0 = zx(toAstronomical(d.start));
-        const x1 = zx(toAstronomical(d.end));
-        const yTop = zy(d.y);
-        const hPix = zy(d.y + d.h) - zy(d.y);
-        d3.select(this).attr("x", Math.min(x0, x1)).attr("y", yTop).attr("width", Math.abs(x1 - x0)).attr("height", hPix);
+        const r = bandRectPx(d, zx, zy);
+        d3.select(this)
+          .attr("x", r.x)
+          .attr("y", r.y)
+          .attr("width", r.w)
+          .attr("height", r.h);
       });
 
       // labels (font scales with the band's rendered height)
-// labels (font scales with the band's rendered height)
-// labels (font scales with the band's rendered height)
-gOut.selectAll("g.durationOutline").each(function (d) {
-  const g = d3.select(this);
+      gOut.selectAll("g.durationOutline").each(function (d) {
+        const g = d3.select(this);
 
-  const x0 = zx(toAstronomical(d.start));
-  const x1 = zx(toAstronomical(d.end));
+        const x0 = zx(toAstronomical(d.start));
+        const x1 = zx(toAstronomical(d.end));
 
-  // Default: place inside the group's full envelope
-  let labelYTop = zy(d.y);
-  let labelHPix = zy(d.y + d.h) - zy(d.y);
+        // Default: place inside the group's full envelope
+        let labelYTop = zy(d.y);
+        let labelHPix = zy(d.y + d.h) - zy(d.y);
 
-  // NEW: if this is a custom GROUP and we have an anchor band, use that band for Y placement
-  if (d._isCustomGroup && Number.isFinite(d._labelAnchorY) && Number.isFinite(d._labelAnchorH)) {
-    labelYTop = zy(d._labelAnchorY);
-    labelHPix = zy(d._labelAnchorY + d._labelAnchorH) - zy(d._labelAnchorY);
-  }
+        // NEW: if this is a custom GROUP and we have an anchor band, use that band for Y placement
+        if (d._isCustomGroup && Number.isFinite(d._labelAnchorY) && Number.isFinite(d._labelAnchorH)) {
+          labelYTop = zy(d._labelAnchorY);
+          labelHPix = zy(d._labelAnchorY + d._labelAnchorH) - zy(d._labelAnchorY);
+        }
 
-  const maxByBand = labelHPix * LABEL_FONT_MAX_REL;
-  const fontPx = clamp(
-    labelHPix * LABEL_TO_BAND,
-    LABEL_FONT_MIN,
-    Math.min(LABEL_FONT_MAX_ABS, maxByBand)
-  );
+        const maxByBand = labelHPix * LABEL_FONT_MAX_REL;
+        const fontPx = clamp(
+          labelHPix * LABEL_TO_BAND,
+          LABEL_FONT_MIN,
+          Math.min(LABEL_FONT_MAX_ABS, maxByBand)
+        );
 
-  const labelSel = g.select("text.durationLabel")
-    .attr("x", Math.min(x0, x1) + 4)
-    .attr("y", labelYTop + labelHPix / 3)
-    .style("font-size", `${fontPx}px`)
-    // NEW: swap text when it's a custom group (use the anchor label text)
-    .text(d => (d._isCustomGroup && d._labelText) ? d._labelText : d.name);
+        const labelSel = g.select("text.durationLabel")
+          .attr("x", Math.min(x0, x1) + 4)
+          .attr("y", labelYTop + labelHPix / 3)
+          .style("font-size", `${fontPx}px`)
+          // NEW: swap text when it's a custom group (use the anchor label text)
+          .text(d => (d._isCustomGroup && d._labelText) ? d._labelText : (d.name ?? ""));
 
-  // Decide visibility after sizing
-  const bandW = Math.abs(x1 - x0);
-  const show = shouldShowDurationLabel({
-    d,
-    k,
-    bandW,
-    bandH: labelHPix,        // important: use the anchor band height for fit checks
-    labelSel
-  });
+        // Decide visibility after sizing
+        const bandW = Math.abs(x1 - x0);
+        const show = shouldShowDurationLabel({
+          d,
+          k,
+          bandW,
+          bandH: labelHPix,        // important: use the anchor band height for fit checks
+          labelSel
+        });
 
-  labelSel.style("display", show ? null : "none");
-});
-
-
-
-
-
+        labelSel.style("display", show ? null : "none");
+      });
 
       // segment hit rects
       gSeg.selectAll("rect.segmentHit").each(function (d) {
-        const x0 = zx(toAstronomical(d.start));
-        const x1 = zx(toAstronomical(d.end));
-        const yTop = zy(d.y);
-        const hPix = zy(d.y + d.h) - zy(d.y);
-        d3.select(this).attr("x", Math.min(x0, x1)).attr("y", yTop).attr("width", Math.abs(x1 - x0)).attr("height", hPix);
+        const r = bandRectPx(d, zx, zy);
+        d3.select(this)
+          .attr("x", r.x)
+          .attr("y", r.y)
+          .attr("width", r.w)
+          .attr("height", r.h);
       });
 
-      // Draw/update custom group polygons
       // Draw/update custom group polygons (rectilinear envelope, no diagonals)
-gCustom.selectAll("path.customGroup").each(function (o) {
-  const intervals = o._groupIntervals || [];
-  if (!intervals.length) {
-    // Fallback: simple rectangle
-    const x0 = zx(toAstronomical(o.start));
-    const x1 = zx(toAstronomical(o.end));
-    const yTop = zy(o.y);
-    const hPix = zy(o.y + o.h) - zy(o.y);
-    const d = `M ${Math.min(x0, x1)} ${yTop} H ${Math.max(x0, x1)} V ${yTop + hPix} H ${Math.min(x0, x1)} Z`;
-    
-    d3.select(this).attr("d", d);
-    return;
-  }
-  const dPath = groupIntervalsToPath(intervals, zx, zy);
- 
-  d3.select(this).attr("d", groupIntervalsToPath(intervals, zx, zy));
-});
-
+      gCustom.selectAll("path.customGroup").each(function (o) {
+        const intervals = o._groupIntervals || [];
+        if (!intervals.length) {
+          // Fallback: simple rectangle
+          const x0 = zx(toAstronomical(o.start));
+          const x1 = zx(toAstronomical(o.end));
+          const yTop = zy(o.y);
+          const hPix = zy(o.y + o.h) - zy(o.y);
+          const d = `M ${Math.min(x0, x1)} ${yTop} H ${Math.max(x0, x1)} V ${yTop + hPix} H ${Math.min(x0, x1)} Z`;
+          d3.select(this).attr("d", d);
+          return;
+        }
+        const dPath = groupIntervalsToPath(intervals, zx, zy);
+        d3.select(this).attr("d", dPath);
+      });
 
       // === Author-lane layout (stable across zoom) ===
-      const rDraw = TEXT_BASE_R * k;
-
       // Position circles using per-band author lanes
       gTexts.selectAll("circle.textDot").each(function (d) {
         const cx = zx(toAstronomical(d.when));
@@ -1562,17 +1855,43 @@ gCustom.selectAll("path.customGroup").each(function (o) {
         g.attr("transform", `translate(${cx},${cy})`);
         drawSlicesAtRadius(g, TEXT_BASE_R * k);
       });
+
+      // FATHERS: position triangles with zoom scaling
+      gFathers.selectAll("path.fatherMark").each(function (d) {
+  const cx = zx(toAstronomical(d.when));
+  const cy = zy(y0(d.y));
+
+  // use per-entry base radius:
+  const r = getFatherBaseR(d) * k * 2.2;
+
+  const path = triPathRight(cx, cy, r);
+  d3.select(this)
+    .attr("d", path)
+    .attr("data-cy", cy); // used by fatherAnchorClient
+});
+
+gFathers.selectAll("line.fatherMid").each(function (d) {
+  const cx = zx(toAstronomical(d.when));
+  const cy = zy(y0(d.y));
+  const r  = getFatherBaseR(d) * k * 2.2;
+
+  d3.select(this)
+    .attr("x1", cx).attr("x2", cx)
+    .attr("y1", cy - r).attr("y2", cy + r)
+    .attr("opacity", hasHistoricTag(d.historicMythicStatusTags) ? 1 : 0);
+});
+
     }
 
     function updateInteractivity(k) {
       const zoomedIn = k >= ZOOM_THRESHOLD;
 
       gOut.selectAll("rect.outlineRect")
-    .style("pointer-events", d => (d._isCustomGroup || d._hiddenCustom) ? "none" : (zoomedIn ? "none" : "all"));
+        .style("pointer-events", d => (d._isCustomGroup || d._hiddenCustom) ? "none" : (zoomedIn ? "none" : "all"));
       gSeg.selectAll("rect.segmentHit").style("pointer-events", zoomedIn ? "all" : "none");
       gTexts.selectAll("circle.textDot").style("pointer-events", zoomedIn ? "all" : "none");
       gCustom.selectAll("path.customGroup").style("pointer-events", zoomedIn ? "none" : "visibleFill");
-
+      gFathers.selectAll("path.fatherMark").style("pointer-events", zoomedIn ? "all" : "none"); // FATHERS
 
       if (!zoomedIn) {
         clearActiveSegment();
@@ -1695,38 +2014,37 @@ gCustom.selectAll("path.customGroup").each(function (o) {
     const svgSel = d3.select(svgRef.current);
 
     // FIRST DRAW using the chosen transform (persisted if available)
-     const initT = lastTransformRef.current ?? d3.zoomIdentity
-   .translate((innerWidth - innerWidth * MIN_ZOOM) / 2, (innerHeight - innerHeight * MIN_ZOOM) / 2)
-   .scale(MIN_ZOOM);
+    const initT = lastTransformRef.current ?? d3.zoomIdentity
+      .translate((innerWidth - innerWidth * MIN_ZOOM) / 2, (innerHeight - innerHeight * MIN_ZOOM) / 2)
+      .scale(MIN_ZOOM);
 
     apply(initT.rescaleX(x), initT.rescaleY(y0), initT.k);
     svgSel.call(zoom).call(zoom.transform, initT);
     updateInteractivity(initT.k);
 
     // Click-away to close cards / one-shot close for durations
-svgSel.on("click.clearActive", (ev) => {
-  // One-shot close for an open duration card
-  if (awaitingCloseClickRef.current) {
-    awaitingCloseClickRef.current = false;
-    clearActiveDuration();
-    return;
-  }
+    svgSel.on("click.clearActive", (ev) => {
+      // One-shot close for an open duration card
+      if (awaitingCloseClickRef.current) {
+        awaitingCloseClickRef.current = false;
+        clearActiveDuration();
+        return;
+      }
 
-  const el = ev.target;
-  const cl = el && el.classList;
+      const el = ev.target;
+      const cl = el && el.classList;
 
-  const isSeg       = cl && cl.contains("segmentHit");
-  const isOutline   = cl && cl.contains("outlineRect");
-  const isGroupPoly = cl && cl.contains("customGroup");
+      const isSeg       = cl && cl.contains("segmentHit");
+      const isOutline   = cl && cl.contains("outlineRect");
+      const isGroupPoly = cl && cl.contains("customGroup");
 
-  // Only clear if the click was NOT on a segment, NOT on a duration rect,
-  // and NOT on a custom group polygon.
-  if (!isSeg && !isOutline && !isGroupPoly) {
-    clearActiveSegment();
-    clearActiveDuration();
-  }
-});
-
+      // Only clear if the click was NOT on a segment, NOT on a duration rect,
+      // and NOT on a custom group polygon.
+      if (!isSeg && !isOutline && !isGroupPoly) {
+        clearActiveSegment();
+        clearActiveDuration();
+      }
+    });
 
     // Mark that we've initialized at least once
     didInitRef.current = true;
@@ -1746,6 +2064,7 @@ svgSel.on("click.clearActive", (ev) => {
     outlines,
     segments,
     textRows,
+    fatherRows,        // FATHERS: ensure updates
     width,
     height,
     innerWidth,
@@ -1774,6 +2093,7 @@ svgSel.on("click.clearActive", (ev) => {
           <g ref={customPolysRef} className="customPolys" /> {/* NEW: polygon layer under labels */}
           <g ref={outlinesRef} className="durations" />
           <g ref={segmentsRef} className="segments" />
+          <g ref={fathersRef} className="fathers" />        {/* FATHERS: triangles sit between segments and texts */}
           <g ref={textsRef} className="texts" />
         </g>
         <g ref={axisRef} className="axis" />
@@ -1793,6 +2113,17 @@ svgSel.on("click.clearActive", (ev) => {
           onClose={closeAll}
         />
       )}
+
+      {selectedFather && (
+   <FatherCard
+     d={selectedFather}
+     left={fatherCardPos.left}
+     top={fatherCardPos.top}
+     showMore={showMore}
+     setShowMore={setShowMore}
+     onClose={closeAll}
+   />
+ )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
+/* App shell / canvas */
 .appShell {
   width: 100vw;
   height: 100dvh;
@@ -21,7 +22,7 @@ body {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
-/* The SVG should occupy all available space */
+/* SVG should occupy all available space */
 .timelineSvg {
   display: block;
   width: 100%;
@@ -29,7 +30,6 @@ body {
   background: #ffffff;
 }
 
-/* Wrappers used by your App.jsx */
 .viewport {
   position: relative;
   width: 100vw;
@@ -58,25 +58,25 @@ body {
   stroke-width: 1;
   stroke-linecap: round;
   stroke-dasharray: 6 6;
-  vector-effect: non-scaling-stroke; /* stays crisp while zooming */
+  vector-effect: non-scaling-stroke;
   shape-rendering: crispEdges;
 }
 
-/* Duration labels (slight polish) */
+/* Duration labels */
 .durationLabel {
   user-select: none;
   -webkit-user-select: none;
   paint-order: stroke fill;
   stroke: rgba(255,255,255,0.7);
-  stroke-width: 2px; /* subtle halo for contrast over grid */
+  stroke-width: 2px;
 }
 
-/* Optional: wrapper positioning if you want UI elements inside */
-.timelineWrap {
-  position: relative;
-}
+/* Wrapper */
+.timelineWrap { position: relative; }
 
-/* ===== Tooltip base ===== */
+/* ============================
+   Tooltips
+   ============================ */
 .tl-tooltip{
   position: absolute;
   background: rgba(20,20,24,0.95);
@@ -89,9 +89,9 @@ body {
   line-height:1.25;
   box-shadow:0 6px 18px rgba(0,0,0,0.25);
   max-width:280px;
-  z-index: 1000;                /* sit above SVG */
+  z-index: 1000;
   white-space: nowrap;
-  pointer-events: none;         /* don’t steal hover */
+  pointer-events: none;
   transform: translate3d(0,0,0);
   transition: opacity 120ms ease;
   will-change: left, top;
@@ -102,8 +102,6 @@ body {
   flex-direction: column;
   align-items: center;
 }
-
-/* Tooltip content */
 .tl-tip-title{
   font-weight:600;
   margin-bottom:4px;
@@ -115,8 +113,6 @@ body {
   margin-left: auto;
   margin-right: auto;
 }
-
-/* Add a readable paragraph block for long notes */
 .tl-tip-note {
   margin-top: 4px;
   font-size: 12px;
@@ -124,39 +120,35 @@ body {
   color: var(--muted);
 }
 
-/* ===== TYPE: AUTHOR tooltip ===== */
+/* Tooltip variants */
 .tl-author {
-  --bgc: rgba(17,24,39,0.95); /* slate-900-ish */
+  --bgc: rgba(17,24,39,0.95);
   background: var(--bgc);
   color: #fff;
   border: 1px solid var(--accent, rgba(255,255,255,0.22));
   box-shadow: 0 8px 22px rgba(0,0,0,0.25);
 }
-
-/* ===== TYPE: TEXT tooltip ===== */
 .tl-text {
-  --bgc: rgba(15,23,42,0.95); /* slightly different dark */
+  --bgc: rgba(15,23,42,0.95);
   background: var(--bgc);
   color: #f8fafc;
   border: 1px dashed var(--accent, rgba(255,255,255,0.18));
   box-shadow: 0 8px 22px rgba(0,0,0,0.22);
 }
-
-/* ===== TYPE: SEGMENT tooltip ===== */
 .tl-seg {
   --bgc: #ffffff;
   background: #ffffff;
   color: #0f172a;
   border: 2px solid var(--accent, #888);
   box-shadow: 0 12px 28px rgba(0,0,0,0.18);
-  white-space: normal;  /* allow wrapping for longer labels/notes */
+  white-space: normal;
   max-width: 320px;
-  margin-top: 8px;      /* visual gap from segment bar */
-  text-align: left; 
+  margin-top: 8px;
+  text-align: left;
 }
 .tl-seg::after {
   width: 12px;
-  height: 12px;       /* beefier arrow for segments */
+  height: 12px;
   border-left-width: 2px;
   border-bottom-width: 2px;
 }
@@ -164,48 +156,37 @@ body {
   border-right-width: 2px;
   border-top-width: 2px;
 }
-
-/* ===== TYPE: DURATION tooltip (durationBox) ===== */
 .tl-duration{
   --bgc: #ffffff;
   background: var(--bgc);
   color: #0f172a;
   border: 2px solid var(--accent, #b3b3b3);
   box-shadow: 0 12px 28px rgba(0,0,0,0.18);
-  white-space: normal;           /* wrap long “broad note” text */
-  max-width: 440px;              /* a bit wider for essays */
-  text-align: left;              /* paragraphs read better left-aligned */
+  white-space: normal;
+  max-width: 440px;
+  text-align: left;
   padding: 10px 12px;
-  margin-top: 8px;           
+  margin-top: 8px;
 }
-.tl-duration .tl-tip-title{
-  margin-bottom: 6px;
-}
-.tl-duration .tl-tip-sub{
-  margin-bottom: 6px;
-  opacity: 0.9;
-}
+.tl-duration .tl-tip-title{ margin-bottom: 6px; }
+.tl-duration .tl-tip-sub{ margin-bottom: 6px; opacity: 0.9; }
 
-/* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .tl-tooltip { transition: none; }
 }
 
-/* ===========================================================
-   TextCard (click-to-open details panel for a text dot)
-   =========================================================== */
-
-/* Centered, near-fullscreen modal */
+/* ============================
+   TextCard (modal)
+   ============================ */
 .textCard {
-  position: fixed !important;          /* ignore inline left/top */
+  position: fixed !important;
   left: 50% !important;
   top: 50% !important;
   transform: translate(-50%, -50%);
-  width: min(960px, 92vw); 
+  width: min(960px, 92vw);
   max-width: 96vw;
   max-height: min(92dvh, 100dvh - 32px);
   overflow: auto;
-
   background: var(--bg);
   color: var(--text);
   border: 1px solid rgba(0,0,0,0.08);
@@ -214,40 +195,20 @@ body {
     0 20px 40px rgba(0,0,0,0.18),
     0 2px 8px rgba(0,0,0,0.06);
   padding: 18px 20px 16px 20px;
-  z-index: 1200;                        /* above tooltips */
+  z-index: 1200;
   pointer-events: auto;
 }
-
-.textCard-title {
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.2;
-  margin: 2px 6px 12px 0;              /* room for close button */
-  word-break: break-word;
-}
-
-/* New: title row that places category on the right */
+.textCard-title { font-size: 20px; font-weight: 800; line-height: 1.2; margin: 2px 6px 12px 0; word-break: break-word; }
 .textCard-titleCombo {
   display: flex;
   justify-content: center;
   align-items: baseline;
   gap: 1px;
   text-align: center;
-  margin-bottom: 8px; /* same spacing as before */
+  margin-bottom: 8px;
 }
-
-.textCard-sep {
-  opacity: 0.6;      /* subtle divider */
-  margin: 0 9px;
-}
-.textCard-category {
-  margin-left: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  opacity: 0.8;
-  white-space: nowrap;
-}
-
+.textCard-sep { opacity: 0.6; margin: 0 9px; }
+.textCard-category { margin-left: 6px; font-size: 12px; font-weight: 700; opacity: 0.8; white-space: nowrap; }
 .textCard-close {
   position: absolute;
   top: 8px;
@@ -264,108 +225,41 @@ body {
   line-height: 1;
   cursor: pointer;
 }
+.textCard-close:hover { background: #f3f4f6; border-color: #e5e7eb; }
+.textCard-row { display: flex; align-items: baseline; gap: 10px; padding: 6px 0; }
+.textCard-row.is-tags .textCard-label { display: flex; align-items: center; }
+.textCard-row.is-tags { align-items: center; }
+.textCard-row .textCard-value { display: flex; align-items: center; }
+.textCard-row.is-centered .textCard-value { display: block; width: 100%; text-align: center; }
+.textCard-label { flex: 0 0 160px; color: var(--muted); font-weight: 600; font-size: 12px; }
+.textCard-value { flex: 1 1 auto; font-size: 14px; line-height: 1.45; }
+.textCard-meta { margin: 6px 0 8px; font-size: 12px; line-height: 1.4; color: var(--muted); text-align: center; }
+.textCard-tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.textCard-tag { display: inline-block; padding: 6px 10px; font-size: 12px; line-height: 1; border-radius: 999px; background: #f3f4f6; color: #111827; border: 1px solid #e5e7eb; }
+.textCard-moreToggle { margin-top: 12px; }
+.textCard-button { appearance: none; border: 1px solid #e5e7eb; background: #ffffff; color: #111827; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.textCard-button:hover { background: #f9fafb; }
+.textCard-more { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e5e7eb; }
 
-.textCard-row .textCard-value {
-  display: flex;
-  align-items: center;   /* vertically center plain text with the label */
+/* ============================
+   Backdrop + Blur when modal open
+   ============================ */
+.timelineSvg.isModalOpen {
+  filter: blur(2px) saturate(1) brightness(1);
+  transition: filter 120ms ease;
+  pointer-events: none;
 }
-
-.textCard-close:hover {
-  background: #f3f4f6;
-  border-color: #e5e7eb;
-}
-
-.textCard-row.is-tags .textCard-label {
-  display: flex;
-  align-items: center;
-}
-
-.textCard-row.is-tags {
-  align-items: center;
-}
-
-.textCard-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 6px 0;
-}
-
-/* Center the description row’s value text */
-.textCard-row.is-centered .textCard-value {
-  display: block;
-  width: 100%;
-  text-align: center;
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(1.5px);
+  z-index: 1150;
 }
 
-.textCard-label {
-  flex: 0 0 160px;
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.textCard-value {
-  flex: 1 1 auto;
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-/* Meta one-liner after description */
-.textCard-meta {
-  margin: 6px 0 8px;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--muted);
-  text-align: center;
-}
-
-/* Tag pills */
-.textCard-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.textCard-tag {
-  display: inline-block;
-  padding: 6px 10px;
-  font-size: 12px;
-  line-height: 1;
-  border-radius: 999px;
-  background: #f3f4f6;
-  color: #111827;              /* can be overridden inline */
-  border: 1px solid #e5e7eb;   /* can be overridden inline */
-}
-
-/* Divider + toggle */
-.textCard-moreToggle {
-  margin-top: 12px;
-}
-
-.textCard-button {
-  appearance: none;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #111827;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.textCard-button:hover {
-  background: #f9fafb;
-}
-
-.textCard-more {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed #e5e7eb;
-}
-
-/* --- Optional: AuthorCard styling (mirror of TextCard) --- */
-.authorCard {
+/* ============================
+   FatherCard (modal) + shared rows
+   ============================ */
+.fatherCard {
   position: fixed !important;
   left: 50% !important;
   top: 50% !important;
@@ -386,23 +280,77 @@ body {
   pointer-events: auto;
 }
 
-.timelineSvg.isModalOpen {
-  filter: blur(2px) saturate(1) brightness(1);
-  transition: filter 120ms ease;
-  pointer-events: none; /* block hover/click/zoom */
+/* Header + rows reused by FatherCard */
+.tl-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 8px;
 }
-
-/* Backdrop that catches outside clicks */
-.modalBackdrop {
-  position: fixed;
-  inset: 0;
-  backdrop-filter: blur(1.5px);
-  z-index: 1150; /* below cards (1200), above tooltips (1000) */
+.tl-card-title {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  padding: 0 28px;
+  word-break: break-word;
 }
+.tl-card-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.tl-card-close:hover { background: #f3f4f6; border-color: #e5e7eb; }
 
-/* Mobile-friendly layout (true fullscreen-y) */
+.tl-card-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+}
+.tl-card-label { flex: 0 0 140px; color: var(--muted); font-weight: 600; font-size: 12px; }
+.tl-card-value { flex: 1 1 auto; font-size: 14px; line-height: 1.45; }
+
+/* NEW: make FatherCard rows inherit TextCard’s baseline/centered behavior */
+.tl-card-row .tl-card-value { display: flex; align-items: center; }                /* baseline alignment */
+.tl-card-row.is-centered .tl-card-value { display: block; width: 100%; text-align: center; }  /* centered description */
+
+.tl-card-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e5e7eb;
+}
+.tl-card-btn {
+  appearance: none;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tl-card-btn:hover { background: #f9fafb; }
+
+/* Mobile tweaks */
 @media (max-width: 640px) {
-  .textCard {
+  .textCard,
+  .fatherCard {
     width: 96vw;
     max-width: 96vw;
     max-height: 94dvh;
@@ -410,28 +358,6 @@ body {
     border-radius: 14px;
     z-index: 1200;
   }
-  .authorCard {
-    width: 96vw;
-    max-width: 96vw;
-    max-height: 94dvh;
-    padding: 16px 14px;
-    border-radius: 14px;
-    z-index: 1200;
-  }
-  .textCard-label {
-    flex-basis: 130px;
-  }
-  .textCard-title {
-    font-size: 18px;
-    margin-right: 32px;
-  }
-
-  .textCard-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(15,23,42,0.4);
-    backdrop-filter: blur(2px);
-    z-index: 1100;
-    display: none;
-  }
+  .textCard-label { flex-basis: 130px; }
+  .textCard-title { font-size: 18px; margin-right: 32px; }
 }

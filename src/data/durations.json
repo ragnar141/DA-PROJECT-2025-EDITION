@@ -73,7 +73,7 @@
     "yRel": 0.301,
     "hRel": 0.08,
     "broad note": "The roots of Mesopotamian civilization emerged with early farmers and foragers along the Tigris and Euphrates, who gradually formed more centralized settlements. First Sumerian city-states like Uruk and Lagash developed economies administered in ziggurats (local temples), each ruled under the patronage of its own deity. Gradually, writing, law, and kingship emerged as new tools of order. Over centuries, this system was repeatedly seized by foreign warrior kings coming from surrounding hills and mountains—Akkadians, Amorites, Kassites, Assyrians, and Babylonians—whose empires rose and fell amidst political turbulence. Despite the upheavals, Sumerian roots remained foundational, influencing neighboring states and sustaining priesthoods and scribal traditions that outlasted dynasties. In 539 BCE Cyrus of Persia conquered Babylon yet preserved its temples and rituals, whose authority endured until Alexander the Great’s conquest.",
-    "broad lifespan": "c. 5000 BCE - 330 BCE",
+    "broad lifespan": "c. 5000 BCE - 331 BCE",
     "segments": [
       {
         "start": -5000,
@@ -157,7 +157,7 @@
     "yRel": 0.181,
     "hRel": 0.02,
     "broad note": "Anatolian civilization emerged from early farming and metallurgical villages on the central plateau and western coasts, uniquely shaped by its position between Mesopotamia, the Aegean, and the Caucasus. From the beginning, its societies carried a strongly martial character, forged by constant movement of peoples and the need to defend upland fortresses and trade corridors. By the third and second millennia BCE, Hattian, Hittite, Hurrian, and Luwian groups developed fortified capitals, warrior aristocracies, and ritual traditions that blended local cults with Mesopotamian influence. The Hittite Empire became Anatolia’s first great power, ruling through kings who were both warriors and priests, and extending influence across Syria and the Aegean before succumbing to Bronze Age collapse. In the first millennium, Phrygians, Urartians, Lydians, and Ionian Greeks continued this legacy of martial resilience, competing for dominance while serving as intermediaries between East and West. By the mid-6th century BCE, Anatolia fell to the expanding Achaemenid Empire, and after two centuries of Persian rule its warrior traditions were finally drawn into the Hellenistic world.",
-    "broad lifespan": "c. 5000 BCE - 330 BCE",
+    "broad lifespan": "c. 5000 BCE - 332 BCE",
     "segments": [
       {
         "start": -5000,
@@ -209,7 +209,7 @@
       },
       {
         "start": -546,
-        "end": -330,
+        "end": -332,
         "label": "Achaemenid Persian Anatolia",
         "note": "After defeating Croesus of Lydia in 546 BCE, Cyrus the Great brought Anatolia into the Achaemenid Persian Empire. The land was divided into satrapies, with Sardis as a key administrative center on the Royal Road linking Anatolia to the imperial core at Susa. Persian rule allowed local cults and traditions to persist while introducing elements of Zoroastrian practice, creating a layered symbolic order. The Ionian Revolt (499–494 BCE) and the subsequent Greco-Persian Wars made Anatolia a contested frontier between East and West. Persian authority remained until Alexander the Great’s campaigns (334–330 BCE), which drew Anatolia fully into the Hellenistic world."
       }
@@ -499,10 +499,10 @@
     "yRel": 0.181,
     "hRel": 0.02,
     "broad note": "Greek civilization took shape from the seafaring Minoans of Crete and the warrior Mycenaeans of the mainland, whose fusion around 1450 BCE generated a culture dominated by heroic elites before collapsing into a centuries-long dark age. Out of this silence arose the Archaic and Classical city-states, where Athens, Sparta, and their rivals developed strikingly different models of governance, ritual, and war, while philosophy, drama, and art flourished in the competitive civic arena. United briefly against Persia but fractured by internecine wars, the Greeks forged enduring traditions of political debate, inquiry, and aesthetics that influenced the wider Mediterranean. Macedon’s rise under Philip II and Alexander the Great extended this warrior-intellectual tradition far beyond Greece, reshaping the Near Eastern landscape with new cities, libraries, and civic institutions. The Hellenistic world that followed was cosmopolitan, spanning from Egypt and the Levant to Bactria and India, where Greek language, thought, and art intermingled with older traditions in hubs such as Alexandria and Pergamon. This synthesis, absorbed by Rome after 146 BCE, ensured that the Greek canon—myth, philosophy, political theory, and science—remained foundational to Mediterranean and global culture.",
-    "broad lifespan": "c. 330 BCE - 30 BCE",
+    "broad lifespan": "c. 332 BCE - 30 BCE",
     "segments": [
       {
-        "start": -330,
+        "start": -332,
         "end": -250,
         "label": "Early Hellenistic Anatolia",
         "note": "Alexander’s campaigns dismantled Achaemenid satrapal authority in Asia Minor. He and his successors founded new cities, installed Greek civic institutions, and encouraged the settlement of Macedonian veterans. The coast, long Hellenized, integrated quickly, while the interior (Phrygia, Cappadocia) remained culturally resistant. The early Seleucid kings and the Attalids of Pergamon began carving out spheres of influence. Symbolically, Anatolia became a patchwork frontier, where Greek poleis thrived along the coast while indigenous cults and priestly structures persisted inland."
@@ -559,10 +559,10 @@
     "yRel": 0.261,
     "hRel": 0.04,
     "broad note": "Greek civilization took shape from the seafaring Minoans of Crete and the warrior Mycenaeans of the mainland, whose fusion around 1450 BCE generated a culture dominated by heroic elites before collapsing into a centuries-long dark age. Out of this silence arose the Archaic and Classical city-states, where Athens, Sparta, and their rivals developed strikingly different models of governance, ritual, and war, while philosophy, drama, and art flourished in the competitive civic arena. United briefly against Persia but fractured by internecine wars, the Greeks forged enduring traditions of political debate, inquiry, and aesthetics that influenced the wider Mediterranean. Macedon’s rise under Philip II and Alexander the Great extended this warrior-intellectual tradition far beyond Greece, reshaping the Near Eastern landscape with new cities, libraries, and civic institutions. The Hellenistic world that followed was cosmopolitan, spanning from Egypt and the Levant to Bactria and India, where Greek language, thought, and art intermingled with older traditions in hubs such as Alexandria and Pergamon. This synthesis, absorbed by Rome after 146 BCE, ensured that the Greek canon—myth, philosophy, political theory, and science—remained foundational to Mediterranean and global culture.",
-    "broad lifespan": "c. 330 BCE - 30 BCE",
+    "broad lifespan": "c. 332 BCE - 30 BCE",
     "segments": [
       {
-        "start": -330,
+        "start": -332,
         "end": -200,
         "label": "Early Hellenistic Levant",
         "note": "After Alexander’s death, the Levant (Phoenicia, Judea, Coele-Syria) became a key battleground in the wars of the Diadochi. Control shifted repeatedly between the Ptolemaic dynasty of Egypt and the Seleucid Empire, with cities and communities often caught in between. Phoenician ports like Tyre and Sidon thrived as naval and commercial bases, while Judea oscillated between rulers, navigating foreign domination through local priestly authority. This period is marked by imperial tug-of-war and the entrenchment of Greek influence through garrisons, colonies, and cultural institutions, yet local traditions — Canaanite-derived cults, Yahwistic religion — persisted beneath the surface."
@@ -643,8 +643,8 @@
   },
   {
   "id": "carthaginian-composite",
-  "name": "Libyan",
-  "expanded name": "Libyan (North-African/Berber/Punic/Carthaginian)",
+  "name": "North-African",
+  "expanded name": "North-African (Libyan/Berber/Punic/Carthaginian)",
   "color": "#f97316ff",
   "yRel": 0.091,
   "hRel": 0.03,
@@ -816,7 +816,7 @@
   ]
 },
  {
-    "id": "custom-roman-carthoginian-composite",
+    "id": "custom-roman-carthaginian-composite",
     "name": "Roman",
     "expanded name": "Roman (Italic/Etruscan/Latin/Roman)",
     "color": "#000000ff",
