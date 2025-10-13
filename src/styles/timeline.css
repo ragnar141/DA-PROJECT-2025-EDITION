@@ -2,6 +2,13 @@
   --bg: #ffffff;
   --text: #111827;
   --muted: #4b5563;
+
+  /* Font variables */
+  --font-ui: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: "Literata", Georgia, "Times New Roman", serif;
+
+  /* How much to push card content downward (keeps index/close fixed) */
+  --card-content-offset: 14px; /* adjust to taste */
 }
 
 /* Fill the viewport */
@@ -10,7 +17,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family: var(--font-ui);
 }
 
 /* App shell / canvas */
@@ -84,7 +91,7 @@ body {
   border:1px solid rgba(255,255,255,0.12);
   border-radius:8px;
   padding:8px 10px;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size:12px;
   line-height:1.25;
   box-shadow:0 6px 18px rgba(0,0,0,0.25);
@@ -194,11 +201,20 @@ body {
   box-shadow:
     0 20px 40px rgba(0,0,0,0.18),
     0 2px 8px rgba(0,0,0,0.06);
-  padding: 18px 20px 16px 20px;
+  /* push content downward while keeping absolute index/close fixed */
+  padding: calc(18px + var(--card-content-offset)) 20px 16px 20px;
   z-index: 1200;
   pointer-events: auto;
+  font-family: var(--font-ui);
 }
-.textCard-title { font-size: 20px; font-weight: 800; line-height: 1.2; margin: 2px 6px 12px 0; word-break: break-word; }
+.textCard-title {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 2px 6px 12px 0;
+  word-break: break-word;
+  font-family: var(--font-heading);
+}
 .textCard-titleCombo {
   display: flex;
   justify-content: center;
@@ -235,11 +251,42 @@ body {
 .textCard-value { flex: 1 1 auto; font-size: 14px; line-height: 1.45; }
 .textCard-meta { margin: 6px 0 8px; font-size: 12px; line-height: 1.4; color: var(--muted); text-align: center; }
 .textCard-tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.textCard-tag { display: inline-block; padding: 6px 10px; font-size: 12px; line-height: 1; border-radius: 999px; background: #f3f4f6; color: #111827; border: 1px solid #e5e7eb; }
+.textCard-tag {
+  display: inline-block;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  font-family: var(--font-ui);
+}
 .textCard-moreToggle { margin-top: 12px; }
 .textCard-button { appearance: none; border: 1px solid #e5e7eb; background: #ffffff; color: #111827; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
 .textCard-button:hover { background: #f9fafb; }
 .textCard-more { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e5e7eb; }
+
+/* Subtle left-aligned index for TextCard & FatherCard */
+.textCard-index {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-size: 12px;
+  font-weight: 500;     /* thinner */
+  opacity: 0.6;         /* faded */
+  color: var(--muted);
+  letter-spacing: 0.2px;
+}
+
+@media (max-width: 640px) {
+  .textCard-index {
+    top: 8px;
+    left: 10px;
+    font-size: 12px;
+  }
+}
+
 
 /* ============================
    Backdrop + Blur when modal open
@@ -275,9 +322,11 @@ body {
   box-shadow:
     0 20px 40px rgba(0,0,0,0.18),
     0 2px 8px rgba(0,0,0,0.06);
-  padding: 18px 20px 16px 20px;
+  /* push content downward while keeping absolute index/close fixed */
+  padding: calc(18px + var(--card-content-offset)) 20px 16px 20px;
   z-index: 1200;
   pointer-events: auto;
+  font-family: var(--font-ui);
 }
 
 /* Header + rows reused by FatherCard */
@@ -295,6 +344,7 @@ body {
   text-align: center;
   padding: 0 28px;
   word-break: break-word;
+  font-family: var(--font-heading);
 }
 .tl-card-close {
   position: absolute;
@@ -354,11 +404,11 @@ body {
     width: 96vw;
     max-width: 96vw;
     max-height: 94dvh;
-    padding: 16px 14px;
+    /* keep content offset on mobile too, but you can dial it back if needed */
+    padding: calc(16px + var(--card-content-offset)) 14px 14px 14px;
     border-radius: 14px;
     z-index: 1200;
   }
   .textCard-label { flex-basis: 130px; }
   .textCard-title { font-size: 18px; margin-right: 32px; }
 }
-

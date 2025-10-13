@@ -17,19 +17,11 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
       </div>
     );
 
-  // Only the Symbolic System row should pick up the accent color from the dot (d.color)
-  // ⬇️ Replace ONLY the SymbolicTagRow in TextCard with this
   const SymbolicTagRow = ({ label, value }) => {
     const tags = splitTags(value);
     if (!tags.length) return null;
-
-    // d.colors comes from Timeline: one color per symbolic system tag
     const colors = Array.isArray(d.colors) && d.colors.length ? d.colors : [];
-
-    // picks the color for tag i; falls back to last known color, then d.color, then neutral
-    const colorFor = (i) =>
-      colors[i] || colors[colors.length - 1] || d.color || "#444";
-
+    const colorFor = (i) => colors[i] || colors[colors.length - 1] || d.color || "#444";
     return (
       <div className="textCard-row is-tags">
         <span className="textCard-label">{label}</span>
@@ -48,30 +40,25 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
     );
   };
 
-  const showAuthor = d.authorName && d.authorName !== "-";
   const metaLocation = d.originalGeographicalLocation || d.originalGeo;
-
-  // 👉 Build the title as "Index Name" (index is optional; no extra space if missing)
   const indexStr = (d.textIndex ?? "").toString().trim();
-  const titleLine = [indexStr, d.title].filter(Boolean).join(" ");
+  const titleOnly = d.title || "";
 
   return (
     <div className="textCard" style={{ position: "absolute", left, top }}>
-      <button className="textCard-close" onClick={onClose} aria-label="Close">
-        ×
-      </button>
+      {/* left-aligned, subtle index */}
+      {indexStr && <span className="textCard-index">{indexStr}</span>}
 
-      {/* Title + Category centered with a dash */}
+      <button className="textCard-close" onClick={onClose} aria-label="Close">×</button>
+
       <div className="textCard-titleCombo">
-        <span className="textCard-title">{titleLine}</span>
+        <span className="textCard-title">{titleOnly}</span>
         {d.category && <span className="textCard-sep"> - </span>}
-        {d.category && <span className="textCard-category">({d.category})</span>}
+        {d.category && <span className="textCard-category">{d.category}</span>}
       </div>
 
-      {/* Centered description */}
       <Row value={d.shortDescription} className="is-centered" />
 
-      {/* Meta one-liner after description */}
       {(d.displayDate || metaLocation || d.originalLanguage) && (
         <div className="textCard-meta">
           {`composed in ${d.displayDate || "—"} in ${metaLocation || "—"}, in ${
@@ -81,7 +68,6 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
         </div>
       )}
 
-      {/* Symbolic System uses accent color; ensure its wrapper aligns */}
       <SymbolicTagRow label="Symbolic System(s):" value={d.symbolicSystemTags} />
       <Row label="Comtean framework:" value={d.comteanFramework} />
       <Row label="Access Level:" value={d.accessLevel} />
@@ -102,9 +88,7 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
             <span className="textCard-label">Arts & Sciences:</span>
             <div className="textCard-tags">
               {splitTags(d.artsAndSciencesTags).map((t, i) => (
-                <span key={`as-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`as-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -113,9 +97,7 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
             <span className="textCard-label">Metaphysical:</span>
             <div className="textCard-tags">
               {splitTags(d.metaphysicalTags).map((t, i) => (
-                <span key={`m-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`m-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -124,9 +106,7 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
             <span className="textCard-label">Jungian Archetypes:</span>
             <div className="textCard-tags">
               {splitTags(d.jungianArchetypesTags).map((t, i) => (
-                <span key={`ja-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`ja-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -135,9 +115,7 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
             <span className="textCard-label">Neumann Stages:</span>
             <div className="textCard-tags">
               {splitTags(d.neumannStagesTags).map((t, i) => (
-                <span key={`ns-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`ns-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -146,9 +124,7 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
             <span className="textCard-label">Socio-political:</span>
             <div className="textCard-tags">
               {splitTags(d.socioPoliticalTags).map((t, i) => (
-                <span key={`sp-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`sp-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -157,9 +133,7 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
             <span className="textCard-label">Literary Forms:</span>
             <div className="textCard-tags">
               {splitTags(d.literaryFormsTags).map((t, i) => (
-                <span key={`lf-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`lf-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -168,9 +142,7 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
             <span className="textCard-label">Literary Content:</span>
             <div className="textCard-tags">
               {splitTags(d.literaryContentTags).map((t, i) => (
-                <span key={`lc-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`lc-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>

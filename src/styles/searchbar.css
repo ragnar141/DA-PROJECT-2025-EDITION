@@ -5,16 +5,18 @@
   left: 50%;
   transform: translateX(-50%);
   width: min(600px, 92vw);
-  z-index: 2000; /* above the SVG */
+  z-index: 2000; /* base layer for the search UI */
   pointer-events: none; /* popover/input will re-enable */
+  --pop-gap: 0px;
 }
 
 /* Inherit the app's font everywhere in the search UI */
 .sb-wrap, .sb-box, .sb-input, .sb-popover, .sb-item, .sb-empty,
-.sb-title, .sb-sub, .sb-desc {
+.sb-title, .sb-sub, .sb-desc, .sb-line {
   font-family: inherit;
 }
 
+/* === Search pill === */
 .sb-box {
   display: flex;
   align-items: center;
@@ -26,6 +28,8 @@
   border-radius: 9999px;          /* pill shape */
   padding: 8px 8px 8px 12px;      /* tighter, right padding small—button provides final edge */
   pointer-events: auto;
+  position: relative;             /* keep the bar ABOVE the backdrop */
+  z-index: 2110;                  /* > .sb-backdrop (2050) */
 }
 
 .sb-icon {
@@ -36,7 +40,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transform: translateY(-2px);    /* tweak -1px to -3px as needed */
+  transform: translateY(-2px);   /* tweak -1px to -3px as needed */
 }
 
 .sb-input {
@@ -51,6 +55,7 @@
   padding: 1px 2px;
 }
 
+/* Optional "go" button (if you add it) */
 .sb-go {
   flex: 0 0 auto;
   display: inline-flex;
@@ -64,7 +69,6 @@
   color: #374151;
   cursor: pointer;
 }
-
 .sb-go svg { width: 18px; height: 18px; }
 .sb-go:hover  { background: #e5e7eb; }
 .sb-go:active { background: #d1d5db; }
@@ -73,27 +77,46 @@
 /* Focus ring on the whole pill when input is focused */
 .sb-box:focus-within { border-color: rgba(37,99,235,0.35); }
 
-/* Popover */
+/* === Popover === */
 .sb-popover {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + 8px);      /* sits just under the pill */
+  top: calc(100% + var(--pop-gap)); /* sits a bit lower below the pill */
   pointer-events: auto;
-  z-index: 2100;
-
+  z-index: 2120;                     /* above backdrop and the bar */
   margin-top: 10px;
   background: rgba(255,255,255,0.98);
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 14px;
 
   /* scrolling */
-  max-height: 60vh;
+  /* Fallback for browsers without dynamic viewport units */
+  max-height: calc(100vh - 120px);    /* taller so more results fit */
   overflow-y: auto;
+  overflow-x: hidden;                 /* vertical-only scrolling */
   overscroll-behavior: contain;
-  padding-right: 2px;         /* gutter so text doesn't sit under the scrollbar */
+  padding-right: 2px;                 /* gutter so text doesn't sit under the scrollbar */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); /* avoid last-item clipping */
+  display: block;                     /* single-flow list (no grid) */
+  box-sizing: border-box;             /* include padding in width calc */
+}
 
-  display: grid;
+/* Ensure inner content never forces horizontal overflow */
+.sb-item,
+.sb-line,
+.sb-title-text,
+.sb-category,
+.sb-desc,
+.sb-right-meta,
+.sb-index {
+  max-width: 100%;
+}
+
+/* Long unbroken strings won’t cause horizontal overflow */
+.sb-desc {
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .sb-empty {
@@ -102,12 +125,9 @@
   font-size: 14px;
 }
 
-/* Item: variable height, content-driven */
+/* === Item (single-flow; no two-column look) === */
 .sb-item {
-  display: grid;
-  grid-template-columns: 18px 1fr;
-  grid-gap: 10px;
-  align-items: flex-start;     /* let tall text define height; icon sticks to top */
+  display: block;             /* block so lines stack naturally */
   text-align: left;
   width: 100%;
   border: none;
@@ -115,80 +135,114 @@
   padding: 10px 12px;
   cursor: pointer;
 }
-
 .sb-item + .sb-item { border-top: 1px solid rgba(0,0,0,0.06); }
 
 .sb-item.is-hover { background: #f5f7ff; }
 .sb-item:focus-visible { outline: 2px solid #2563eb; outline-offset: -2px; }
 
-/* Glyph container matches 16x16 inline SVGs and pins to top-left */
-.sb-dot {
+/* === New "line" layout === */
+.sb-line {
+  display: block;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+}
+
+/* Make the first line a flex row and vertically center everything */
+.sb-line1 {
+  display: flex;
+  align-items: center;
+  gap: 0;                /* rely on .sb-sep for spacing */
+  font-weight: 600;
+  flex-wrap: wrap;       /* allow wrap for narrow widths */
+  min-width: 0;          /* allow children to shrink; avoids horizontal push */
+}
+
+/* Space under line 1 before line 2 */
+.sb-line1 + .sb-line2 {
+  margin-top: 4px;      /* slight separation */
+}
+
+/* Line 2 needs breathing room so underlays/descenders don't clip (esp. first item) */
+.sb-item .sb-line2 {
+  line-height: 1.3;     /* tiny lift */
+  padding-bottom: 2px;  /* cushion to prevent bottom clipping */
+  overflow: visible;    /* allow highlight underlay to render fully */
+}
+
+/* Category line text color/weight */
+.sb-line2 .sb-category { color: #5a5a5a; font-weight: 500; }
+
+/* Inline icon on the first line */
+.sb-inline-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 3px;
   width: 16px;
   height: 16px;
-  display: inline-flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  margin-top: 2px;             /* optical alignment */
+  transform: none;
+  vertical-align: middle;
 }
 
-.sb-main { min-width: 0; }
-
-/* Title stays single-line; descriptions expand fully */
-.sb-title {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.sb-type {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: #eef0f6;
-  color: #3b3f58;
-  text-transform: uppercase;
-  letter-spacing: .02em;
-}
-
+/* Title text */
 .sb-title-text {
-  flex: 1 1 auto;
-  min-width: 0;
+  display: inline-block;
+  max-width: 100%;
   white-space: nowrap;
   font-size: 15px;
   font-weight: 600;
   color: #111;
   overflow: hidden;
   text-overflow: ellipsis;
+  position: relative;
+  top: 0px;
+  min-width: 0;          /* enables proper shrinking/ellipsis in flex line */
 }
 
-.sb-index {
-  flex: 0 0 auto;
-  margin-left: 8px;
-  font-size: 12px;
-  opacity: 0.55;        /* reduced opacity */
-  white-space: nowrap;  /* keep it on one line */
+/* Light utility (for “by”, “born around”, etc.) */
+.sb-light {
+  color: #6b7280;
+  font-weight: 500;
+  position: relative;
+  top: 0.5px;
 }
 
-/* Subtitle/category line can remain single-line */
-.sb-sub {
-  margin-top: 3px;
-  font-size: 12.5px;
-  color: #444;
-  display: flex;
-  gap: 6px;
-  overflow: hidden;
+/* Tiny spacing chunks between inline bits */
+.sb-sep {
+  display: inline-block;
+  width: 6px;
+}
+
+/* When author line exists, add a bit more space before the next line */
+.sb-author-line + .sb-line3 {
+  margin-top: 4px;  /* tweak 2–6px to taste */
+}
+
+/* Author/date styling */
+.sb-author {
+  display: inline;
   white-space: nowrap;
+  position: relative;
+  top: 0.5px;
+}
+.sb-date {
+  display: inline;
+  white-space: nowrap;
+  color: #374151;
+  font-weight: 500;
+  position: relative;
+  top: 0.5px;
+}
+
+/* Category line (single line with ellipsis) */
+.sb-category {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.sb-subtitle { color: #333; }
-.sb-category { color: #5a5a5a; }
-.sb-dotsep  { color: #aaa; }
 
 /* FULL DESCRIPTION — no clamp, wraps naturally, variable height */
 .sb-desc {
@@ -196,12 +250,64 @@
   font-size: 12.5px;
   color: #333;
   line-height: 1.35;
-  white-space: normal;         /* allow wrapping */
-  overflow: visible;           /* no truncation */
-  display: block;              /* ensure proper flow */
-  -webkit-line-clamp: unset;   /* kill any previous clamping */
+  white-space: normal;
+  overflow: visible;
+  display: block;
+  -webkit-line-clamp: unset;
   line-clamp: unset;
   -webkit-box-orient: unset;
+}
+
+/* Legacy helpers (kept for compatibility) */
+.sb-main { min-width: 0; }
+.sb-title { display: none; }
+.sb-sub   { display: none; }
+.sb-dot   { display: none; }
+.sb-type  { display: none; }
+
+/* Highlighted match — underlay */
+.sb-mark {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  line-height: inherit;
+  letter-spacing: inherit;
+  font: inherit;
+  color: inherit;
+  background: none;
+  box-shadow: inset 0 -1.8em 0 #fff2a8; /* slightly softer than -2em to avoid edge kiss */
+  border-radius: 0;
+}
+
+/* Hover variant for highlight underlay */
+.sb-item.is-hover .sb-mark {
+  box-shadow: inset 0 -1.8em 0 #ffe58f;
+}
+
+/* Right-side meta (line 2, under index): low opacity & lighter weight */
+.sb-right-meta {
+  opacity: 0.55;
+  font-weight: 500;
+  white-space: nowrap;
+  font-size: 12px;
+  min-width: 0;                /* don’t push layout wide */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Index at the far right on line 1 */
+.sb-index {
+  opacity: 0.55;
+  font-weight: 500;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* Nudge the right-side meta on line 2 up a bit (both text & father) */
+.sb-line2 .sb-right-meta {
+  display: inline-block;          /* ensures transform/top doesn’t get clipped */
+  transform: translateY(-2px);    /* subtle lift; try -1px…-3px for your font */
 }
 
 /* Optional: nicer WebKit scrollbars */
@@ -215,6 +321,22 @@
 }
 .sb-popover::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); }
 
+/* Blur the graph only when results are visible */
+body.sb-open .timelineSvg {
+  filter: blur(2px) saturate(1) brightness(1);
+  transition: filter 120ms ease;
+  pointer-events: none; /* defensive; backdrop also blocks */
+}
+
+/* Backdrop that sits above the SVG but below the bar & popover */
+.sb-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2050;                    /* below .sb-box (2110) & .sb-popover (2120) */
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(1.5px);
+}
+
 /* Optional: Firefox scrollbar */
 @supports (scrollbar-width: thin) {
   .sb-popover {
@@ -223,16 +345,9 @@
   }
 }
 
-/* Highlighted match */
-.sb-mark {
-  background: #fff2a8;     /* subtle yellow */
-  color: inherit;
-  padding: 0 .12em;
-  border-radius: 3px;
+/* Prefer dynamic viewport units when available (more room for results) */
+@supports (height: 100dvh) {
+  .sb-popover {
+    max-height: calc(100dvh - 140px); /* taller than the fallback */
+  }
 }
-
-/* Optional: better contrast when hovering the item */
-.sb-item.is-hover .sb-mark {
-  background: #ffe58f;
-}
-

@@ -7,18 +7,39 @@ function MarkerIcon({ item }) {
   const color = item?.color || "#666";
   const colors = Array.isArray(item?.colors) ? item.colors.filter(Boolean) : null;
   const vb = "0 0 16 16";
+  const MIDLINE_OFFSET = 0.22;
 
+  // father: right-pointing triangle (+ optional white midline if historic)
   if (type === "father") {
     const r = item?.founding ? 5.5 : 4.0;
     const cx = 8, cy = 8;
     const xL = cx - r, xR = cx + r, yT = cy - r, yB = cy + r, yM = cy;
+    const midX = Math.max(xL + 1, cx - r * MIDLINE_OFFSET); // keep inside triangle
+
+    // accept either .historic (from upstream) or .isHistoric (canonical boolean)
+    const isHistoric = !!(item?.historic ?? item?.isHistoric);
+
     return (
       <svg viewBox={vb} width="16" height="16" focusable="false" aria-hidden="true">
+        {/* triangle */}
         <path d={`M ${xL} ${yT} L ${xL} ${yB} L ${xR} ${yM} Z`} fill={color} />
+        {/* white vertical midline for historic entries */}
+        {isHistoric && (
+          <line
+            x1={midX}
+            y1={cy - r}
+            x2={midX}
+            y2={cy + r}
+            stroke="#fff"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        )}
       </svg>
     );
   }
 
+  // multi-color (pie) text marker
   if (colors && colors.length > 1) {
     const n = colors.length;
     const cx = 8, cy = 8, r = 5.5;
@@ -42,11 +63,22 @@ function MarkerIcon({ item }) {
     );
   }
 
+  // default text marker (single-color dot)
   return (
     <svg viewBox={vb} width="16" height="16" focusable="false" aria-hidden="true">
       <circle cx="8" cy="8" r="5.5" fill={color} />
     </svg>
   );
+}
+
+function durationLabelFromId(id) {
+  if (!id) return null;
+  if (id.startsWith("custom-")) {
+    const m = id.match(/^custom-(.+?)-composite$/);
+    return (m ? m[1] : id.slice("custom-".length)).trim();
+  }
+  const m = id.match(/^(.+?)-composite$/);
+  return (m ? m[1] : id).trim();
 }
 
 function arcPath(cx, cy, r, a0, a1) {
@@ -61,6 +93,19 @@ function arcPath(cx, cy, r, a0, a1) {
 
 function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/* === Helpers for date/field handling === */
+function cleanField(v) {
+  if (v == null) return null;
+  const t = String(v).trim();
+  return t && t !== "-" && t !== "—" ? t : null;
+}
+function formatYearHuman(y) {
+  const n = Number(y);
+  if (!Number.isFinite(n)) return null;
+  if (n === 0) return "—"; // no year zero
+  return n < 0 ? `${Math.abs(n)} BCE` : `${n} CE`;
 }
 
 function Highlight({ text, query }) {
@@ -84,7 +129,23 @@ function Highlight({ text, query }) {
 
 /**
  * Props:
- * - items: Array<{ id, type: "text"|"father", title, subtitle?, category?, description?, color?, colors?, founding?, index?, textIndex? }>
+ * - items: Array<{
+ *     id,
+ *     type: "text"|"father",
+ *     title,               // for father this is the name
+ *     author?,             // for text
+ *     date?,               // preferred display date (string)
+ *     subtitle?,
+ *     category?,
+ *     description?,
+ *     color?,
+ *     colors?,
+ *     founding?,
+ *     index?,
+ *     textIndex?,
+ *     dob?,                // for father (string)
+ *     when?                // numeric year (fallback)
+ *   }>
  * - onSelect: (item) => void
  * - placeholder?: string
  * - maxResults?: number
@@ -123,8 +184,10 @@ export default function SearchBar({
       s += inc(it.subtitle, 5);
       s += inc(it.category, 3);
       s += inc(it.description, 2);
-      // Optional: also let index participate lightly
-      s += inc(it.index ?? it.textIndex, 1);
+      s += inc(it.index ?? it.textIndex, 1); // index/textIndex
+      s += inc(it.author, 4);                // text-specific
+      s += inc(it.date, 2);
+      s += inc(it.dob, 2);                   // father-specific
       return s;
     };
     return items
@@ -188,96 +251,253 @@ export default function SearchBar({
     }
   };
 
-  return (
-    <div ref={wrapRef} className="sb-wrap">
-      <div className="sb-box" onMouseDown={onInteract}>
-        <svg className="sb-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M21 21l-4.3-4.3m1.3-4.2a7 7 0 11-14 0 7 7 0 0114 0z"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+  const renderTextItem = (r, idx, isHover) => {
+    const rawAuthor =
+      r.author ??
+      (Array.isArray(r.authors) ? r.authors.filter(Boolean).join(", ") : null) ??
+      r.subtitle;
 
-        <input
-          ref={inputRef}
-          className="sb-input"
-          type="text"
-          value={q}
-          placeholder={placeholder}
-          onFocus={() => { setOpen(true); onInteract(); }}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={onKeyDown}
-          aria-label="Search"
-        />
-      </div>
+    // Treat "-" (or empty) as "no author"
+    const author = (() => {
+      if (rawAuthor == null) return null;
+      const t = String(rawAuthor).trim();
+      return t && t !== "-" ? t : null;
+    })();
 
-      {open && q.trim() && results.length > 0 && (
-        <div className="sb-popover" role="listbox" onMouseDown={onInteract}>
-          {results.map((r, idx) => {
-            const idxValue = r.index ?? r.textIndex; // support either prop
-            return (
-              <button
-                key={r.id}
-                className={`sb-item ${idx === hoverIdx ? "is-hover" : ""}`}
-                onMouseEnter={() => setHoverIdx(idx)}
-                onClick={() => activate(idx)}
-                role="option"
-                aria-selected={idx === hoverIdx}
-              >
-                <span className="sb-dot" aria-hidden="true">
-                  <MarkerIcon item={r} />
+    const date =
+      cleanField(r.date ?? r.year ?? r.dob) ??
+      (Number.isFinite(Number(r.when)) ? formatYearHuman(r.when) : null);
+
+    // Right-aligned index (use index or textIndex)
+    const idxDisplay = cleanField(r.index ?? r.textIndex);
+
+    // Duration label derived from durationId (to be shown on line 2, right side)
+    const durationLabel = r.durationId ? durationLabelFromId(r.durationId) : null;
+
+    return (
+      <button
+        key={r.id}
+        className={`sb-item ${isHover ? "is-hover" : ""}`}
+        onMouseEnter={() => setHoverIdx(idx)}
+        onClick={() => activate(idx)}
+        role="option"
+        aria-selected={isHover}
+      >
+        {/* LINE 1: icon, title, date .......... [index on right] */}
+        <div className="sb-line sb-line1">
+          <span className="sb-inline-icon" aria-hidden="true">
+            <MarkerIcon item={r} />
+          </span>
+          <span className="sb-title-text">
+            <Highlight text={r.title} query={q} />
+          </span>
+
+          {date ? (
+            <>
+              <span className="sb-sep" />
+              <span className="sb-date">
+                <Highlight text={String(date)} query={q} />
+              </span>
+            </>
+          ) : null}
+
+          {/* spacer pushes the index to the far right */}
+          <span style={{ marginLeft: "auto" }} />
+
+          {idxDisplay ? (
+            <span className="sb-index" aria-hidden="true">
+              <Highlight text={String(idxDisplay)} query={q} />
+            </span>
+          ) : null}
+        </div>
+
+        {/* LINE 2: by author (left) ......... [duration label right under index] */}
+        {(author || durationLabel) && (
+          <div
+            className="sb-line sb-line2 sb-author-line"
+            style={{ display: "flex", alignItems: "baseline", gap: 0 }}
+          >
+            <div>
+              {author ? (
+                <>
+                  <span className="sb-light">by</span>
+                  <span className="sb-sep" />
+                  <span className="sb-author">
+                    <Highlight text={author} query={q} />
+                  </span>
+                </>
+              ) : null}
+            </div>
+
+            {/* spacer pushes the right meta under the index */}
+            <span style={{ marginLeft: "auto" }} />
+
+            {durationLabel ? (
+              <span className="sb-category sb-right-meta">
+                <Highlight text={durationLabel} query={q} />
+              </span>
+            ) : null}
+          </div>
+        )}
+
+        {/* LINE 3: category */}
+        {r.category ? (
+          <div className="sb-line sb-line3">
+            <span className="sb-category">
+              <Highlight text={r.category} query={q} />
+            </span>
+          </div>
+        ) : null}
+
+        {/* LINE 4+: description */}
+        {r.description ? (
+          <div className="sb-line sb-desc">
+            <Highlight text={r.description} query={q} />
+          </div>
+        ) : null}
+      </button>
+    );
+  };
+
+  const renderFatherItem = (r, idx, isHover) => {
+    const date =
+      cleanField(r.dob ?? r.date) ??
+      (Number.isFinite(Number(r.when)) ? formatYearHuman(r.when) : null);
+
+    const idxDisplay = cleanField(r.index);
+
+    const durationLabel = r.durationId ? durationLabelFromId(r.durationId) : null;
+
+    return (
+      <button
+        key={r.id}
+        className={`sb-item ${isHover ? "is-hover" : ""}`}
+        onMouseEnter={() => setHoverIdx(idx)}
+        onClick={() => activate(idx)}
+        role="option"
+        aria-selected={isHover}
+      >
+        {/* LINE 1: icon, name, date .......... [index on right] */}
+        <div className="sb-line sb-line1">
+          <span className="sb-inline-icon" aria-hidden="true">
+            <MarkerIcon item={r} />
+          </span>
+          <span className="sb-title-text">
+            <Highlight text={r.title} query={q} />
+          </span>
+          {date ? (
+            <>
+              <span className="sb-sep" />
+              <span className="sb-date">
+                <Highlight text={String(date)} query={q} />
+              </span>
+            </>
+          ) : null}
+
+          {/* spacer pushes the index to the far right */}
+          <span style={{ marginLeft: "auto" }} />
+
+          {idxDisplay ? (
+            <span className="sb-index" aria-hidden="true">
+              <Highlight text={String(idxDisplay)} query={q} />
+            </span>
+          ) : null}
+        </div>
+
+        {/* LINE 2: category (left) ......... [duration label right under index] */}
+        {(r.category || durationLabel) && (
+          <div
+            className="sb-line sb-line2"
+            style={{ display: "flex", alignItems: "baseline", gap: 0 }}
+          >
+            <div>
+              {r.category ? (
+                <span className="sb-category">
+                  <Highlight text={r.category} query={q} />
                 </span>
+              ) : null}
+            </div>
 
-                <div className="sb-main">
-                  <div className="sb-title">
-                    <span className="sb-title-text">
-                      <Highlight text={r.title} query={q} />
-                    </span>
+            {/* spacer to push right meta */}
+            <span style={{ marginLeft: "auto" }} />
 
-                    {idxValue != null && String(idxValue).trim() !== "" && (
-                      <span className="sb-index">
-                        <Highlight text={String(idxValue)} query={q} />
-                      </span>
-                    )}
-                  </div>
+            {durationLabel ? (
+              <span className="sb-category sb-right-meta">
+                <Highlight text={durationLabel} query={q} />
+              </span>
+            ) : null}
+          </div>
+        )}
 
-                  {(r.subtitle || r.category) && (
-                    <div className="sb-sub">
-                      {r.subtitle && (
-                        <span className="sb-subtitle">
-                          <Highlight text={r.subtitle} query={q} />
-                        </span>
-                      )}
-                      {r.subtitle && r.category && <span className="sb-dotsep">•</span>}
-                      {r.category && (
-                        <span className="sb-category">
-                          <Highlight text={r.category} query={q} />
-                        </span>
-                      )}
-                    </div>
-                  )}
+        {/* LINE 3+: description */}
+        {r.description ? (
+          <div className="sb-line sb-desc">
+            <Highlight text={r.description} query={q} />
+          </div>
+        ) : null}
+      </button>
+    );
+  };
+const listVisible = !!(open && q.trim() && results.length > 0);
+  // add this effect (keeps body class in sync)
+useEffect(() => {
+  document.body.classList.toggle("sb-open", listVisible);
+  return () => document.body.classList.remove("sb-open");
+}, [listVisible]);
 
-                  {r.description && (
-                    <div className="sb-desc">
-                      <Highlight text={r.description} query={q} />
-                    </div>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+ return (
+  <div ref={wrapRef} className="sb-wrap">
+    <div className="sb-box" onMouseDown={onInteract}>
+      <svg className="sb-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M21 21l-4.3-4.3m1.3-4.2a7 7 0 11-14 0 7 7 0 0114 0z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
 
-      {open && q.trim() && results.length === 0 && (
-        <div className="sb-popover sb-empty" onMouseDown={onInteract}>
-          No results
-        </div>
-      )}
+      <input
+        ref={inputRef}
+        className="sb-input"
+        type="text"
+        value={q}
+        placeholder={placeholder}
+        onFocus={() => { setOpen(true); onInteract(); }}
+        onChange={(e) => setQ(e.target.value)}
+        onKeyDown={onKeyDown}
+        aria-label="Search"
+      />
     </div>
-  );
+
+    {/* Backdrop: blur & block interactions with the graph; click closes */}
+    {listVisible && (
+      <div
+        className="sb-backdrop"
+        onMouseDown={closeAndReset}
+        aria-hidden="true"
+      />
+    )}
+
+    {open && q.trim() && results.length > 0 && (
+      <div className="sb-popover" role="listbox" onMouseDown={onInteract}>
+        {results.map((r, idx) => {
+          const isHover = idx === hoverIdx;
+          return r.type === "father"
+            ? renderFatherItem(r, idx, isHover)
+            : renderTextItem(r, idx, isHover);
+        })}
+      </div>
+    )}
+
+    {open && q.trim() && results.length === 0 && (
+      <div className="sb-popover sb-empty" onMouseDown={onInteract}>
+        No results
+      </div>
+    )}
+  </div>
+);
+
 }

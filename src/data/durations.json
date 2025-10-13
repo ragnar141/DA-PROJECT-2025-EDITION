@@ -216,9 +216,9 @@
     ]
   },
   {
-    "id": "west-semitic-composite",
-    "name": "West Semitic",
-    "expanded name": "West Semitic (Levantine)",
+    "id": "levantine-composite",
+    "name": "Levantine",
+    "expanded name": "Levantine (West-Semitic)",
     "color": "#F59E0B",
     "yRel": 0.311,
     "hRel": 0.04,
@@ -288,7 +288,7 @@
     ]
   },
   {
-    "id": "1stpersian-composite",
+    "id": "persian-composite",
     "name": "Persian",
     "expanded name": "Persian (Elamite/Zoroastrian)",
     "color": "#06930bff",
@@ -552,11 +552,11 @@
     ]
   },
   {
-    "id": "custom-hellenistic-westsemitic-composite",
+    "id": "custom-hellenistic-levantine-composite",
     "name": "Greek",
     "expanded name": "Greek (Minoan/Mycenaean/Hellenic/Hellenistic)",
     "color": "#1102e7ff",
-    "yRel": 0.331,
+    "yRel": 0.311,
     "hRel": 0.04,
     "broad note": "Greek civilization took shape from the seafaring Minoans of Crete and the warrior Mycenaeans of the mainland, whose fusion around 1450 BCE generated a culture dominated by heroic elites before collapsing into a centuries-long dark age. Out of this silence arose the Archaic and Classical city-states, where Athens, Sparta, and their rivals developed strikingly different models of governance, ritual, and war, while philosophy, drama, and art flourished in the competitive civic arena. United briefly against Persia but fractured by internecine wars, the Greeks forged enduring traditions of political debate, inquiry, and aesthetics that influenced the wider Mediterranean. Macedon’s rise under Philip II and Alexander the Great extended this warrior-intellectual tradition far beyond Greece, reshaping the Near Eastern landscape with new cities, libraries, and civic institutions. The Hellenistic world that followed was cosmopolitan, spanning from Egypt and the Levant to Bactria and India, where Greek language, thought, and art intermingled with older traditions in hubs such as Alexandria and Pergamon. This synthesis, absorbed by Rome after 146 BCE, ensured that the Greek canon—myth, philosophy, political theory, and science—remained foundational to Mediterranean and global culture.",
     "broad lifespan": "c. 332 BCE - 30 BCE",
@@ -904,7 +904,7 @@
     "name": "Roman",
     "expanded name": "Roman (Italic/Etruscan/Latin/Roman)",
     "color": "#000000ff",
-    "yRel": 0.181,
+    "yRel": 0.231,
     "hRel": 0.02,
     "broad note": "The roots of Rome lay in the warlike cultures of prehistoric Italy, where villages hardened into fortified communities. From Etruscan kings and Italic tribes, Rome inherited augury, sacred arms, and civic ritual, but transformed them into an unparalleled system of disciplined warriorship. The Republic elevated conquest into a civic religion: triumphs sanctified victory, law and order followed the legions, and the Senate cloaked expansion with universalizing ideals. In overtaking the Hellenistic world, Rome absorbed its gods, sciences, and philosophies, yet recast them under the authority of the legion and the Latin tongue. At later stages, Roman emperors embodied not only political supremacy but also symbolic mastery over the living Being. This war-forged system became the prototype of Western empires to come—uniting force, law, and cultural dominance into a single claim of globalist rule. The final division of 395 CE did not end Rome’s model, but ensured its legacy would echo across Byzantium, Christendom, and every empire that sought to emulate its fusion of power and permanence.",
     "broad lifespan": "c. 146 BCE - 395 CE",
@@ -946,7 +946,7 @@
     "name": "Roman",
     "expanded name": "Roman (Italic/Etruscan/Latin/Roman)",
     "color": "#000000ff",
-    "yRel": 0.201,
+    "yRel": 0.251,
     "hRel": 0.06,
     "broad note": "The roots of Rome lay in the warlike cultures of prehistoric Italy, where villages hardened into fortified communities. From Etruscan kings and Italic tribes, Rome inherited augury, sacred arms, and civic ritual, but transformed them into an unparalleled system of disciplined warriorship. The Republic elevated conquest into a civic religion: triumphs sanctified victory, law and order followed the legions, and the Senate cloaked expansion with universalizing ideals. In overtaking the Hellenistic world, Rome absorbed its gods, sciences, and philosophies, yet recast them under the authority of the legion and the Latin tongue. At later stages, Roman emperors embodied not only political supremacy but also symbolic mastery over the living Being. This war-forged system became the prototype of Western empires to come—uniting force, law, and cultural dominance into a single claim of globalist rule. The final division of 395 CE did not end Rome’s model, but ensured its legacy would echo across Byzantium, Christendom, and every empire that sought to emulate its fusion of power and permanence.",
     "broad lifespan": "c. 30 BCE - 395 CE",
@@ -978,11 +978,11 @@
   ]
   },
   {
-    "id": "custom-roman-westsemitic-composite",
+    "id": "custom-roman-levantine-composite",
     "name": "Roman",
     "expanded name": "Roman (Italic/Etruscan/Latin/Roman)",
     "color": "#000000ff",
-    "yRel": 0.261,
+    "yRel": 0.311,
     "hRel": 0.04,
     "broad note": "The roots of Rome lay in the warlike cultures of prehistoric Italy, where villages hardened into fortified communities. From Etruscan kings and Italic tribes, Rome inherited augury, sacred arms, and civic ritual, but transformed them into an unparalleled system of disciplined warriorship. The Republic elevated conquest into a civic religion: triumphs sanctified victory, law and order followed the legions, and the Senate cloaked expansion with universalizing ideals. In overtaking the Hellenistic world, Rome absorbed its gods, sciences, and philosophies, yet recast them under the authority of the legion and the Latin tongue. At later stages, Roman emperors embodied not only political supremacy but also symbolic mastery over the living Being. This war-forged system became the prototype of Western empires to come—uniting force, law, and cultural dominance into a single claim of globalist rule. The final division of 395 CE did not end Rome’s model, but ensured its legacy would echo across Byzantium, Christendom, and every empire that sought to emulate its fusion of power and permanence.",
     "broad lifespan": "c. 30 BCE - 395 CE",

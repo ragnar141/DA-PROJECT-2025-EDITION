@@ -55,7 +55,7 @@ const DUR_STROKE = {
 
 /* ===== Label visibility policy ===== */
 const LABEL_ALLOWLIST = new Set([
-  "egyptian-composite", "mesopotamian-composite", "anatolian-composite", "west-semitic-composite", "1stpersian-composite", 
+  "egyptian-composite", "mesopotamian-composite", "anatolian-composite", "levantine-composite", "persian-composite", 
   "greek-composite", "carthaginian-composite", "customgroup-hellenistic"
 ]);
 

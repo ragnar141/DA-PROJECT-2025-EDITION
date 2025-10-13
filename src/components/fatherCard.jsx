@@ -11,10 +11,10 @@ export default function FatherCard({
 }) {
   if (!d) return null;
 
-  // Title: "Index Name"
-  const title = [d.index, d.name].filter(Boolean).join(" ");
+  // Title: just the Name (index moves left)
+  const title = d.name || "";
+  const indexStr = (d.index ?? "").toString().trim();
 
-  // "Born/Emerged: <dob>, Died/Dissolved: <dod> in <location>"
   const dateBits = [];
   if (d.dob) dateBits.push(`Born/Emerged: ${d.dob}`);
   if (d.dod) dateBits.push(`Died/Dissolved: ${d.dod}`);
@@ -32,7 +32,6 @@ export default function FatherCard({
       .map((t) => t.trim())
       .filter(Boolean);
 
-  // Match TextCard classes/behavior so CSS applies 1:1 (chips, spacing, dashed divider)
   const Row = ({ label, value, className }) =>
     value ? (
       <div className={`textCard-row ${className || ""}`}>
@@ -41,14 +40,11 @@ export default function FatherCard({
       </div>
     ) : null;
 
-  // Symbolic System chips — mirror TextCard logic (per-tag color if d.colors provided)
   const SymbolicTagRow = ({ label, value }) => {
     const tags = splitTags(value);
     if (!tags.length) return null;
-
     const colors = Array.isArray(d.colors) && d.colors.length ? d.colors : [];
     const colorFor = (i) => colors[i] || colors[colors.length - 1] || d.color || "#444";
-
     return (
       <div className="textCard-row is-tags">
         <span className="textCard-label">{label}</span>
@@ -68,23 +64,17 @@ export default function FatherCard({
   };
 
   return (
-    <div
-      className="fatherCard"
-      style={{
-        // Centered modal; keep as-is. If you later anchor it, pass {left, top} and add absolute positioning.
-      }}
-      role="dialog"
-      aria-label={`Details for ${title}`}
-    >
-      <button className="textCard-close" onClick={onClose} aria-label="Close">
-        ×
-      </button>
+    <div className="fatherCard" role="dialog" aria-label={`Details for ${title}`}>
+      {/* left-aligned, subtle index */}
+      {indexStr && <span className="textCard-index">{indexStr}</span>}
 
-      {/* Title + Category (same classes as TextCard) */}
+      <button className="textCard-close" onClick={onClose} aria-label="Close">×</button>
+
+      {/* Title + Category (reuse TextCard classes for consistency) */}
       <div className="textCard-titleCombo">
         <span className="textCard-title">{title}</span>
         {d.category && <span className="textCard-sep"> - </span>}
-        {d.category && <span className="textCard-category">({d.category})</span>}
+        {d.category && <span className="textCard-category">{d.category}</span>}
       </div>
 
       {/* Centered description */}
@@ -93,7 +83,7 @@ export default function FatherCard({
       {/* Small meta line */}
       {metaLine && <div className="textCard-meta">{metaLine}</div>}
 
-      {/* Primary rows (outside of the dashed divider, just like TextCard) */}
+      {/* Primary rows */}
       <SymbolicTagRow label="Symbolic System(s):" value={d.symbolicSystem} />
       <Row label="Comtean framework:" value={d.comteanFramework} />
 
@@ -108,16 +98,14 @@ export default function FatherCard({
         </button>
       </div>
 
-      {/* Expanded area — exact same structure/classes as TextCard so the dashed line appears */}
+      {/* Expanded area */}
       {showMore && (
         <div className="textCard-more">
           <div className="textCard-row is-tags">
             <span className="textCard-label">Jungian Archetypes:</span>
             <div className="textCard-tags">
               {splitTags(d.jungianArchetypesTags).map((t, i) => (
-                <span key={`ja-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`ja-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -126,9 +114,7 @@ export default function FatherCard({
             <span className="textCard-label">Neumann Stages:</span>
             <div className="textCard-tags">
               {splitTags(d.neumannStagesTags).map((t, i) => (
-                <span key={`ns-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`ns-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -137,9 +123,7 @@ export default function FatherCard({
             <span className="textCard-label">Socio-political:</span>
             <div className="textCard-tags">
               {splitTags(d.socioPoliticalTags).map((t, i) => (
-                <span key={`sp-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`sp-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
@@ -148,9 +132,7 @@ export default function FatherCard({
             <span className="textCard-label">Historic-Mythic Status:</span>
             <div className="textCard-tags">
               {splitTags(d.historicMythicStatusTags).map((t, i) => (
-                <span key={`hm-${i}`} className="textCard-tag">
-                  {t}
-                </span>
+                <span key={`hm-${i}`} className="textCard-tag">{t}</span>
               ))}
             </div>
           </div>
