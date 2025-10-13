@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import "../styles/searchBar.css";
 
 /* === Tiny SVGs that mirror timeline glyphs (inline) === */
@@ -132,9 +133,9 @@ function Highlight({ text, query }) {
  * - items: Array<{
  *     id,
  *     type: "text"|"father",
- *     title,               // for father this is the name
- *     author?,             // for text
- *     date?,               // preferred display date (string)
+ *     title,
+ *     author?,
+ *     date?,
  *     subtitle?,
  *     category?,
  *     description?,
@@ -143,8 +144,8 @@ function Highlight({ text, query }) {
  *     founding?,
  *     index?,
  *     textIndex?,
- *     dob?,                // for father (string)
- *     when?                // numeric year (fallback)
+ *     dob?,
+ *     when?
  *   }>
  * - onSelect: (item) => void
  * - placeholder?: string
@@ -184,10 +185,10 @@ export default function SearchBar({
       s += inc(it.subtitle, 5);
       s += inc(it.category, 3);
       s += inc(it.description, 2);
-      s += inc(it.index ?? it.textIndex, 1); // index/textIndex
-      s += inc(it.author, 4);                // text-specific
+      s += inc(it.index ?? it.textIndex, 1);
+      s += inc(it.author, 4);
       s += inc(it.date, 2);
-      s += inc(it.dob, 2);                   // father-specific
+      s += inc(it.dob, 2);
       return s;
     };
     return items
@@ -257,7 +258,6 @@ export default function SearchBar({
       (Array.isArray(r.authors) ? r.authors.filter(Boolean).join(", ") : null) ??
       r.subtitle;
 
-    // Treat "-" (or empty) as "no author"
     const author = (() => {
       if (rawAuthor == null) return null;
       const t = String(rawAuthor).trim();
@@ -268,10 +268,7 @@ export default function SearchBar({
       cleanField(r.date ?? r.year ?? r.dob) ??
       (Number.isFinite(Number(r.when)) ? formatYearHuman(r.when) : null);
 
-    // Right-aligned index (use index or textIndex)
     const idxDisplay = cleanField(r.index ?? r.textIndex);
-
-    // Duration label derived from durationId (to be shown on line 2, right side)
     const durationLabel = r.durationId ? durationLabelFromId(r.durationId) : null;
 
     return (
@@ -283,7 +280,6 @@ export default function SearchBar({
         role="option"
         aria-selected={isHover}
       >
-        {/* LINE 1: icon, title, date .......... [index on right] */}
         <div className="sb-line sb-line1">
           <span className="sb-inline-icon" aria-hidden="true">
             <MarkerIcon item={r} />
@@ -301,7 +297,6 @@ export default function SearchBar({
             </>
           ) : null}
 
-          {/* spacer pushes the index to the far right */}
           <span style={{ marginLeft: "auto" }} />
 
           {idxDisplay ? (
@@ -311,7 +306,6 @@ export default function SearchBar({
           ) : null}
         </div>
 
-        {/* LINE 2: by author (left) ......... [duration label right under index] */}
         {(author || durationLabel) && (
           <div
             className="sb-line sb-line2 sb-author-line"
@@ -329,7 +323,6 @@ export default function SearchBar({
               ) : null}
             </div>
 
-            {/* spacer pushes the right meta under the index */}
             <span style={{ marginLeft: "auto" }} />
 
             {durationLabel ? (
@@ -340,7 +333,6 @@ export default function SearchBar({
           </div>
         )}
 
-        {/* LINE 3: category */}
         {r.category ? (
           <div className="sb-line sb-line3">
             <span className="sb-category">
@@ -349,7 +341,6 @@ export default function SearchBar({
           </div>
         ) : null}
 
-        {/* LINE 4+: description */}
         {r.description ? (
           <div className="sb-line sb-desc">
             <Highlight text={r.description} query={q} />
@@ -365,7 +356,6 @@ export default function SearchBar({
       (Number.isFinite(Number(r.when)) ? formatYearHuman(r.when) : null);
 
     const idxDisplay = cleanField(r.index);
-
     const durationLabel = r.durationId ? durationLabelFromId(r.durationId) : null;
 
     return (
@@ -377,7 +367,6 @@ export default function SearchBar({
         role="option"
         aria-selected={isHover}
       >
-        {/* LINE 1: icon, name, date .......... [index on right] */}
         <div className="sb-line sb-line1">
           <span className="sb-inline-icon" aria-hidden="true">
             <MarkerIcon item={r} />
@@ -394,7 +383,6 @@ export default function SearchBar({
             </>
           ) : null}
 
-          {/* spacer pushes the index to the far right */}
           <span style={{ marginLeft: "auto" }} />
 
           {idxDisplay ? (
@@ -404,7 +392,6 @@ export default function SearchBar({
           ) : null}
         </div>
 
-        {/* LINE 2: category (left) ......... [duration label right under index] */}
         {(r.category || durationLabel) && (
           <div
             className="sb-line sb-line2"
@@ -418,7 +405,6 @@ export default function SearchBar({
               ) : null}
             </div>
 
-            {/* spacer to push right meta */}
             <span style={{ marginLeft: "auto" }} />
 
             {durationLabel ? (
@@ -429,7 +415,6 @@ export default function SearchBar({
           </div>
         )}
 
-        {/* LINE 3+: description */}
         {r.description ? (
           <div className="sb-line sb-desc">
             <Highlight text={r.description} query={q} />
@@ -438,66 +423,66 @@ export default function SearchBar({
       </button>
     );
   };
-const listVisible = !!(open && q.trim() && results.length > 0);
-  // add this effect (keeps body class in sync)
-useEffect(() => {
-  document.body.classList.toggle("sb-open", listVisible);
-  return () => document.body.classList.remove("sb-open");
-}, [listVisible]);
 
- return (
-  <div ref={wrapRef} className="sb-wrap">
-    <div className="sb-box" onMouseDown={onInteract}>
-      <svg className="sb-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M21 21l-4.3-4.3m1.3-4.2a7 7 0 11-14 0 7 7 0 0114 0z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+  const listVisible = !!(open && q.trim() && results.length > 0);
+
+  // keep body class in sync (used to blur/freeze the graph)
+  useEffect(() => {
+    document.body.classList.toggle("sb-open", listVisible);
+    return () => document.body.classList.remove("sb-open");
+  }, [listVisible]);
+
+  return (
+    <div ref={wrapRef} className="sb-wrap">
+      <div className="sb-box" onMouseDown={onInteract}>
+        <svg className="sb-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M21 21l-4.3-4.3m1.3-4.2a7 7 0 11-14 0 7 7 0 0114 0z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+
+        <input
+          ref={inputRef}
+          className="sb-input"
+          type="text"
+          value={q}
+          placeholder={placeholder}
+          onFocus={() => { setOpen(true); onInteract(); }}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={onKeyDown}
+          aria-label="Search"
         />
-      </svg>
+      </div>
 
-      <input
-        ref={inputRef}
-        className="sb-input"
-        type="text"
-        value={q}
-        placeholder={placeholder}
-        onFocus={() => { setOpen(true); onInteract(); }}
-        onChange={(e) => setQ(e.target.value)}
-        onKeyDown={onKeyDown}
-        aria-label="Search"
-      />
+      {/* Backdrop via portal so it covers viewport and blocks graph interactions */}
+      {listVisible &&
+        createPortal(
+          <div className="sb-backdrop" onMouseDown={closeAndReset} aria-hidden="true" />,
+          document.body
+        )
+      }
+
+      {open && q.trim() && results.length > 0 && (
+        <div className="sb-popover" role="listbox" onMouseDown={onInteract}>
+          {results.map((r, idx) => {
+            const isHover = idx === hoverIdx;
+            return r.type === "father"
+              ? renderFatherItem(r, idx, isHover)
+              : renderTextItem(r, idx, isHover);
+          })}
+        </div>
+      )}
+
+      {open && q.trim() && results.length === 0 && (
+        <div className="sb-popover sb-empty" onMouseDown={onInteract}>
+          No results
+        </div>
+      )}
     </div>
-
-    {/* Backdrop: blur & block interactions with the graph; click closes */}
-    {listVisible && (
-      <div
-        className="sb-backdrop"
-        onMouseDown={closeAndReset}
-        aria-hidden="true"
-      />
-    )}
-
-    {open && q.trim() && results.length > 0 && (
-      <div className="sb-popover" role="listbox" onMouseDown={onInteract}>
-        {results.map((r, idx) => {
-          const isHover = idx === hoverIdx;
-          return r.type === "father"
-            ? renderFatherItem(r, idx, isHover)
-            : renderTextItem(r, idx, isHover);
-        })}
-      </div>
-    )}
-
-    {open && q.trim() && results.length === 0 && (
-      <div className="sb-popover sb-empty" onMouseDown={onInteract}>
-        No results
-      </div>
-    )}
-  </div>
-);
-
+  );
 }

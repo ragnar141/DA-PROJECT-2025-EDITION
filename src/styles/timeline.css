@@ -9,6 +9,14 @@
 
   /* How much to push card content downward (keeps index/close fixed) */
   --card-content-offset: 14px; /* adjust to taste */
+
+  /* Safe head/foot space inside panels so first/last content + scrollbars are visible */
+  --panel-safe-top: 30px;
+  --panel-safe-bottom: 12px;
+
+  /* EXTRA LEFT/RIGHT PADDING for TextCard/FatherCard content (index/close unaffected) */
+  --card-pad-left: 34px;  /* desktop/tablet default */
+  --card-pad-right: 16px; /* tighter right edge */
 }
 
 /* Fill the viewport */
@@ -183,26 +191,38 @@ body {
 }
 
 /* ============================
-   TextCard (modal)
+   TextCard — LEFT-SIDEBAR MODE
    ============================ */
 .textCard {
   position: fixed !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%);
-  width: min(960px, 92vw);
-  max-width: 96vw;
-  max-height: min(92dvh, 100dvh - 32px);
+
+  /* crop a bit on the left, but keep fully visible vertically */
+  left: -12px !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: auto !important;
+  transform: none !important;
+
+  /* sidebar sizing */
+  width: min(408px, 92vw);
+  max-width: 92vw;
+  height: auto;           /* let top/bottom define height */
+  max-height: none;
   overflow: auto;
+  scrollbar-gutter: stable;
+
   background: var(--bg);
   color: var(--text);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 16px;
-  box-shadow:
-    0 20px 40px rgba(0,0,0,0.18),
-    0 2px 8px rgba(0,0,0,0.06);
-  /* push content downward while keeping absolute index/close fixed */
-  padding: calc(18px + var(--card-content-offset)) 20px 16px 20px;
+
+  /* square edges, only right border visible */
+  border: none !important;
+  border-right: 1px solid rgba(0,0,0,0.12) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  /* internal safe areas: variable left/right padding */
+  padding: 18px var(--card-pad-right) 18px var(--card-pad-left);
+
   z-index: 1200;
   pointer-events: auto;
   font-family: var(--font-ui);
@@ -217,18 +237,20 @@ body {
 }
 .textCard-titleCombo {
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  align-items: baseline;
-  gap: 1px;
+  align-items: center;
+  gap: 4px;
   text-align: center;
   margin-bottom: 8px;
+  margin-top: 14px
 }
-.textCard-sep { opacity: 0.6; margin: 0 9px; }
-.textCard-category { margin-left: 6px; font-size: 12px; font-weight: 700; opacity: 0.8; white-space: nowrap; }
+.textCard-sep { opacity: 0.6; margin: 0 9px; display: none; }
+.textCard-category { margin-left: 0; font-size: 12px; font-weight: 700; opacity: 0.8; white-space: nowrap; }
 .textCard-close {
   position: absolute;
   top: 8px;
-  right: 8px;
+  right: max(4px, calc(var(--card-pad-right) - 10px)); /* closer to right edge */
   width: 32px;
   height: 32px;
   display: grid;
@@ -242,13 +264,16 @@ body {
   cursor: pointer;
 }
 .textCard-close:hover { background: #f3f4f6; border-color: #e5e7eb; }
-.textCard-row { display: flex; align-items: baseline; gap: 10px; padding: 6px 0; }
+
+/* ↓↓↓ TIGHTER label/value spacing for TextCard ↓↓↓ */
+.textCard-row { display: flex; align-items: baseline; gap: 6px; padding: 6px 0; } /* was 10px */
 .textCard-row.is-tags .textCard-label { display: flex; align-items: center; }
 .textCard-row.is-tags { align-items: center; }
 .textCard-row .textCard-value { display: flex; align-items: center; }
 .textCard-row.is-centered .textCard-value { display: block; width: 100%; text-align: center; }
-.textCard-label { flex: 0 0 160px; color: var(--muted); font-weight: 600; font-size: 12px; }
+.textCard-label { flex: 0 0 140px; color: var(--muted); font-weight: 600; font-size: 12px; } /* was 160px */
 .textCard-value { flex: 1 1 auto; font-size: 14px; line-height: 1.45; }
+
 .textCard-meta { margin: 6px 0 8px; font-size: 12px; line-height: 1.4; color: var(--muted); text-align: center; }
 .textCard-tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .textCard-tag {
@@ -271,10 +296,10 @@ body {
 .textCard-index {
   position: absolute;
   top: 10px;
-  left: 12px;
+  left: 27px;
   font-size: 12px;
-  font-weight: 500;     /* thinner */
-  opacity: 0.6;         /* faded */
+  font-weight: 500;
+  opacity: 0.6;
   color: var(--muted);
   letter-spacing: 0.2px;
 }
@@ -287,43 +312,56 @@ body {
   }
 }
 
-
 /* ============================
-   Backdrop + Blur when modal open
+   Background when modal open
+   (NO BLUR; keep interactions)
    ============================ */
 .timelineSvg.isModalOpen {
-  filter: blur(2px) saturate(1) brightness(1);
-  transition: filter 120ms ease;
-  pointer-events: none;
+  filter: none;
+  transition: none;
+  pointer-events: auto;
 }
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  backdrop-filter: blur(1.5px);
+  backdrop-filter: none;     /* remove blur */
+  background: transparent;   /* no dimming */
   z-index: 1150;
+  pointer-events: none;
 }
 
 /* ============================
-   FatherCard (modal) + shared rows
+   FatherCard — LEFT-SIDEBAR MODE
    ============================ */
 .fatherCard {
   position: fixed !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%);
-  width: min(960px, 92vw);
-  max-width: 96vw;
-  max-height: min(92dvh, 100dvh - 32px);
+
+  /* crop a bit on the left, but keep fully visible vertically */
+  left: -12px !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: auto !important;
+  transform: none !important;
+
+  width: min(408px, 92vw);
+  max-width: 92vw;
+  height: auto;
+  max-height: none;
   overflow: auto;
+  scrollbar-gutter: stable;
+
   background: var(--bg);
   color: var(--text);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 16px;
-  box-shadow:
-    0 20px 40px rgba(0,0,0,0.18),
-    0 2px 8px rgba(0,0,0,0.06);
-  /* push content downward while keeping absolute index/close fixed */
-  padding: calc(18px + var(--card-content-offset)) 20px 16px 20px;
+
+  /* square edges, only right border visible */
+  border: none !important;
+  border-right: 1px solid rgba(0,0,0,0.12) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  /* internal safe areas: variable left/right padding */
+  padding: 18px var(--card-pad-right) 18px var(--card-pad-left);
+
   z-index: 1200;
   pointer-events: auto;
   font-family: var(--font-ui);
@@ -349,7 +387,7 @@ body {
 .tl-card-close {
   position: absolute;
   top: 0;
-  right: 0;
+  right: max(4px, calc(var(--card-pad-right) - 10px)); /* closer to right edge */
   width: 28px;
   height: 28px;
   display: grid;
@@ -364,18 +402,19 @@ body {
 }
 .tl-card-close:hover { background: #f3f4f6; border-color: #e5e7eb; }
 
+/* ↓↓↓ TIGHTER label/value spacing for FatherCard ↓↓↓ */
 .tl-card-row {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 6px;               /* was 10px */
   padding: 6px 0;
 }
-.tl-card-label { flex: 0 0 140px; color: var(--muted); font-weight: 600; font-size: 12px; }
+.tl-card-label { flex: 0 0 128px; color: var(--muted); font-weight: 600; font-size: 12px; } /* was 140px */
 .tl-card-value { flex: 1 1 auto; font-size: 14px; line-height: 1.45; }
 
-/* NEW: make FatherCard rows inherit TextCard’s baseline/centered behavior */
-.tl-card-row .tl-card-value { display: flex; align-items: center; }                /* baseline alignment */
-.tl-card-row.is-centered .tl-card-value { display: block; width: 100%; text-align: center; }  /* centered description */
+/* Make FatherCard rows inherit TextCard’s baseline/centered behavior */
+.tl-card-row .tl-card-value { display: flex; align-items: center; }
+.tl-card-row.is-centered .tl-card-value { display: block; width: 100%; text-align: center; }
 
 .tl-card-footer {
   display: flex;
@@ -397,18 +436,55 @@ body {
 }
 .tl-card-btn:hover { background: #f9fafb; }
 
-/* Mobile tweaks */
+/* ============================
+   Responsive tweaks
+   ============================ */
 @media (max-width: 640px) {
+  :root{
+    --panel-safe-top: 8px;
+    --panel-safe-bottom: 8px;
+
+    /* slightly more left space on mobile too */
+    --card-pad-left: 24px;
+    --card-pad-right: 12px; /* a touch tighter on small screens */
+  }
+
   .textCard,
   .fatherCard {
-    width: 96vw;
-    max-width: 96vw;
-    max-height: 94dvh;
-    /* keep content offset on mobile too, but you can dial it back if needed */
-    padding: calc(16px + var(--card-content-offset)) 14px 14px 14px;
-    border-radius: 14px;
+    left: -8px !important;        /* lighter crop on small screens */
+    right: 8px !important;         /* allow near-full width */
+    top: 0 !important;
+    bottom: 0 !important;
+
+    width: auto;
+    height: auto;
+    max-height: none;
+
+    /* keep only-right-edge look on mobile */
+    border: none !important;
+    border-right: 1px solid rgba(0,0,0,0.12) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+
+    padding-top: 16px;
+    padding-right: var(--card-pad-right);
+    padding-bottom: 16px;
+    padding-left: var(--card-pad-left); /* increased LEFT padding only */
+
     z-index: 1200;
   }
-  .textCard-label { flex-basis: 130px; }
+
+  /* tighter label/value spacing on small screens */
+  .textCard-row,
+  .tl-card-row {
+    gap: 5px;            /* was 10px */
+  }
+  .textCard-label {
+    flex-basis: 124px;   /* was 130/160 */
+  }
+  .tl-card-label {
+    flex-basis: 116px;   /* was 140 */
+  }
+
   .textCard-title { font-size: 18px; margin-right: 32px; }
 }

@@ -5,8 +5,8 @@
   left: 50%;
   transform: translateX(-50%);
   width: min(600px, 92vw);
-  z-index: 2000; /* base layer for the search UI */
-  pointer-events: none; /* popover/input will re-enable */
+  z-index: 3000;                 /* above backdrop; below nothing else important */
+  pointer-events: none;          /* only inner controls receive events */
   --pop-gap: 0px;
 }
 
@@ -26,10 +26,10 @@
   border: 1px solid rgba(0,0,0,0.08);
   box-shadow: 0 3px 8px rgba(0,0,0,0.12);
   border-radius: 9999px;          /* pill shape */
-  padding: 8px 8px 8px 12px;      /* tighter, right padding small—button provides final edge */
-  pointer-events: auto;
-  position: relative;             /* keep the bar ABOVE the backdrop */
-  z-index: 2110;                  /* > .sb-backdrop (2050) */
+  padding: 8px 8px 8px 12px;
+  pointer-events: auto;           /* re-enable events for the pill */
+  position: relative;             /* keeps popover anchored visually below */
+  z-index: 3010;                  /* above backdrop */
 }
 
 .sb-icon {
@@ -40,7 +40,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transform: translateY(-2px);   /* tweak -1px to -3px as needed */
+  transform: translateY(-2px);
 }
 
 .sb-input {
@@ -77,29 +77,28 @@
 /* Focus ring on the whole pill when input is focused */
 .sb-box:focus-within { border-color: rgba(37,99,235,0.35); }
 
-/* === Popover === */
+/* === Popover (same width as the bar; never full-screen) === */
 .sb-popover {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(100% + var(--pop-gap)); /* sits a bit lower below the pill */
-  pointer-events: auto;
-  z-index: 2120;                     /* above backdrop and the bar */
+  top: calc(100% + var(--pop-gap));
+  pointer-events: auto;             /* interactive list */
+  z-index: 3010;                    /* above backdrop */
   margin-top: 10px;
   background: rgba(255,255,255,0.98);
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 14px;
 
   /* scrolling */
-  /* Fallback for browsers without dynamic viewport units */
-  max-height: calc(100vh - 120px);    /* taller so more results fit */
+  max-height: calc(100vh - 120px);  /* fallback */
   overflow-y: auto;
-  overflow-x: hidden;                 /* vertical-only scrolling */
+  overflow-x: hidden;                /* vertical-only scrolling */
   overscroll-behavior: contain;
-  padding-right: 2px;                 /* gutter so text doesn't sit under the scrollbar */
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); /* avoid last-item clipping */
-  display: block;                     /* single-flow list (no grid) */
-  box-sizing: border-box;             /* include padding in width calc */
+  padding-right: 2px;                /* gutter so text doesn't sit under the scrollbar */
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  display: block;
+  box-sizing: border-box;
 }
 
 /* Ensure inner content never forces horizontal overflow */
@@ -127,7 +126,7 @@
 
 /* === Item (single-flow; no two-column look) === */
 .sb-item {
-  display: block;             /* block so lines stack naturally */
+  display: block;
   text-align: left;
   width: 100%;
   border: none;
@@ -155,19 +154,19 @@
   gap: 0;                /* rely on .sb-sep for spacing */
   font-weight: 600;
   flex-wrap: wrap;       /* allow wrap for narrow widths */
-  min-width: 0;          /* allow children to shrink; avoids horizontal push */
+  min-width: 0;
 }
 
 /* Space under line 1 before line 2 */
 .sb-line1 + .sb-line2 {
-  margin-top: 4px;      /* slight separation */
+  margin-top: 4px;
 }
 
 /* Line 2 needs breathing room so underlays/descenders don't clip (esp. first item) */
 .sb-item .sb-line2 {
-  line-height: 1.3;     /* tiny lift */
-  padding-bottom: 2px;  /* cushion to prevent bottom clipping */
-  overflow: visible;    /* allow highlight underlay to render fully */
+  line-height: 1.3;
+  padding-bottom: 2px;
+  overflow: visible;
 }
 
 /* Category line text color/weight */
@@ -197,7 +196,7 @@
   text-overflow: ellipsis;
   position: relative;
   top: 0px;
-  min-width: 0;          /* enables proper shrinking/ellipsis in flex line */
+  min-width: 0;
 }
 
 /* Light utility (for “by”, “born around”, etc.) */
@@ -215,9 +214,7 @@
 }
 
 /* When author line exists, add a bit more space before the next line */
-.sb-author-line + .sb-line3 {
-  margin-top: 4px;  /* tweak 2–6px to taste */
-}
+.sb-author-line + .sb-line3 { margin-top: 4px; }
 
 /* Author/date styling */
 .sb-author {
@@ -276,7 +273,7 @@
   font: inherit;
   color: inherit;
   background: none;
-  box-shadow: inset 0 -1.8em 0 #fff2a8; /* slightly softer than -2em to avoid edge kiss */
+  box-shadow: inset 0 -1.8em 0 #fff2a8;
   border-radius: 0;
 }
 
@@ -291,7 +288,7 @@
   font-weight: 500;
   white-space: nowrap;
   font-size: 12px;
-  min-width: 0;                /* don’t push layout wide */
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -306,8 +303,8 @@
 
 /* Nudge the right-side meta on line 2 up a bit (both text & father) */
 .sb-line2 .sb-right-meta {
-  display: inline-block;          /* ensures transform/top doesn’t get clipped */
-  transform: translateY(-2px);    /* subtle lift; try -1px…-3px for your font */
+  display: inline-block;
+  transform: translateY(-2px);
 }
 
 /* Optional: nicer WebKit scrollbars */
@@ -321,20 +318,25 @@
 }
 .sb-popover::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); }
 
-/* Blur the graph only when results are visible */
-body.sb-open .timelineSvg {
-  filter: blur(2px) saturate(1) brightness(1);
-  transition: filter 120ms ease;
-  pointer-events: none; /* defensive; backdrop also blocks */
-}
-
-/* Backdrop that sits above the SVG but below the bar & popover */
+/* --- Backdrop (via portal) --- */
 .sb-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2050;                    /* below .sb-box (2110) & .sb-popover (2120) */
+  z-index: 2050;                    /* below bar/popover; above the graph */
   background: rgba(255,255,255,0.12);
   backdrop-filter: blur(1.5px);
+  pointer-events: auto;             /* captures clicks to close */
+}
+
+/* Freeze graph interactions and optionally blur it while list is visible */
+body.sb-open .timelineSvg,
+body.sb-open .viewport {
+  pointer-events: none !important;
+}
+
+body.sb-open .timelineSvg {
+  filter: blur(2px) saturate(1) brightness(1);
+  transition: filter 120ms ease;
 }
 
 /* Optional: Firefox scrollbar */
@@ -348,6 +350,6 @@ body.sb-open .timelineSvg {
 /* Prefer dynamic viewport units when available (more room for results) */
 @supports (height: 100dvh) {
   .sb-popover {
-    max-height: calc(100dvh - 140px); /* taller than the fallback */
+    max-height: calc(100dvh - 140px);
   }
 }

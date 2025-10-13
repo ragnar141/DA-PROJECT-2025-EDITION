@@ -1030,43 +1030,42 @@ const handleSearchInteract = () => {
   }, [fatherRows, outlines, y0]);
  
 
-  // Close segment or duration boxes with ESC
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      const key = e.key || e.code;               // safety for older browsers
-      if (key !== "Escape" && key !== "Esc") return;
+  // Close overlays (segment/duration) first, then cards (Text/Father). Ignore while search list is open.
+useEffect(() => {
+  const onKeyDown = (e) => {
+    const key = e.key || e.code;
+    if (key !== "Escape" && key !== "Esc") return;
 
-      let did = false;
+    // If the SearchBar results are open, let SearchBar handle ESC
+    if (document.body.classList.contains("sb-open")) return;
 
-      // Close the text card (modal)
-      if (selectedText || selectedFather) {
-        closeAll();
-        did = true;
-      }
+    // 1) Close segment/duration first (whichever is open)
+    if (activeSegIdRef.current || activeDurationIdRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
 
-      // Close segment box
       if (activeSegIdRef.current) {
         clearActiveSegmentRef.current?.();
-        did = true;
       }
-
-      // Close duration box
       if (activeDurationIdRef.current) {
         clearActiveDurationRef.current?.();
         awaitingCloseClickRef.current = false;
-        did = true;
       }
+      return; // stop here so cards stay open on first ESC
+    }
 
-      if (did) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
+    // 2) If no overlay is open, then close the card
+    if (selectedText || selectedFather) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeAll();
+    }
+  };
 
-    // capture:true helps if something inside stops propagation
-    window.addEventListener("keydown", onKeyDown, { capture: true });
-    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, [selectedText, selectedFather]); // we only need this state to decide to close the TextCard
+  // capture:true helps if something inside stops propagation
+  window.addEventListener("keydown", onKeyDown, { capture: true });
+  return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
+}, [selectedText, selectedFather]);
 
   // Hide any tooltips the moment a modal opens
   useEffect(() => {
@@ -1732,7 +1731,7 @@ const handleSearchInteract = () => {
         }
 
 // --- inside textSel.on("mouseenter", ...) ---
-const titleLine = [d.textIndex, d.title].filter(Boolean).join(" "); // e.g., "12 Hymn to Amun"
+const titleLine = d.title || "";
 const html = tipHTML(titleLine, d.displayDate || formatYear(d.when));
 const a = textAnchorClient(this, d);
 if (a) showTip(tipText, html, a.x, a.y, d.color);
@@ -1740,7 +1739,7 @@ if (a) showTip(tipText, html, a.x, a.y, d.color);
       })
       .on("mousemove", function (_ev, d) {
 // --- inside textSel.on("mousemove", ...) ---
-const titleLine = [d.textIndex, d.title].filter(Boolean).join(" ");
+const titleLine = d.title || "";
 const html = tipHTML(titleLine, d.displayDate || formatYear(d.when));
 const a = textAnchorClient(this, d);
 if (a) showTip(tipText, html, a.x, a.y, d.color);
@@ -1770,7 +1769,9 @@ if (a) showTip(tipText, html, a.x, a.y, d.color);
         }
       })
       .on("click", function (ev, d) {
-        clearActiveSegment();
+            // Close any open UI (text/father cards, active boxes)
+    closeAll();
+    clearActiveSegment();
 
         const a = textAnchorClient(this, d);
         const wrapRect = wrapRef.current.getBoundingClientRect();
@@ -1790,8 +1791,9 @@ if (a) showTip(tipText, html, a.x, a.y, d.color);
         hideTipSel(tipDur);
 
         setCardPos({ left, top });
-        setSelectedText(d);
-        setShowMore(false);
+    setSelectedText(d);      // open the new TextCard
+    setSelectedFather(null); // make sure FatherCard is closed
+    setShowMore(false);
 
         ev.stopPropagation();
       })
@@ -1885,7 +1887,7 @@ function hasHistoricTag(tags) {
     const a = fatherAnchorClient(this, d);
     if (!a) return;
 
-    const title = [d.index, d.name].filter(Boolean).join(" "); // "Index, Name"
+    const title = d.name || "";
     const subtitle = d.dob || "";                               // D.O.B. (empty if missing)
 
     showTip(tipText, tipHTML(title, subtitle, null), a.x, a.y, d.color);
@@ -1896,7 +1898,7 @@ function hasHistoricTag(tags) {
     const a = fatherAnchorClient(this, d);
     if (!a) return;
 
-    const title = [d.index, d.name].filter(Boolean).join(" ");
+    const title = d.name || "";
     const subtitle = d.dob || "";
 
     showTip(tipText, tipHTML(title, subtitle, null), a.x, a.y, d.color);
@@ -1906,7 +1908,8 @@ function hasHistoricTag(tags) {
     hideTipSel(tipText);
   })
   .on("click", function (ev, d) {
-  // 🔽 NEW: kill any open segment/duration boxes first
+  // Close any open cards + active boxes
+  closeAll();
   clearActiveSegment();
   clearActiveDuration();
   awaitingCloseClickRef.current = false;
@@ -1925,8 +1928,9 @@ function hasHistoricTag(tags) {
   d3.select(wrapRef.current).selectAll(".tl-tooltip")
     .style("opacity", 0).style("display", "none");
 
-  setFatherCardPos({ left, top });
-  setSelectedFather(d);
+setFatherCardPos({ left, top });
+  setSelectedFather(d);   // open the new FatherCard
+  setSelectedText(null);  // make sure TextCard is closed
   setShowMore(false);
   ev.stopPropagation();
 });
