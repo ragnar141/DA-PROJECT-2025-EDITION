@@ -1769,34 +1769,29 @@ if (a) showTip(tipText, html, a.x, a.y, d.color);
         }
       })
       .on("click", function (ev, d) {
-            // Close any open UI (text/father cards, active boxes)
-    closeAll();
-    clearActiveSegment();
+  // Keep any open segment box visible
 
-        const a = textAnchorClient(this, d);
-        const wrapRect = wrapRef.current.getBoundingClientRect();
+  const a = textAnchorClient(this, d);
+  const wrapRect = wrapRef.current.getBoundingClientRect();
+  const CARD_W = 360, CARD_H = 320, PAD = 12;
 
-        const CARD_W = 360;
-        const CARD_H = 320;
-        const PAD = 12;
+  let left = a ? a.x - wrapRect.left + PAD : PAD;
+  let top  = a ? a.y - wrapRect.top + PAD : PAD;
+  left = Math.max(4, Math.min(left, wrapRect.width - CARD_W - 4));
+  top  = Math.max(4, Math.min(top, wrapRect.height - CARD_H - 4));
 
-        let left = a ? a.x - wrapRect.left + PAD : PAD;
-        let top = a ? a.y - wrapRect.top + PAD : PAD;
+  hideTipSel(tipText);    // OK to hide the tiny hover tip
+  // leave tipSeg visible so the segment box stays up
+  // hideTipSel(tipDur);   // optional, keep duration card if desired
 
-        left = Math.max(4, Math.min(left, wrapRect.width - CARD_W - 4));
-        top = Math.max(4, Math.min(top, wrapRect.height - CARD_H - 4));
+  setCardPos({ left, top });
+  setSelectedText(d);
+  setSelectedFather(null);
+  setShowMore(false);
 
-        hideTipSel(tipText);
-        hideTipSel(tipSeg);
-        hideTipSel(tipDur);
+  ev.stopPropagation();
+})
 
-        setCardPos({ left, top });
-    setSelectedText(d);      // open the new TextCard
-    setSelectedFather(null); // make sure FatherCard is closed
-    setShowMore(false);
-
-        ev.stopPropagation();
-      })
       .attr("opacity", BASE_OPACITY);
 
     function textAnchorClient(el, d) {
@@ -1908,11 +1903,8 @@ function hasHistoricTag(tags) {
     hideTipSel(tipText);
   })
   .on("click", function (ev, d) {
-  // Close any open cards + active boxes
-  closeAll();
-  clearActiveSegment();
-  clearActiveDuration();
-  awaitingCloseClickRef.current = false;
+  // Keep any open segment box visible
+  // Do NOT clear active segment or duration; do NOT close all
 
   // anchor near the triangle
   const a = fatherAnchorClient(this, d);
@@ -1924,16 +1916,19 @@ function hasHistoricTag(tags) {
   left = Math.max(4, Math.min(left, wrapRect.width - CARD_W - 4));
   top  = Math.max(4, Math.min(top, wrapRect.height - CARD_H - 4));
 
-  // hide any floating tips
-  d3.select(wrapRef.current).selectAll(".tl-tooltip")
-    .style("opacity", 0).style("display", "none");
+  // Only hide the tiny hover tip; leave the segment box (tipSeg) up
+  hideTipSel(tipText);
+  // hideTipSel(tipSeg);   // <-- do NOT call this
+  // hideTipSel(tipDur);   // optional: keep duration card if it’s open
 
-setFatherCardPos({ left, top });
-  setSelectedFather(d);   // open the new FatherCard
-  setSelectedText(null);  // make sure TextCard is closed
+  setFatherCardPos({ left, top });
+  setSelectedFather(d);   // open FatherCard
+  setSelectedText(null);  // ensure TextCard is closed
   setShowMore(false);
+
   ev.stopPropagation();
-});
+})
+
 
 
     function fatherAnchorClient(el, d) {

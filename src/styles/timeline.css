@@ -246,7 +246,12 @@ body {
   margin-top: 14px
 }
 .textCard-sep { opacity: 0.6; margin: 0 9px; display: none; }
-.textCard-category { margin-left: 0; font-size: 12px; font-weight: 700; opacity: 0.8; white-space: nowrap; }
+.textCard-category { margin-left: 0; font-size: 12px; font-weight: 700; opacity: 0.8;
+overflow-wrap: anywhere;   /* modern, breaks long tokens */
+  word-break: break-word;    /* fallback */
+  hyphens: auto;             /* nicer breaks when possible */
+  text-align: center;
+  min-width: 0;         }
 .textCard-close {
   position: absolute;
   top: 8px;

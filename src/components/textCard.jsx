@@ -54,7 +54,7 @@ export default function TextCard({ d, left, top, onClose, showMore, setShowMore 
       <div className="textCard-titleCombo">
         <span className="textCard-title">{titleOnly}</span>
         {d.category && <span className="textCard-sep"> - </span>}
-        {d.category && <span className="textCard-category">({d.category})</span>}
+        {d.category && <span className="textCard-category">{d.category}</span>}
       </div>
 
       <Row value={d.shortDescription} className="is-centered" />

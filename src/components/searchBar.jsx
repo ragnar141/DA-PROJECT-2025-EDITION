@@ -1,6 +1,15 @@
+// searchBar.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "../styles/searchBar.css";
+
+/* ===== verbose logging ===== */
+const SB_DEBUG = true;
+const dlog = (...args) => {
+  if (!SB_DEBUG) return;
+  // use console.log so it shows up even if "Verbose" is filtered off
+  console.log("[SearchBar]", ...args);
+};
 
 /* === Tiny SVGs that mirror timeline glyphs (inline) === */
 function MarkerIcon({ item }) {
@@ -10,37 +19,23 @@ function MarkerIcon({ item }) {
   const vb = "0 0 16 16";
   const MIDLINE_OFFSET = 0.22;
 
-  // father: right-pointing triangle (+ optional white midline if historic)
   if (type === "father") {
     const r = item?.founding ? 5.5 : 4.0;
     const cx = 8, cy = 8;
     const xL = cx - r, xR = cx + r, yT = cy - r, yB = cy + r, yM = cy;
-    const midX = Math.max(xL + 1, cx - r * MIDLINE_OFFSET); // keep inside triangle
-
-    // accept either .historic (from upstream) or .isHistoric (canonical boolean)
+    const midX = Math.max(xL + 1, cx - r * MIDLINE_OFFSET);
     const isHistoric = !!(item?.historic ?? item?.isHistoric);
 
     return (
       <svg viewBox={vb} width="16" height="16" focusable="false" aria-hidden="true">
-        {/* triangle */}
         <path d={`M ${xL} ${yT} L ${xL} ${yB} L ${xR} ${yM} Z`} fill={color} />
-        {/* white vertical midline for historic entries */}
         {isHistoric && (
-          <line
-            x1={midX}
-            y1={cy - r}
-            x2={midX}
-            y2={cy + r}
-            stroke="#fff"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+          <line x1={midX} y1={cy - r} x2={midX} y2={cy + r} stroke="#fff" strokeWidth="2" strokeLinecap="round" />
         )}
       </svg>
     );
   }
 
-  // multi-color (pie) text marker
   if (colors && colors.length > 1) {
     const n = colors.length;
     const cx = 8, cy = 8, r = 5.5;
@@ -64,7 +59,6 @@ function MarkerIcon({ item }) {
     );
   }
 
-  // default text marker (single-color dot)
   return (
     <svg viewBox={vb} width="16" height="16" focusable="false" aria-hidden="true">
       <circle cx="8" cy="8" r="5.5" fill={color} />
@@ -105,7 +99,7 @@ function cleanField(v) {
 function formatYearHuman(y) {
   const n = Number(y);
   if (!Number.isFinite(n)) return null;
-  if (n === 0) return "—"; // no year zero
+  if (n === 0) return "—";
   return n < 0 ? `${Math.abs(n)} BCE` : `${n} CE`;
 }
 
@@ -118,11 +112,7 @@ function Highlight({ text, query }) {
   return (
     <>
       {parts.map((part, i) =>
-        rx.test(part) ? (
-          <mark key={i} className="sb-mark">{part}</mark>
-        ) : (
-          <span key={i}>{part}</span>
-        )
+        rx.test(part) ? <mark key={i} className="sb-mark">{part}</mark> : <span key={i}>{part}</span>
       )}
     </>
   );
@@ -130,23 +120,7 @@ function Highlight({ text, query }) {
 
 /**
  * Props:
- * - items: Array<{
- *     id,
- *     type: "text"|"father",
- *     title,
- *     author?,
- *     date?,
- *     subtitle?,
- *     category?,
- *     description?,
- *     color?,
- *     colors?,
- *     founding?,
- *     index?,
- *     textIndex?,
- *     dob?,
- *     when?
- *   }>
+ * - items: Array<{ id, type: "text"|"father", title, author?, date?, subtitle?, category?, description?, color?, colors?, founding?, index?, textIndex?, dob?, when?, durationId? }>
  * - onSelect: (item) => void
  * - placeholder?: string
  * - maxResults?: number
@@ -165,10 +139,23 @@ export default function SearchBar({
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
 
+  // mount/unmount trace
+  useEffect(() => {
+    dlog("mounted", { itemsCount: items?.length ?? 0 });
+    return () => dlog("unmounted");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Trace props updates that matter
+  useEffect(() => {
+    dlog("props update", { itemsCount: items?.length ?? 0, maxResults });
+  }, [items, maxResults]);
+
   // Track when the list transitions from hidden -> visible to fire onInteract once
   const listWasVisibleRef = useRef(false);
 
   const closeAndReset = () => {
+    dlog("closeAndReset()");
     setOpen(false);
     setQ("");
     inputRef.current?.blur();
@@ -176,7 +163,10 @@ export default function SearchBar({
 
   const results = useMemo(() => {
     const qq = q.trim().toLowerCase();
-    if (!qq) return [];
+    if (!qq) {
+      dlog("results(empty query)", { open, q });
+      return [];
+    }
     const score = (it) => {
       let s = 0;
       const T = (v) => String(v || "").toLowerCase();
@@ -191,13 +181,15 @@ export default function SearchBar({
       s += inc(it.dob, 2);
       return s;
     };
-    return items
+    const out = items
       .map((it) => ({ it, s: score(it) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s || a.it.title.localeCompare(b.it.title))
       .slice(0, maxResults)
       .map((x) => x.it);
-  }, [q, items, maxResults]);
+    dlog("results(populated)", { q, count: out.length, sample: out.slice(0, 2) });
+    return out;
+  }, [q, items, maxResults, open]);
 
   useEffect(() => {
     setHoverIdx(0);
@@ -209,6 +201,7 @@ export default function SearchBar({
       if (!(open && q.trim())) return;
       if (!wrapRef.current) return;
       if (!wrapRef.current.contains(e.target)) {
+        dlog("outside click → closeAndReset");
         closeAndReset();
       }
     };
@@ -216,38 +209,72 @@ export default function SearchBar({
     return () => document.removeEventListener("pointerdown", handleOutside, true);
   }, [open, q]);
 
-  // Notify parent when list appears
+  // Notify parent when list appears/disappears
   useEffect(() => {
     const listVisible = !!(open && q.trim() && results.length > 0);
-    if (listVisible && !listWasVisibleRef.current) onInteract();
+    if (listVisible && !listWasVisibleRef.current) {
+      dlog("list became visible");
+      onInteract();
+    }
+    if (!listVisible && listWasVisibleRef.current) {
+      dlog("list hidden");
+    }
     listWasVisibleRef.current = listVisible;
   }, [open, q, results, onInteract]);
 
   const activate = (idx) => {
     const item = results[idx];
-    if (!item) return;
+    if (!item) {
+      dlog("activate: no item at idx", { idx });
+      return;
+    }
+    dlog("activate", {
+      idx,
+      id: item.id,
+      type: item.type,
+      title: item.title,
+      when: item.when,
+      durationId: item.durationId,
+      payload: item,
+    });
     onInteract();
-    onSelect(item);
-    closeAndReset();
+    try {
+      dlog("onSelect → begin");
+      onSelect(item); // Timeline should log from handleSearchSelect too
+      dlog("onSelect → end");
+    } catch (err) {
+      console.log("[SearchBar] onSelect threw", err);
+    }
+    requestAnimationFrame(() => {
+      dlog("rAF → closeAndReset");
+      closeAndReset();
+    });
   };
 
   const onKeyDown = (e) => {
     if (!open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       setOpen(true);
       onInteract();
+      dlog("key", e.key, "→ open");
       return;
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setHoverIdx((i) => Math.min((results.length || 1) - 1, i + 1));
+      dlog("key ArrowDown → hoverIdx", Math.min((results.length || 1) - 1, hoverIdx + 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setHoverIdx((i) => Math.max(0, i - 1));
+      dlog("key ArrowUp → hoverIdx", Math.max(0, hoverIdx - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (open) activate(hoverIdx);
+      if (open) {
+        dlog("key Enter → activate", { hoverIdx });
+        activate(hoverIdx);
+      }
     } else if (e.key === "Escape" || e.key === "Esc") {
       e.preventDefault();
+      dlog("key Escape → closeAndReset");
       closeAndReset();
     }
   };
@@ -276,9 +303,15 @@ export default function SearchBar({
         key={r.id}
         className={`sb-item ${isHover ? "is-hover" : ""}`}
         onMouseEnter={() => setHoverIdx(idx)}
-        onClick={() => activate(idx)}
+        onMouseDown={(e) => {
+          dlog("mouseDown(text item)", { idx, id: r.id, title: r.title });
+          e.preventDefault();
+          e.stopPropagation();
+          activate(idx);
+        }}
         role="option"
         aria-selected={isHover}
+        type="button"
       >
         <div className="sb-line sb-line1">
           <span className="sb-inline-icon" aria-hidden="true">
@@ -306,11 +339,8 @@ export default function SearchBar({
           ) : null}
         </div>
 
-        {(author || durationLabel) && (
-          <div
-            className="sb-line sb-line2 sb-author-line"
-            style={{ display: "flex", alignItems: "baseline", gap: 0 }}
-          >
+        {author && (
+          <div className="sb-line sb-line2 sb-author-line" style={{ display: "flex", alignItems: "baseline", gap: 0 }}>
             <div>
               {author ? (
                 <>
@@ -325,11 +355,7 @@ export default function SearchBar({
 
             <span style={{ marginLeft: "auto" }} />
 
-            {durationLabel ? (
-              <span className="sb-category sb-right-meta">
-                <Highlight text={durationLabel} query={q} />
-              </span>
-            ) : null}
+            
           </div>
         )}
 
@@ -363,9 +389,15 @@ export default function SearchBar({
         key={r.id}
         className={`sb-item ${isHover ? "is-hover" : ""}`}
         onMouseEnter={() => setHoverIdx(idx)}
-        onClick={() => activate(idx)}
+        onMouseDown={(e) => {
+          dlog("mouseDown(father item)", { idx, id: r.id, title: r.title });
+          e.preventDefault();
+          e.stopPropagation();
+          activate(idx);
+        }}
         role="option"
         aria-selected={isHover}
+        type="button"
       >
         <div className="sb-line sb-line1">
           <span className="sb-inline-icon" aria-hidden="true">
@@ -393,10 +425,7 @@ export default function SearchBar({
         </div>
 
         {(r.category || durationLabel) && (
-          <div
-            className="sb-line sb-line2"
-            style={{ display: "flex", alignItems: "baseline", gap: 0 }}
-          >
+          <div className="sb-line sb-line2" style={{ display: "flex", alignItems: "baseline", gap: 0 }}>
             <div>
               {r.category ? (
                 <span className="sb-category">
@@ -426,15 +455,16 @@ export default function SearchBar({
 
   const listVisible = !!(open && q.trim() && results.length > 0);
 
-  // keep body class in sync (used to blur/freeze the graph)
+  // keep body class in sync (used to dim the graph)
   useEffect(() => {
+    dlog("listVisible changed", { listVisible });
     document.body.classList.toggle("sb-open", listVisible);
     return () => document.body.classList.remove("sb-open");
   }, [listVisible]);
 
   return (
     <div ref={wrapRef} className="sb-wrap">
-      <div className="sb-box" onMouseDown={onInteract}>
+      <div className="sb-box" onMouseDown={() => { dlog("sb-box mousedown"); onInteract(); }}>
         <svg className="sb-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path
             d="M21 21l-4.3-4.3m1.3-4.2a7 7 0 11-14 0 7 7 0 0114 0z"
@@ -452,8 +482,8 @@ export default function SearchBar({
           type="text"
           value={q}
           placeholder={placeholder}
-          onFocus={() => { setOpen(true); onInteract(); }}
-          onChange={(e) => setQ(e.target.value)}
+          onFocus={() => { dlog("input focus → open"); setOpen(true); onInteract(); }}
+          onChange={(e) => { setQ(e.target.value); dlog("input change", { q: e.target.value }); }}
           onKeyDown={onKeyDown}
           aria-label="Search"
         />
@@ -462,13 +492,17 @@ export default function SearchBar({
       {/* Backdrop via portal so it covers viewport and blocks graph interactions */}
       {listVisible &&
         createPortal(
-          <div className="sb-backdrop" onMouseDown={closeAndReset} aria-hidden="true" />,
+          <div
+            className="sb-backdrop"
+            onMouseDown={() => { dlog("backdrop mousedown → closeAndReset"); closeAndReset(); }}
+            aria-hidden="true"
+          />,
           document.body
         )
       }
 
       {open && q.trim() && results.length > 0 && (
-        <div className="sb-popover" role="listbox" onMouseDown={onInteract}>
+        <div className="sb-popover" role="listbox" onMouseDown={() => { dlog("popover mousedown"); onInteract(); }}>
           {results.map((r, idx) => {
             const isHover = idx === hoverIdx;
             return r.type === "father"
@@ -479,7 +513,7 @@ export default function SearchBar({
       )}
 
       {open && q.trim() && results.length === 0 && (
-        <div className="sb-popover sb-empty" onMouseDown={onInteract}>
+        <div className="sb-popover sb-empty" onMouseDown={() => { dlog("popover(empty) mousedown"); onInteract(); }}>
           No results
         </div>
       )}

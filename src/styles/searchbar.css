@@ -307,6 +307,10 @@
   transform: translateY(-2px);
 }
 
+.sb-line1 + .sb-line3 {
+  margin-top: 6px;  /* slightly more than the 4px used after line 2 */
+}
+
 /* Optional: nicer WebKit scrollbars */
 .sb-popover::-webkit-scrollbar { width: 10px; }
 .sb-popover::-webkit-scrollbar-track { background: transparent; }
@@ -329,15 +333,12 @@
 }
 
 /* Freeze graph interactions and optionally blur it while list is visible */
-body.sb-open .timelineSvg,
-body.sb-open .viewport {
-  pointer-events: none !important;
-}
 
-body.sb-open .timelineSvg {
-  filter: blur(2px) saturate(1) brightness(1);
-  transition: filter 120ms ease;
-}
+
+  body.sb-open .timelineSvg {
+   opacity: 0.92;
+   transition: opacity 120ms ease;
+ }
 
 /* Optional: Firefox scrollbar */
 @supports (scrollbar-width: thin) {
