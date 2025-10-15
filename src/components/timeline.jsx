@@ -428,6 +428,18 @@ export default function Timeline() {
   const awaitingCloseClickRef = useRef(false);
   const lastVisibleLogTsRef = useRef(0);
 
+  const zoomRef = useRef(null);
+  const svgSelRef = useRef(null);
+  const flyToRef = useRef(null);
+
+  const SEARCH_FLY = {
+  k: 4.5,         // target zoom (>= ZOOM_THRESHOLD so dots/triangles are interactive)
+  xFrac: 2/3,     // horizontal position (2/3 = boundary between 2nd and 3rd thirds)
+  yFrac: 0.5,     // vertical center
+  duration: 700,  // ms
+  ease: d3.easeCubicOut
+};
+
   /* ---- Responsive sizing ---- */
   const [size, setSize] = useState({ width: 800, height: 400 });
   const [selectedText, setSelectedText] = useState(null);
@@ -841,6 +853,9 @@ const fathers = (fatherRows || []).map((f) => ({
 
 // ---- Selection handler for the SearchBar ----
 const handleSearchSelect = (item) => {
+  console.log("[TL] handleSearchSelect()", {
+    id: item?.id, type: item?.type, when: item?.when, durationId: item?.durationId
+  });
   const wrapRect = wrapRef.current?.getBoundingClientRect();
   const CARD_W = 360, CARD_H = 320;
   const left = wrapRect ? Math.round((wrapRect.width - CARD_W) / 2) : 24;
@@ -851,19 +866,29 @@ const handleSearchSelect = (item) => {
 
   if (item.type === "text") {
     const payload = textRows.find((t) => t.id === item.id);
+    console.log("[TL] resolved text payload?", !!payload, payload && { when: payload.when, y: payload.y });
     if (payload) {
       setCardPos({ left, top });
       setSelectedText(payload);
       setSelectedFather(null);
       setShowMore(false);
+      flyToRef.current?.(payload, "text");
+      const ok = !!flyToRef.current;
+      console.log("[TL] flyToRef exists?", ok);
+      flyToRef.current?.(payload, "text");
     }
   } else {
     const payload = fatherRows.find((f) => f.id === item.id);
+    console.log("[TL] resolved father payload?", !!payload, payload && { when: payload.when, y: payload.y });
     if (payload) {
       setFatherCardPos({ left, top });
       setSelectedFather(payload);
       setSelectedText(null);
       setShowMore(false);
+       flyToRef.current?.(payload, "father");
+       const ok = !!flyToRef.current;
+       console.log("[TL] flyToRef exists?", ok);
+       flyToRef.current?.(payload, "father");
     }
   }
 };
@@ -1112,14 +1137,8 @@ useEffect(() => {
     // --- INITIAL TRANSFORM (compute BEFORE joins) ---
     const MIN_ZOOM = 1;
     const MAX_ZOOM = 22;
-    const s = MIN_ZOOM;
-    {
-      const tx = (innerWidth - innerWidth * s) / 2;
-      const ty = (innerHeight - innerHeight * s) / 2;
-      const t0 = d3.zoomIdentity.translate(tx, ty).scale(s);
-      const tInit = t0;
-      kRef.current = tInit.k;
-    }
+
+
 
     // ----- Three tooltip DIVs (no author tip now) -----
     const wrapEl = wrapRef.current;
@@ -2165,12 +2184,69 @@ gFathers.selectAll("line.fatherMid").each(function (d) {
           })
       );
 
-    // set up zoom
-    const zoom = d3.zoom()
-      .scaleExtent([MIN_ZOOM, MAX_ZOOM])
-      .translateExtent([[0,0],[innerWidth, innerHeight]])
-      .extent([[0,0],[innerWidth, innerHeight]])
-      .filter((event) => event.type !== "dblclick")
+      // Helper: compute author-lane Y (in "band units" = px at k=1) for a text
+function laneYUForText(d) {
+  // default to original hashed Y if no author lane
+  let yU = y0(d.y);
+  if (d.authorKey) {
+    const lanes = authorLaneMap.get(d.durationId);
+    const laneU = lanes?.get(d.authorKey);
+    if (Number.isFinite(laneU)) yU = laneU;
+  }
+  return yU;
+}
+
+// Helper: compute father Y (in "band units") using fatherYMap bin-aware jitter
+function laneYUForFather(d) {
+  let yU = y0(d.y);
+  const yBandMap = fatherYMap.get(d.durationId);
+  const assignedU = yBandMap?.get(d.id);
+  if (Number.isFinite(assignedU)) yU = assignedU;
+  return yU;
+}
+
+// Compute a zoom transform that places (xData, yU) at desired screen fractions
+function computeTransformForPoint(xDataAstro, yU, kTarget) {
+  // base k=1 pixel positions (inner chart space)
+  const px0 = x(xDataAstro);   // x: astro -> px
+  const py0 = y0(yU);          // y0: band units -> px
+
+ console.log("[TL] computeTransformForPoint()", {
+   px0, py0, innerWidth, innerHeight,
+   desiredX: innerWidth * SEARCH_FLY.xFrac,
+   desiredY: innerHeight * SEARCH_FLY.yFrac
+ });
+
+  const desiredX = innerWidth  * SEARCH_FLY.xFrac;
+  const desiredY = innerHeight * SEARCH_FLY.yFrac;
+
+  const tx = desiredX - kTarget * px0;
+  const ty = desiredY - kTarget * py0;
+
+  console.log("[TL] computed translate", { tx, ty });
+
+  return d3.zoomIdentity.translate(tx, ty).scale(kTarget);
+}
+
+
+// set up zoom (clamped to the data rectangle)
+// data-space bounds (astro years on X, band-units (px@k=1) on Y)
+const XMIN = domainAstro[0]; // toAstronomical(-5500)
+const XMAX = domainAstro[1]; // toAstronomical(2500)
+
+// on-screen ranges at k = 1
+const rangeX0 = x(XMIN);      // 0
+const rangeX1 = x(XMAX);      // innerWidth
+const rangeY0 = 0;
+const rangeY1 = innerHeight;
+
+
+const zoom = (zoomRef.current ?? d3.zoom())
+  .scaleExtent([MIN_ZOOM, MAX_ZOOM])
+  .translateExtent([[rangeX0, rangeY0], [rangeX1, rangeY1]])  // hard clamp
+  .extent([[0, 0], [innerWidth, innerHeight]])
+  .filter((event) => event.type !== "dblclick")
+
       .on("start", () => {
         zoomDraggingRef.current = true;
         // NEW: hard reset any stale segment preview at the start of a gesture
@@ -2180,6 +2256,14 @@ gFathers.selectAll("line.fatherMid").each(function (d) {
         updateHoverVisuals();
       })
       .on("zoom", (event) => {
+        if (event && event.transform) {
+    console.log("[TL] zoom.on('zoom')", {
+      k: event.transform.k,
+      x: event.transform.x,
+      y: event.transform.y,
+      source: event.sourceEvent ? event.sourceEvent.type : "programmatic"
+    });
+  }
         const t = event.transform;
         lastTransformRef.current = t;
         kRef.current = t.k;
@@ -2231,43 +2315,61 @@ gFathers.selectAll("line.fatherMid").each(function (d) {
         updateHoverVisuals();
       });
 
-    const svgSel = d3.select(svgRef.current);
+  const svgSel = svgSelRef.current ?? d3.select(svgRef.current);
+  zoomRef.current = zoom;
+  svgSelRef.current = svgSel;
+  // Public fly-to callback used by SearchBar selection
+  flyToRef.current = function flyToDatum(d, type /* "text" | "father" */) {
+  if (!zoomRef.current || !svgSelRef.current) return;
+  if (!d) return;
 
-    // FIRST DRAW using the chosen transform (persisted if available)
-    const initT = lastTransformRef.current ?? d3.zoomIdentity
-      .translate((innerWidth - innerWidth * MIN_ZOOM) / 2, (innerHeight - innerHeight * MIN_ZOOM) / 2)
-      .scale(MIN_ZOOM);
+  const kTarget = SEARCH_FLY.k;
+  const xAstro  = toAstronomical(d.when);
 
-    apply(initT.rescaleX(x), initT.rescaleY(y0), initT.k);
-    svgSel.call(zoom).call(zoom.transform, initT);
-    updateInteractivity(initT.k);
+  let yU;
+  if (type === "father") yU = laneYUForFather(d);
+  else                   yU = laneYUForText(d);
 
-    // Click-away to close cards / one-shot close for durations
-    svgSel.on("click.clearActive", (ev) => {
-      // One-shot close for an open duration card
-      if (awaitingCloseClickRef.current) {
-        awaitingCloseClickRef.current = false;
-        clearActiveDuration();
-        return;
-      }
+  console.log("[TL] flyToDatum()", { id: d.id, type, when: d.when, xAstro, yU, kTarget });
 
-      const el = ev.target;
-      const cl = el && el.classList;
+  const t = computeTransformForPoint(xAstro, yU, kTarget);
 
-      const isSeg       = cl && cl.contains("segmentHit");
-      const isOutline   = cl && cl.contains("outlineRect");
-      const isGroupPoly = cl && cl.contains("customGroup");
+  console.log("[TL] flyToDatum() transform", t);
 
-      // Only clear if the click was NOT on a segment, NOT on a duration rect,
-      // and NOT on a custom group polygon.
-      if (!isSeg && !isOutline && !isGroupPoly) {
-        clearActiveSegment();
-        clearActiveDuration();
-      }
-    });
+  svgSelRef.current
+    .transition()
+    .duration(SEARCH_FLY.duration)
+    .ease(SEARCH_FLY.ease)
+    .call(zoomRef.current.transform, t)
+    .on("end", () => { lastTransformRef.current = t; });
+};
 
-    // Mark that we've initialized at least once
-    didInitRef.current = true;
+ // Dev helper: try window.flyToTest(id) from DevTools
+ window.flyToTest = (id) => {
+   const t = textRows.find(x => x.id === id);
+   if (t) { console.log("[TL] flyToTest → text", id); flyToRef.current?.(t, "text"); return; }
+   const f = fatherRows.find(x => x.id === id);
+   if (f) { console.log("[TL] flyToTest → father", id); flyToRef.current?.(f, "father"); return; }
+   console.warn("[TL] flyToTest: no such id", id);
+ };
+   if (!didInitRef.current) {
+   // First time only: bind zoom and set init transform
+  const initT = d3.zoomIdentity; // translate(0,0).scale(1)
+
+
+   apply(initT.rescaleX(x), initT.rescaleY(y0), initT.k);
+   svgSel.call(zoom).call(zoom.transform, initT);
+   updateInteractivity(initT.k);
+   lastTransformRef.current = initT;   // remember
+   didInitRef.current = true;
+ } else {
+   // Subsequent runs: DO NOT reset transform.
+   // Re-apply the last transform to current scales for a seamless update.
+   const t = lastTransformRef.current ?? d3.zoomIdentity;
+   apply(t.rescaleX(x), t.rescaleY(y0), t.k);
+   updateInteractivity(t.k);
+   kRef.current = t.k;
+ }
 
     // Hide tooltips if mouse leaves the whole svg area
     svgSel.on("mouseleave.tl-tip", () => {
@@ -2276,7 +2378,6 @@ gFathers.selectAll("line.fatherMid").each(function (d) {
     });
 
     return () => {
-      d3.select(svgRef.current).on(".zoom", null);
       svgSel.on("mouseleave.tl-tip", null);
       svgSel.on("click.clearActive", null);
     };
@@ -2310,21 +2411,36 @@ gFathers.selectAll("line.fatherMid").each(function (d) {
 />
 
       <svg
-        ref={svgRef}
-        className={`timelineSvg ${modalOpen ? "isModalOpen" : ""}`}
-        width={width}
-        height={height}
-      >
-        <g className="chart" transform={`translate(${margin.left},${margin.top})`}>
-          <g ref={gridRef} className="grid" />
-          <g ref={customPolysRef} className="customPolys" /> {/* NEW: polygon layer under labels */}
-          <g ref={outlinesRef} className="durations" />
-          <g ref={segmentsRef} className="segments" />
-          <g ref={fathersRef} className="fathers" />        {/* FATHERS: triangles sit between segments and texts */}
-          <g ref={textsRef} className="texts" />
-        </g>
-        <g ref={axisRef} className="axis" />
-      </svg>
+  ref={svgRef}
+  className={`timelineSvg ${modalOpen ? "isModalOpen" : ""}`}
+  width={width}
+  height={height}
+>
+  {/* 1) Clip path for the charting viewport */}
+  <defs>
+    <clipPath id="tl-clip" clipPathUnits="userSpaceOnUse">
+      {/* coordinates are in the translated chart's local space */}
+      <rect x="0" y="0" width={innerWidth} height={innerHeight} />
+    </clipPath>
+  </defs>
+
+  {/* 2) Apply clipPath to the chart group */}
+  <g
+    className="chart"
+    transform={`translate(${margin.left},${margin.top})`}
+    clipPath="url(#tl-clip)"
+  >
+    <g ref={gridRef} className="grid" />
+    <g ref={customPolysRef} className="customPolys" />
+    <g ref={outlinesRef} className="durations" />
+    <g ref={segmentsRef} className="segments" />
+    <g ref={fathersRef} className="fathers" />
+    <g ref={textsRef} className="texts" />
+  </g>
+
+  {/* Axis is outside the clipped region so it always sits on top */}
+  <g ref={axisRef} className="axis" />
+</svg>
 
       {/* Backdrop for modal; closes on click */}
       {modalOpen && <div className="modalBackdrop" onClick={closeAll} />}
