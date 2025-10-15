@@ -893,22 +893,19 @@ const handleSearchSelect = (item) => {
   }
 };
 
-// Hide any open cards + any transient UI when user interacts with the search
 const handleSearchInteract = () => {
-  // close modals
-  closeAll();
-
-  // clear segment/duration states
+  // Do NOT close cards when interacting with the search bar.
+  // Just clear transient overlays and hide tiny hover tips.
   clearActiveSegmentRef.current?.();
   clearActiveDurationRef.current?.();
   awaitingCloseClickRef.current = false;
 
-  // hide any floating tooltips
   d3.select(wrapRef.current)
     .selectAll(".tl-tooltip")
     .style("opacity", 0)
     .style("display", "none");
 };
+
 
 
 
@@ -2397,76 +2394,87 @@ const zoom = (zoomRef.current ?? d3.zoom())
     y0,
   ]);
 
-  return (
-    <div
-      ref={wrapRef}
-      className="timelineWrap"
-      style={{ width: "100%", height: "100%", position: "relative" }}
-    >
-<SearchBar
-  items={searchItems}
-  onSelect={handleSearchSelect}
-  placeholder="Search"
-  onInteract={handleSearchInteract}
-/>
-
-      <svg
-  ref={svgRef}
-  className={`timelineSvg ${modalOpen ? "isModalOpen" : ""}`}
-  width={width}
-  height={height}
->
-  {/* 1) Clip path for the charting viewport */}
-  <defs>
-    <clipPath id="tl-clip" clipPathUnits="userSpaceOnUse">
-      {/* coordinates are in the translated chart's local space */}
-      <rect x="0" y="0" width={innerWidth} height={innerHeight} />
-    </clipPath>
-  </defs>
-
-  {/* 2) Apply clipPath to the chart group */}
-  <g
-    className="chart"
-    transform={`translate(${margin.left},${margin.top})`}
-    clipPath="url(#tl-clip)"
+return (
+  <div
+    ref={wrapRef}
+    className="timelineWrap"
+    style={{ width: "100%", height: "100%", position: "relative" }}
   >
-    <g ref={gridRef} className="grid" />
-    <g ref={customPolysRef} className="customPolys" />
-    <g ref={outlinesRef} className="durations" />
-    <g ref={segmentsRef} className="segments" />
-    <g ref={fathersRef} className="fathers" />
-    <g ref={textsRef} className="texts" />
-  </g>
+    <SearchBar
+      items={searchItems}
+      onSelect={handleSearchSelect}
+      placeholder="Search"
+      onInteract={handleSearchInteract}
+    />
 
-  {/* Axis is outside the clipped region so it always sits on top */}
-  <g ref={axisRef} className="axis" />
-</svg>
+    <svg
+      ref={svgRef}
+      className={`timelineSvg ${modalOpen ? "isModalOpen" : ""}`}
+      width={width}
+      height={height}
+    >
+      {/* 1) Clip path for the charting viewport */}
+      <defs>
+        <clipPath id="tl-clip" clipPathUnits="userSpaceOnUse">
+          {/* coordinates are in the translated chart's local space */}
+          <rect x="0" y="0" width={innerWidth} height={innerHeight} />
+        </clipPath>
+      </defs>
 
-      {/* Backdrop for modal; closes on click */}
-      {modalOpen && <div className="modalBackdrop" onClick={closeAll} />}
+      {/* 2) Apply clipPath to the chart group */}
+      <g
+        className="chart"
+        transform={`translate(${margin.left},${margin.top})`}
+        clipPath="url(#tl-clip)"
+      >
+        <g ref={gridRef} className="grid" />
+        <g ref={customPolysRef} className="customPolys" />
+        <g ref={outlinesRef} className="durations" />
+        <g ref={segmentsRef} className="segments" />
+        <g ref={fathersRef} className="fathers" />
+        <g ref={textsRef} className="texts" />
+      </g>
 
-      {/* Text modal */}
-      {selectedText && (
-        <TextCard
-          d={selectedText}
-          left={cardPos.left}
-          top={cardPos.top}
-          showMore={showMore}
-          setShowMore={setShowMore}
-          onClose={closeAll}
-        />
-      )}
+      {/* 3) Underfill band beneath the bottom timeline axis (outside clip so it stays visible) */}
+      <rect
+        className="axisUnderfill"
+        x={0}
+        y={margin.top + axisY}
+        width={width}
+        height={margin.bottom}
+        rx={0}
+      />
 
-      {selectedFather && (
-   <FatherCard
-     d={selectedFather}
-     left={fatherCardPos.left}
-     top={fatherCardPos.top}
-     showMore={showMore}
-     setShowMore={setShowMore}
-     onClose={closeAll}
-   />
- )}
-    </div>
-  );
+      {/* Axis is outside the clipped region so it always sits on top */}
+      <g ref={axisRef} className="axis" />
+    </svg>
+
+    {/* Backdrop for modal; closes on click */}
+    {modalOpen && <div className="modalBackdrop" onClick={closeAll} />}
+
+    {/* Text modal */}
+    {selectedText && (
+      <TextCard
+        d={selectedText}
+        left={cardPos.left}
+        top={cardPos.top}
+        showMore={showMore}
+        setShowMore={setShowMore}
+        onClose={closeAll}
+      />
+    )}
+
+    {selectedFather && (
+      <FatherCard
+        d={selectedFather}
+        left={fatherCardPos.left}
+        top={fatherCardPos.top}
+        showMore={showMore}
+        setShowMore={setShowMore}
+        onClose={closeAll}
+      />
+    )}
+  </div>
+);
+
 }

@@ -3,20 +3,30 @@
   --text: #111827;
   --muted: #4b5563;
 
+  /* Card look */
+  --card-bg: #fdf5d8;        /* softer warm amber */
+  --card-border: #f3c26644;  /* subtle right-edge border */
+
   /* Font variables */
   --font-ui: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-heading: "Literata", Georgia, "Times New Roman", serif;
 
-  /* How much to push card content downward (keeps index/close fixed) */
-  --card-content-offset: 14px; /* adjust to taste */
-
-  /* Safe head/foot space inside panels so first/last content + scrollbars are visible */
+  /* Layout helpers */
+  --card-content-offset: 14px; /* keeps index/close fixed while content scrolls */
   --panel-safe-top: 30px;
   --panel-safe-bottom: 12px;
 
-  /* EXTRA LEFT/RIGHT PADDING for TextCard/FatherCard content (index/close unaffected) */
+  /* Card paddings */
   --card-pad-left: 34px;  /* desktop/tablet default */
   --card-pad-right: 16px; /* tighter right edge */
+
+  /* Buttons (Show/Hide Tags) */
+  --btn-brown:        #e4b570;
+  --btn-brown-hover:  #d9a85e;  /* slightly darker */
+  --btn-brown-active: #cfa161;  /* pressed */
+  --btn-brown-border: #b08a4b;  /* softer than black */
+  --btn-brown-text:   #000000;  /* readable on light brown */
+  --btn-brown-ring:   #b08a4b55;
 }
 
 /* Fill the viewport */
@@ -75,6 +85,18 @@ body {
   stroke-dasharray: 6 6;
   vector-effect: non-scaling-stroke;
   shape-rendering: crispEdges;
+}
+.axis .tick text {
+  font-weight: 550;
+  letter-spacing: 0.1px;
+  fill: var(--muted);
+}
+
+/* soft fill under the axis */
+.axisUnderfill {
+  fill: #fff7d6;           /* warm light yellow */
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 /* Duration labels */
@@ -204,23 +226,23 @@ body {
   transform: none !important;
 
   /* sidebar sizing */
-  width: min(408px, 92vw);
+  width: min(330px, 92vw);
   max-width: 92vw;
-  height: auto;           /* let top/bottom define height */
+  height: auto;
   max-height: none;
   overflow: auto;
   scrollbar-gutter: stable;
 
-  background: var(--bg);
+  background: var(--card-bg) !important;
   color: var(--text);
 
-  /* square edges, only right border visible */
+  /* only right border visible */
   border: none !important;
-  border-right: 1px solid rgba(0,0,0,0.12) !important;
+  border-right: 1px solid var(--card-border) !important;
   border-radius: 0 !important;
-  box-shadow: none !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.08) !important;
 
-  /* internal safe areas: variable left/right padding */
+  /* internal safe areas */
   padding: 18px var(--card-pad-right) 18px var(--card-pad-left);
 
   z-index: 1200;
@@ -246,16 +268,21 @@ body {
   margin-top: 14px
 }
 .textCard-sep { opacity: 0.6; margin: 0 9px; display: none; }
-.textCard-category { margin-left: 0; font-size: 12px; font-weight: 700; opacity: 0.8;
-overflow-wrap: anywhere;   /* modern, breaks long tokens */
-  word-break: break-word;    /* fallback */
-  hyphens: auto;             /* nicer breaks when possible */
+.textCard-category {
+  margin-left: 0;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
   text-align: center;
-  min-width: 0;         }
+  min-width: 0;
+}
 .textCard-close {
   position: absolute;
   top: 8px;
-  right: max(4px, calc(var(--card-pad-right) - 10px)); /* closer to right edge */
+  right: max(4px, calc(var(--card-pad-right) - 10px));
   width: 32px;
   height: 32px;
   display: grid;
@@ -271,31 +298,37 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
 .textCard-close:hover { background: #f3f4f6; border-color: #e5e7eb; }
 
 /* ↓↓↓ TIGHTER label/value spacing for TextCard ↓↓↓ */
-.textCard-row { display: flex; align-items: baseline; gap: 6px; padding: 6px 0; } /* was 10px */
+.textCard-row { display: flex; align-items: baseline; gap: 3px; padding: 6px 0; }
 .textCard-row.is-tags .textCard-label { display: flex; align-items: center; }
 .textCard-row.is-tags { align-items: center; }
 .textCard-row .textCard-value { display: flex; align-items: center; }
 .textCard-row.is-centered .textCard-value { display: block; width: 100%; text-align: center; }
-.textCard-label { flex: 0 0 140px; color: var(--muted); font-weight: 600; font-size: 12px; } /* was 160px */
+.textCard-label { flex: 0 0 120px; color: var(--muted); font-weight: 600; font-size: 12px; }
 .textCard-value { flex: 1 1 auto; font-size: 14px; line-height: 1.45; }
 
 .textCard-meta { margin: 6px 0 8px; font-size: 12px; line-height: 1.4; color: var(--muted); text-align: center; }
-.textCard-tags { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* White tag chips */
+.textCard-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .textCard-tag {
   display: inline-block;
   padding: 6px 10px;
   font-size: 12px;
   line-height: 1;
   border-radius: 999px;
-  background: #f3f4f6;
+  background: #ffffff;
   color: #111827;
   border: 1px solid #e5e7eb;
   font-family: var(--font-ui);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
 }
+
 .textCard-moreToggle { margin-top: 12px; }
-.textCard-button { appearance: none; border: 1px solid #e5e7eb; background: #ffffff; color: #111827; border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
-.textCard-button:hover { background: #f9fafb; }
-.textCard-more { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e5e7eb; }
+.textCard-more {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e5e7eb;
+}
 
 /* Subtle left-aligned index for TextCard & FatherCard */
 .textCard-index {
@@ -318,8 +351,7 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
 }
 
 /* ============================
-   Background when modal open
-   (NO BLUR; keep interactions)
+   Background when modal open (no blur)
    ============================ */
 .timelineSvg.isModalOpen {
   filter: none;
@@ -329,8 +361,8 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  backdrop-filter: none;     /* remove blur */
-  background: transparent;   /* no dimming */
+  backdrop-filter: none;
+  background: transparent;
   z-index: 1150;
   pointer-events: none;
 }
@@ -341,30 +373,27 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
 .fatherCard {
   position: fixed !important;
 
-  /* crop a bit on the left, but keep fully visible vertically */
   left: -12px !important;
   top: 0 !important;
   bottom: 0 !important;
   right: auto !important;
   transform: none !important;
 
-  width: min(408px, 92vw);
+  width: min(330px, 92vw);
   max-width: 92vw;
   height: auto;
   max-height: none;
   overflow: auto;
   scrollbar-gutter: stable;
 
-  background: var(--bg);
+  background: var(--card-bg);
   color: var(--text);
 
-  /* square edges, only right border visible */
   border: none !important;
-  border-right: 1px solid rgba(0,0,0,0.12) !important;
+  border-right: 1px solid var(--card-border) !important;
   border-radius: 0 !important;
-  box-shadow: none !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.08) !important;
 
-  /* internal safe areas: variable left/right padding */
   padding: 18px var(--card-pad-right) 18px var(--card-pad-left);
 
   z-index: 1200;
@@ -392,7 +421,7 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
 .tl-card-close {
   position: absolute;
   top: 0;
-  right: max(4px, calc(var(--card-pad-right) - 10px)); /* closer to right edge */
+  right: max(4px, calc(var(--card-pad-right) - 10px));
   width: 28px;
   height: 28px;
   display: grid;
@@ -411,10 +440,10 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
 .tl-card-row {
   display: flex;
   align-items: baseline;
-  gap: 6px;               /* was 10px */
+  gap: 6px;
   padding: 6px 0;
 }
-.tl-card-label { flex: 0 0 128px; color: var(--muted); font-weight: 600; font-size: 12px; } /* was 140px */
+.tl-card-label { flex: 0 0 108px; color: var(--muted); font-weight: 600; font-size: 12px; }
 .tl-card-value { flex: 1 1 auto; font-size: 14px; line-height: 1.45; }
 
 /* Make FatherCard rows inherit TextCard’s baseline/centered behavior */
@@ -428,18 +457,72 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
   padding-top: 10px;
   border-top: 1px dashed #e5e7eb;
 }
+
+/* ============================
+   Buttons: Show/Hide Tags (both cards)
+   ============================ */
+.textCard-button,
 .tl-card-btn {
-  appearance: none;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #111827;
+  background: var(--btn-brown);
+  color: var(--btn-brown-text);
+  border: 1px solid var(--btn-brown-border);
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
 }
-.tl-card-btn:hover { background: #f9fafb; }
+.textCard-button:hover,
+.tl-card-btn:hover {
+  background: var(--btn-brown-hover);
+  border-color: var(--btn-brown-border);
+}
+.textCard-button:active,
+.tl-card-btn:active {
+  background: var(--btn-brown-active);
+}
+.textCard-button:focus-visible,
+.tl-card-btn:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 3px var(--btn-brown-ring);
+}
+
+/* ============================
+   Scrollbars on warm card bg
+   ============================ */
+.textCard,
+.fatherCard {
+  --scroll-thumb: rgba(0,0,0,0.28);
+  --scroll-thumb-hover: rgba(0,0,0,0.38);
+  --scroll-track: transparent;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+/* WebKit (Chromium/Safari/Edge) */
+.textCard::-webkit-scrollbar,
+.fatherCard::-webkit-scrollbar {
+  width: 10px;
+}
+.textCard::-webkit-scrollbar-track,
+.fatherCard::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 999px;
+}
+.textCard::-webkit-scrollbar-thumb,
+.fatherCard::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;       /* subtle gutter on warm bg */
+  background-clip: content-box;
+}
+.textCard::-webkit-scrollbar-thumb:hover,
+.fatherCard::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+}
 
 /* ============================
    Responsive tweaks
@@ -448,16 +531,14 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
   :root{
     --panel-safe-top: 8px;
     --panel-safe-bottom: 8px;
-
-    /* slightly more left space on mobile too */
     --card-pad-left: 24px;
-    --card-pad-right: 12px; /* a touch tighter on small screens */
+    --card-pad-right: 12px;
   }
 
   .textCard,
   .fatherCard {
-    left: -8px !important;        /* lighter crop on small screens */
-    right: 8px !important;         /* allow near-full width */
+    left: -8px !important;
+    right: 8px !important;
     top: 0 !important;
     bottom: 0 !important;
 
@@ -465,31 +546,24 @@ overflow-wrap: anywhere;   /* modern, breaks long tokens */
     height: auto;
     max-height: none;
 
-    /* keep only-right-edge look on mobile */
     border: none !important;
-    border-right: 1px solid rgba(0,0,0,0.12) !important;
+    border-right: 1px solid var(--card-border) !important;
     border-radius: 0 !important;
     box-shadow: none !important;
 
     padding-top: 16px;
     padding-right: var(--card-pad-right);
     padding-bottom: 16px;
-    padding-left: var(--card-pad-left); /* increased LEFT padding only */
+    padding-left: var(--card-pad-left);
 
     z-index: 1200;
   }
 
-  /* tighter label/value spacing on small screens */
   .textCard-row,
-  .tl-card-row {
-    gap: 5px;            /* was 10px */
-  }
-  .textCard-label {
-    flex-basis: 124px;   /* was 130/160 */
-  }
-  .tl-card-label {
-    flex-basis: 116px;   /* was 140 */
-  }
+  .tl-card-row { gap: 5px; }
+
+  .textCard-label { flex-basis: 124px; }
+  .tl-card-label { flex-basis: 116px; }
 
   .textCard-title { font-size: 18px; margin-right: 32px; }
 }

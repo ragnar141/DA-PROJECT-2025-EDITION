@@ -21,7 +21,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: rgba(255,255,255,0.3);
+  background: rgb(252, 252, 252);
   backdrop-filter: blur(6px);
   border: 1px solid rgba(0,0,0,0.08);
   box-shadow: 0 3px 8px rgba(0,0,0,0.12);
@@ -326,10 +326,11 @@
 .sb-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 2050;                    /* below bar/popover; above the graph */
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(1.5px);
-  pointer-events: auto;             /* captures clicks to close */
+  z-index: 2050;                         /* below bar/popover; above the graph */
+  background: rgba(255, 247, 214, 0.28); /* warm tint */
+  backdrop-filter: blur(8px) saturate(0.5);
+  -webkit-backdrop-filter: blur(8px) saturate(0.5);
+  pointer-events: auto;            /* captures clicks to close */
 }
 
 /* Freeze graph interactions and optionally blur it while list is visible */
