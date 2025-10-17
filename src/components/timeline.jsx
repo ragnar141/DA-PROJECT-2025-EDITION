@@ -20,7 +20,6 @@ const SymbolicSystemColorPairs = {
   Elamite: "#2AA6A1",       /* verdigris */
   Achaemenid: "#008E9B",    /* deep royal turquoise */
   Sumerian:  "#000000ff",
-  Akkadian:  "#10B981",
   Babylonian:"#1A49D6",
   Assyrian:  "#C1121F",
   Canaanite: "#6F2DBD",
@@ -58,10 +57,12 @@ const LABEL_FONT_MIN = 8;       // px clamp (tiny bands)
 const LABEL_FONT_MAX_ABS = 160; // px safety cap for extreme zoom
 const LABEL_FONT_MAX_REL = 0.9; // never exceed 90% of band height
 
+
 /* ===== Render + hover constants ===== */
-const BASE_OPACITY = 0.7;
+const BASE_OPACITY = 1;
 const TEXT_BASE_R = 0.4;       // at k=1
 const HOVER_SCALE_DOT = 1.6;   // how much bigger a dot gets on hover
+const HOVER_SCALE_FATHER = 1.6; 
 const ZOOM_THRESHOLD = 1.7;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -107,23 +108,7 @@ const MIN_BAND_WIDTH_FOR_LABEL  = 48;  // px
 const ZOOM_TO_FORCE_LABEL       = 3.0; // non-allowlisted labels show only past this zoom
 const FORBIDDEN_TICKS_ASTRO = new Set([toAstronomical(-5500), toAstronomical(2500)]);
 
-// Session-stable randomness (changes on full reload)
-const sessionSaltRef = { current: Math.random().toString(36).slice(2) };
 
-function seededRandFactory(seedStr) {
-  // simple LCG seeded from a string hash
-  let h = 2166136261 >>> 0;
-  const s = String(seedStr || "");
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return function rand() {
-    // LCG (Numerical Recipes)
-    h = (Math.imul(h, 1664525) + 1013904223) >>> 0;
-    return (h >>> 0) / 2 ** 32;
-  };
-}
 
 /* ===== Tooltip helpers ===== */
 const fmtRange = (s, e) => `${formatYear(s)} – ${formatYear(e)}`;
@@ -155,6 +140,224 @@ function getDatavizNumber(row) {
   }
   return NaN;
 }
+
+
+
+
+
+
+function layoutMarksByPixels({ marks, outlines, authorLaneMap, x, y0, innerHeight }) {
+  // per-band structures
+  const bandById = new Map(outlines.map(o => [o.id, o]));
+
+  // Usable vertical bounds inside each band (in band-units)
+  const yBoundsU = new Map(outlines.map(o => {
+    const topU = y0(o.y);
+    const botU = y0(o.y + o.h);
+    const padU = Math.max(1, (botU - topU) * 0.08);
+    return [o.id, { yMin: topU + padU, yMax: botU - padU }];
+  }));
+
+  // Build a per-band map of items with their screen x-span and band-unit radii
+  const perBand = new Map();
+
+  for (const m of marks) {
+    if (!bandById.has(m.bandId)) continue;
+
+    // screen x position at k=1 (px)
+    const cx = x(toAstronomical(m.when));
+
+   // use base (k=1) draw sizes for spacing; no zoom here
+   const rPx = m.kind === "text"
+     ? TEXT_BASE_R                     // your base dot radius in px at k=1
+     : getFatherBaseR({ foundingFigure: m.foundingFigure }) * 2.2; // match your draw base
+   const rRU = rPx; // 1 band-unit == 1px at k=1
+
+    // choose a bin width that scales with the item’s footprint
+    const BIN_PAD_PX = 6;
+    const binW = Math.max(24, 2 * rPx + BIN_PAD_PX); // diameter + pad
+
+    // put the item into every bin that its diameter touches (edge-safe)
+    const b0 = Math.floor((cx - rPx) / binW);
+    const b1 = Math.floor((cx + rPx) / binW);
+
+    // stash enriched item
+    const enriched = { ...m, _cx: cx, _rPx: rPx, _rRU: rRU, _binW: binW };
+
+    const bandBins = perBand.get(m.bandId) || new Map();
+    for (let b = b0; b <= b1; b++) {
+      const arr = bandBins.get(b) || [];
+      arr.push(enriched);
+      bandBins.set(b, arr);
+    }
+    perBand.set(m.bandId, bandBins);
+  }
+
+  // outputs
+  const textYMap  = new Map(); // bandId -> Map(textId   -> yU)
+  const fatherYMap = new Map(); // bandId -> Map(fatherId -> yU)
+
+  // collision check: two items collide if their vertical distance is too small
+  // *and* their horizontal spans overlap on screen.
+  function overlapsInX(a, b) {
+    return Math.abs(a._cx - b._cx) <= (a._rPx + b._rPx);
+  }
+  function minSepRU(a, b) {
+    // baseline separation + their radii in RU
+    const BASE_SEP_RU = 6; // slightly tighter than before; now radii add most of the spacing
+    return BASE_SEP_RU + Math.max(a._rRU, b._rRU);
+  }
+
+  // placement
+  for (const [bandId, buckets] of perBand.entries()) {
+    const bounds = yBoundsU.get(bandId);
+    if (!bounds) continue;
+
+    // track already placed marks across all bins (global for the band)
+    const placed = []; // [{yU, item}]
+    const setY = (m, yU) => {
+      if (m.kind === "text") {
+        const inner = textYMap.get(bandId) || new Map();
+        inner.set(m.id, yU); textYMap.set(bandId, inner);
+      } else {
+        const inner = fatherYMap.get(bandId) || new Map();
+        inner.set(m.id, yU); fatherYMap.set(bandId, inner);
+      }
+      placed.push({ yU, item: m });
+    };
+
+    // deterministic bin order (left → right)
+    const binKeys = Array.from(buckets.keys()).sort((a,b)=>a-b);
+
+    for (const key of binKeys) {
+      const items = buckets.get(key);
+
+      // split by locked-lane only for texts (authors)
+      const locked = [];
+      const free   = [];
+      for (const m of items) {
+        let yLock = null;
+        if (m.kind === "text" && m.authorKey) {
+          const lane = authorLaneMap.get(m.bandId)?.get(m.authorKey);
+          if (Number.isFinite(lane)) yLock = lane;
+        }
+        if (Number.isFinite(yLock)) locked.push({ m, yLock });
+        else free.push(m);
+      }
+
+      // place locked first — clamp to bounds
+      for (const { m, yLock } of locked) {
+        const yU = Math.max(bounds.yMin, Math.min(bounds.yMax, yLock));
+        setY(m, yU);
+      }
+
+      // sort free: priority desc, size desc, kind stable, time then id
+      free.sort((a, b) => {
+        const pr = (b.priority ?? 0) - (a.priority ?? 0);
+        if (pr) return pr;
+        if (a._rRU !== b._rRU) return b._rRU - a._rRU;
+        if (a.kind !== b.kind) return a.kind.localeCompare(b.kind);
+        if (a.when !== b.when) return a.when - b.when;
+        return String(a.id).localeCompare(String(b.id));
+      });
+
+      // anchor: avg of locked lanes if any; else band center
+      const anchorU = locked.length
+        ? locked.reduce((s, { yLock }) => s + yLock, 0) / locked.length
+        : (bounds.yMin + bounds.yMax) / 2;
+
+      // try placing each free mark, nudging until it doesn't collide
+      for (let i = 0; i < free.length; i++) {
+        const m = free[i];
+
+        // start near anchor; alternate above/below
+        const centeredIndex = (j) => (j===0?0:(j%2 ? (j+1)/2 : -j/2));
+        let yU = anchorU + centeredIndex(i) * (m._rRU + 6);
+
+        // clamp and then resolve collisions w.r.t. already placed items whose x overlaps
+        yU = Math.max(bounds.yMin, Math.min(bounds.yMax, yU));
+
+        let tries = 0;
+        const MAX_TRIES = 24;
+        while (tries < MAX_TRIES) {
+          const badNeighbor = placed.find(p =>
+            overlapsInX(m, p.item) && Math.abs(p.yU - yU) < minSepRU(m, p.item)
+          );
+          if (!badNeighbor) break;
+
+          // nudge up/down in growing steps
+          const step = (m._rRU + 6) * (1 + tries * 0.12);
+          yU += (tries % 2 ? -1 : 1) * step;
+          yU = Math.max(bounds.yMin, Math.min(bounds.yMax, yU));
+          tries++;
+        }
+
+        setY(m, yU);
+      }
+    }
+  }
+
+  return { textYMap, fatherYMap };
+}
+
+
+
+// Visual “radius” in band-units for spacing (k=1)
+function textBaseRU(){ return 8; } // dots are tiny; tweak to taste
+
+// --- Father mark sizing (band-units @ k=1) ---
+const FATHER_R_FOUNDING = 0.5;   // or your preferred RU
+const FATHER_R_NONFOUND = 0.25;  // keep a single source of truth
+
+
+function isYesish(v) {
+  const s = String(v || "").trim().toLowerCase();
+  // be generous about truthy "yes"
+  return s === "yes" || s === "y" || s === "true" || s === "1";
+}
+
+function hasHistoricTag(tags) {
+  return String(tags || "")
+    .toLowerCase()
+    .split(",")
+    .map(s => s.trim())
+    .includes("historic");
+}
+
+
+
+function getFatherBaseR(fatherRow) {
+  return isYesish(fatherRow?.foundingFigure) ? FATHER_R_FOUNDING : FATHER_R_NONFOUND;
+}
+
+function overlayStrokeWidth(r){
+  // consistent stroke scaling; clamps avoid overdraw/vanish
+  return Math.max(0.5, Math.min(r * 0.16, 2.0));
+}
+
+function buildOverlaySegments(cx, cy, r, colors, showMid) {
+  const segs = [];
+  const { LT, LB, RM } = triPoints(cx, cy, r);
+  const n = colors.length;
+
+  // Internal split lines (between color slices)
+  if (n > 1) {
+    for (let i = 1; i < n; i++) {
+      const t = i / n;
+      const P = lerpPt(LT, LB, t);
+      segs.push({ type: "split", x1: P.x, y1: P.y, x2: RM.x, y2: RM.y });
+    }
+  }
+
+  // Vertical midline (historic badge)
+  if (showMid) {
+    const cap = r * 0.5;
+    segs.push({ type: "mid", x1: cx, y1: cy - cap, x2: cx, y2: cy + cap });
+  }
+
+  return segs;
+}
+
 
 function pickSystemColors(tagsStr) {
   const seen = new Set();
@@ -208,6 +411,45 @@ function parseCustomId(id = "") {
   if (parts.length < 3) return null;
   return { groupKey: parts[1] };
 }
+
+// Big triangle points (right-pointing)
+function triPoints(cx, cy, r) {
+  return {
+    LT: { x: cx - r, y: cy - r },  // left-top
+    LB: { x: cx - r, y: cy + r },  // left-bottom
+    RM: { x: cx + r, y: cy },      // right-mid
+  };
+}
+function lerpPt(a, b, t) {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+/**
+ * Split the *left* edge (LT→LB) into n segments and form n skinny sub-triangles
+ * with the right-mid point. Returns an array of { d, fill } for path drawing.
+ */
+function leftSplitTriangleSlices(cx, cy, r, colors) {
+  const n = Math.max(1, (colors || []).length);
+  const { LT, LB, RM } = triPoints(cx, cy, r);
+
+  // Single color → single full triangle
+  if (n === 1) {
+    return [{ d: `M ${LT.x} ${LT.y} L ${LB.x} ${LB.y} L ${RM.x} ${RM.y} Z`, fill: colors?.[0] || "#666" }];
+  }
+
+  const slices = [];
+  for (let i = 0; i < n; i++) {
+    const t0 = i / n, t1 = (i + 1) / n;
+    const A = lerpPt(LT, LB, t0); // upper point on left edge
+    const B = lerpPt(LT, LB, t1); // lower point on left edge
+    slices.push({
+      d: `M ${A.x} ${A.y} L ${B.x} ${B.y} L ${RM.x} ${RM.y} Z`,
+      fill: colors[i],
+    });
+  }
+  return slices;
+}
+
 
 // Build a vertical envelope along time using all member bars/segments
 function buildGroupIntervals(members) {
@@ -322,9 +564,7 @@ function bandRectPx({ start, end, y, h }, zx, zy) {
   const yTop = zy(y), hPix = zy(y + h) - zy(y);
   return { x: Math.min(x0, x1), y: yTop, w: Math.abs(x1 - x0), h: hPix };
 }
-function anchorForRange(r) {
-  return { xMid: r.x + r.w / 2, yTop: r.y, hPix: r.h };
-}
+
 
 function shouldShowDurationLabel({ d, k, bandW, bandH, labelSel }) {
   // Always show custom group labels unless explicitly blocked
@@ -412,6 +652,9 @@ function useDiscoveredFatherSets() {
   return registry;
 }
 
+
+
+
 export default function Timeline() {
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
@@ -426,6 +669,24 @@ export default function Timeline() {
   const prevZoomedInRef = useRef(false);
   const hoveredDurationIdRef = useRef(null);
   const zoomDraggingRef = useRef(false);
+
+    function logRenderedCounts() {
+    // Count *rendered* marks (current DOM), not dataset sizes
+    const textsCount = d3.select(textsRef.current)
+      .selectAll("circle.textDot")
+      .size();
+
+    const fathersCount = d3.select(fathersRef.current)
+      .selectAll("g.fatherMark")
+      .size();
+
+    const total = textsCount + fathersCount;
+
+    console.log(
+      `[Timeline] Rendered — texts: ${textsCount}, fathers: ${fathersCount}, total: ${total}`
+    );
+  }
+
 
   // NEW: single source of truth for hovered segment
   const hoveredSegIdRef = useRef(null);
@@ -450,6 +711,8 @@ export default function Timeline() {
   const zoomRef = useRef(null);
   const svgSelRef = useRef(null);
   const flyToRef = useRef(null);
+
+  const [layoutStamp, setLayoutStamp] = useState(0);
 
   const SEARCH_FLY = {
   k: 4.5,         // target zoom (>= ZOOM_THRESHOLD so dots/triangles are interactive)
@@ -784,10 +1047,9 @@ const socioPoliticalTags = (f["Socio-political Tags"] || "").trim();
           (f["Index"] ?? "").toString().trim() || name || "anon"
         ).trim().toLowerCase();
         const y = yForKey(keyForLane); // still compute as a fallback
-        const symbolicSystem =
-  (f["Symbolic System"] || f["Symbolic System Tags"] || "").trim();
-const color = pickSystemColor(symbolicSystem);
-
+        const symbolicSystem =   (f["Symbolic System"] || f["Symbolic System Tags"] || "").trim();
+        const colors = pickSystemColors(symbolicSystem);
+        const color  = colors[0] || "#666";
         rowsF.push({
           id: `${ds.durationId}__father__${name || hashString(JSON.stringify(f))}__${when}`,
           durationId: ds.durationId,
@@ -795,6 +1057,7 @@ const color = pickSystemColor(symbolicSystem);
           y,
           laneKey: keyForLane,
           color,
+          colors,
           name,
           index,
   dob,
@@ -814,6 +1077,8 @@ const color = pickSystemColor(symbolicSystem);
     }
 
 // ---- Search index (texts + fathers) ----
+// === Unified marks for the vertical layout engine ===
+
 
 
 
@@ -827,108 +1092,30 @@ const color = pickSystemColor(symbolicSystem);
     });
   }, [fatherRegistry, outlines]);
 
-  // ---- Search index (texts + fathers) ----
-const searchItems = useMemo(() => {
-  const texts = (textRows || []).map((t) => ({
+  const textMarks = useMemo(() => (textRows || []).map(t => ({
   id: t.id,
-  type: "text",
-  title: t.title || "",
-  textIndex: t.textIndex ?? null,   // keep original name if you like
-  index: t.textIndex ?? null,       // <-- add this for the search list
-  subtitle: t.authorName || "",
-  category: t.category || t.comteanFramework || "",
-  description: t.shortDescription || "",
-  color: t.color || (t.colors && t.colors[0]) || "#666",
-  colors: t.colors || null,              // NEW: enable pie markers
+  kind: "text",
+  bandId: t.durationId,
   when: t.when,
-  durationId: t.durationId,
-}));
+  // visual “size” in band-units (px at k=1) used for separation
+  sizeU: textBaseRU(),
+  authorKey: t.authorKey || null,
+  priority: 0,
+})), [textRows]);
 
-const fathers = (fatherRows || []).map((f) => ({
+const fatherMarks = useMemo(() => (fatherRows || []).map(f => ({
   id: f.id,
-  type: "father",
-  title: f.name || "",
-  index: f.index ?? null,
-  subtitle: f.symbolicSystem || "",
-  category: f.category || f.comteanFramework || f.historicMythicStatusTags || "",
-  description: f.description || "",
-  color: f.color || "#666",
-  founding: (String(f.foundingFigure || "").trim().toLowerCase() === "yes" ||
-             String(f.foundingFigure || "").trim().toLowerCase() === "y" ||
-             String(f.foundingFigure || "").trim().toLowerCase() === "true" ||
-             String(f.foundingFigure || "").trim() === "1"),     // NEW
-  historic: String(f.historicMythicStatusTags || "")
-              .toLowerCase()
-              .split(",")
-              .map(s => s.trim())
-              .includes("historic"),                              // NEW: midline flag
+  kind: "father",
+  bandId: f.durationId,
   when: f.when,
-  durationId: f.durationId,
-}));
+  sizeU: getFatherBaseR(f),
+  authorKey: null,
+  priority: (isYesish(f.foundingFigure) ? 2 : 0) + (hasHistoricTag(f.historicMythicStatusTags) ? 1 : 0),
+})), [fatherRows]);
 
+const allMarks = useMemo(() => [...textMarks, ...fatherMarks], [textMarks, fatherMarks]);
 
-  return [...texts, ...fathers];
-}, [textRows, fatherRows]);
-
-// ---- Selection handler for the SearchBar ----
-const handleSearchSelect = (item) => {
-  console.log("[TL] handleSearchSelect()", {
-    id: item?.id, type: item?.type, when: item?.when, durationId: item?.durationId
-  });
-  const wrapRect = wrapRef.current?.getBoundingClientRect();
-  const CARD_W = 360, CARD_H = 320;
-  const left = wrapRect ? Math.round((wrapRect.width - CARD_W) / 2) : 24;
-  const top  = wrapRect ? Math.max(8, Math.round(72)) : 24;
-
-  d3.select(wrapRef.current).selectAll(".tl-tooltip")
-    .style("opacity", 0).style("display", "none");
-
-  if (item.type === "text") {
-    const payload = textRows.find((t) => t.id === item.id);
-    console.log("[TL] resolved text payload?", !!payload, payload && { when: payload.when, y: payload.y });
-    if (payload) {
-      setCardPos({ left, top });
-      setSelectedText(payload);
-      setSelectedFather(null);
-      setShowMore(false);
-      flyToRef.current?.(payload, "text");
-      const ok = !!flyToRef.current;
-      console.log("[TL] flyToRef exists?", ok);
-      flyToRef.current?.(payload, "text");
-    }
-  } else {
-    const payload = fatherRows.find((f) => f.id === item.id);
-    console.log("[TL] resolved father payload?", !!payload, payload && { when: payload.when, y: payload.y });
-    if (payload) {
-      setFatherCardPos({ left, top });
-      setSelectedFather(payload);
-      setSelectedText(null);
-      setShowMore(false);
-       flyToRef.current?.(payload, "father");
-       const ok = !!flyToRef.current;
-       console.log("[TL] flyToRef exists?", ok);
-       flyToRef.current?.(payload, "father");
-    }
-  }
-};
-
-const handleSearchInteract = () => {
-  // Do NOT close cards when interacting with the search bar.
-  // Just clear transient overlays and hide tiny hover tips.
-  clearActiveSegmentRef.current?.();
-  clearActiveDurationRef.current?.();
-  awaitingCloseClickRef.current = false;
-
-  d3.select(wrapRef.current)
-    .selectAll(".tl-tooltip")
-    .style("opacity", 0)
-    .style("display", "none");
-};
-
-
-
-
-  // Map: bandId -> Map(authorKey -> laneY_in_band_units_at_k1)
+// Map: bandId -> Map(authorKey -> laneY_in_band_units_at_k1)
   const authorLaneMap = useMemo(() => {
     const map = new Map();
 
@@ -939,6 +1126,8 @@ const handleSearchInteract = () => {
       arr.push(t);
       byBand.set(t.durationId, arr);
     }
+
+    
 
     // Fast band lookup
     const bandById = new Map(outlines.map(o => [o.id, o]));
@@ -982,94 +1171,169 @@ const handleSearchInteract = () => {
     return map;
   }, [textRows, outlines, y0]);
 
-  // === FATHER LANES: single hash → single lane per band (all types share this) ===
- // === FATHER LANES (deterministic, evenly spaced, no edge snapping) ===
-  // === FATHER Y POSITIONS (bin-aware random jitter with collision avoidance) ===
-  const fatherYMap = useMemo(() => {
-    const out = new Map(); // bandId -> Map(fatherId -> yU)
-    if (!fatherRows.length) return out;
+const { textYMap, fatherYMap } = useMemo(() => {
+  // use the *current* transform if present so positions are stable
+  const t = lastTransformRef.current ?? d3.zoomIdentity;
+  const zx = t.rescaleX(x);
+  const k  = t.k ?? 1;
 
-    const bandById = new Map(outlines.map(o => [o.id, o]));
+  return layoutMarksByPixels({
+    marks: allMarks,
+    outlines,
+    authorLaneMap,
+    x,               // used for binning by current pixel X
+    y0,               // your base Y scale (band units @ k=1)
+    k,                // current zoom
+    innerHeight,      // for bounds/padding
+  });
+}, [allMarks, outlines, authorLaneMap, x, y0, innerHeight]);
 
-    // Group fathers by band
-    const byBand = new Map();
-    for (const f of fatherRows) {
-      const arr = byBand.get(f.durationId) || [];
-      arr.push(f);
-      byBand.set(f.durationId, arr);
+function redrawFatherAtRadius(gFather, d, r) {
+  const zx = zxRef.current, zy = zyRef.current;
+  if (!zx || !zy) return;
+
+  const cx = zx(toAstronomical(d.when));
+  let cyU = y0(d.y);
+  const yBandMap = fatherYMap.get(d.durationId);
+  const assignedU = yBandMap?.get(d.id);
+  if (Number.isFinite(assignedU)) cyU = assignedU;
+  const cy = zy(cyU);
+
+  const cols = (d.colors && d.colors.length) ? d.colors : [d.color || "#666"];
+  const triSlices = leftSplitTriangleSlices(cx, cy, r, cols);
+
+  // recolor/d paths
+  gFather.select("g.slices").selectAll("path.slice")
+    .data(triSlices, (_, i) => i)
+    .join(
+      e => e.append("path")
+        .attr("class", "slice")
+        .attr("vector-effect", "non-scaling-stroke")
+        .attr("shape-rendering", "geometricPrecision"),
+      u => u,
+      x => x.remove()
+    )
+    .attr("fill", s => s.fill)
+    .attr("d", s => s.d);
+
+  // overlays (splits + optional midline)
+  const showMid = hasHistoricTag(d.historicMythicStatusTags) && r >= 3;
+  const overlaySegs = buildOverlaySegments(cx, cy, r, cols, showMid);
+  const w = overlayStrokeWidth(r);
+  const showOverlays = r >= 3;
+
+  gFather.select("g.overlays").selectAll("line.overlay")
+    .data(overlaySegs, (s, i) => `${s.type}:${i}`)
+    .join(
+      e => e.append("line")
+        .attr("class", "overlay")
+        .attr("stroke", "#fff")
+        .attr("stroke-linecap", "round")
+        .attr("shape-rendering", "geometricPrecision")
+        .style("pointer-events", "none"),
+      u => u,
+      x => x.remove()
+    )
+    .attr("x1", s => s.x1).attr("y1", s => s.y1)
+    .attr("x2", s => s.x2).attr("y2", s => s.y2)
+    .attr("stroke-width", showOverlays ? w : 0)
+    .attr("opacity", showOverlays ? 0.9 : 0);
+}
+
+  
+
+const searchItems = useMemo(() => {
+  const texts = (textRows || []).map(t => ({
+    id: t.id,
+    type: "text",
+    title: t.title || "",
+    textIndex: t.textIndex ?? null,
+    index: t.textIndex ?? null,
+    subtitle: t.authorName || "",
+    category: t.category || t.comteanFramework || "",
+    description: t.shortDescription || "",
+    color: t.color || (t.colors?.[0]) || "#666",
+    colors: t.colors || null,
+    when: t.when,
+    durationId: t.durationId,
+  }));
+
+  const fathers = (fatherRows || []).map(f => ({
+    id: f.id,
+    type: "father",
+    title: f.name || "",
+    index: f.index ?? null,
+    subtitle: f.symbolicSystem || "",
+    category: f.category || f.comteanFramework || f.historicMythicStatusTags || "",
+    description: f.description || "",
+    color: f.color || "#666",
+    colors: f.colors || null,
+    founding: isYesish(f.foundingFigure),
+    historic: hasHistoricTag(f.historicMythicStatusTags),
+    when: f.when,
+    durationId: f.durationId,
+  }));
+
+  return [...texts, ...fathers];
+}, [textRows, fatherRows]);
+
+
+// ---- Selection handler for the SearchBar ----
+const handleSearchSelect = (item) => {
+
+  const wrapRect = wrapRef.current?.getBoundingClientRect();
+  const CARD_W = 360, CARD_H = 320;
+  const left = wrapRect ? Math.round((wrapRect.width - CARD_W) / 2) : 24;
+  const top  = wrapRect ? Math.max(8, Math.round(72)) : 24;
+
+  d3.select(wrapRef.current).selectAll(".tl-tooltip")
+    .style("opacity", 0).style("display", "none");
+
+  if (item.type === "text") {
+    const payload = textRows.find((t) => t.id === item.id);
+   
+    if (payload) {
+      setCardPos({ left, top });
+      setSelectedText(payload);
+      setSelectedFather(null);
+      setShowMore(false);
+      flyToRef.current?.(payload, "text");
     }
+  } else {
+    const payload = fatherRows.find((f) => f.id === item.id);
+  
+    if (payload) {
+      setFatherCardPos({ left, top });
+      setSelectedFather(payload);
+      setSelectedText(null);
+      setShowMore(false);
+       flyToRef.current?.(payload, "father");
+       const ok = !!flyToRef.current;
 
-    // Bin width in YEARS — fathers close in time share a bin and must vertically separate
-    const BIN_YEARS = 8;       // tweak: smaller = stricter x-crowding awareness
-    const MIN_VSEP_U = 12;     // min vertical separation in "band units" (px at k=1)
-    const MAX_TRIES = 24;      // attempts per point to find a clear vertical slot
-
-    const sessionSalt = sessionSaltRef.current;
-
-    for (const [bandId, items] of byBand.entries()) {
-      const band = bandById.get(bandId);
-      if (!band) continue;
-
-      // Band vertical in "band units" (== px at k=1)
-      const bandTopU = y0(band.y);
-      const bandBotU = y0(band.y + band.h);
-      const bandH = Math.max(1, bandBotU - bandTopU);
-      const padU = Math.max(1, bandH * 0.08);
-      const yMin = bandTopU + padU;
-      const yMax = bandBotU - padU;
-      const usableU = Math.max(1, yMax - yMin);
-
-      // Group by x-bin (time bin)
-      const byBin = new Map(); // binKey -> fathers[]
-      for (const it of items) {
-        const binKey = Math.floor(it.when / BIN_YEARS);
-        const arr = byBin.get(binKey) || [];
-        arr.push(it);
-        byBin.set(binKey, arr);
-      }
-
-      const bandMap = new Map(); // fatherId -> yU
-
-      for (const [binKey, binItems] of byBin.entries()) {
-        // Deterministic shuffle order per bin for nicer distribution
-        const order = [...binItems].sort((a, b) => {
-          const ha = hashString(`${sessionSalt}|${bandId}|${binKey}|${a.id}`);
-          const hb = hashString(`${sessionSalt}|${bandId}|${binKey}|${b.id}`);
-          return ha - hb;
-        });
-
-        const placed = []; // array of yU already placed in this bin
-        const rand = seededRandFactory(`${sessionSalt}|${bandId}|${binKey}`);
-
-        for (const it of order) {
-          let yU = yMin + rand() * usableU; // propose anywhere in band
-
-          // Greedy collision avoidance in vertical axis
-          let ok = false;
-          for (let t = 0; t < MAX_TRIES; t++) {
-            ok = placed.every(py => Math.abs(py - yU) >= MIN_VSEP_U);
-            if (ok) break;
-            // Try another random sample
-            yU = yMin + rand() * usableU;
-          }
-          if (!ok) {
-            // Last-resort: spread along the band deterministically
-            // (prevents piling up if random fails)
-            yU = yMin + (placed.length % Math.max(1, Math.floor(usableU / MIN_VSEP_U))) * MIN_VSEP_U;
-          }
-          placed.push(yU);
-          bandMap.set(it.id, yU);
-        }
-      }
-
-      out.set(bandId, bandMap);
-      // DEBUG (optional):
-      // console.log("[father y map] band:", bandId, { count: bandMap.size, yMin, yMax });
+       
     }
+  }
+};
 
-    return out;
-  }, [fatherRows, outlines, y0]);
- 
+const handleSearchInteract = () => {
+  // Do NOT close cards when interacting with the search bar.
+  // Just clear transient overlays and hide tiny hover tips.
+  clearActiveSegmentRef.current?.();
+  clearActiveDurationRef.current?.();
+  awaitingCloseClickRef.current = false;
+
+  d3.select(wrapRef.current)
+    .selectAll(".tl-tooltip")
+    .style("opacity", 0)
+    .style("display", "none");
+};
+
+
+
+
+
+
+
 
   // Close overlays (segment/duration) first, then cards (Text/Father). Ignore while search list is open.
 useEffect(() => {
@@ -1127,6 +1391,8 @@ useEffect(() => {
     const gSeg = d3.select(segmentsRef.current);
     const gTexts = d3.select(textsRef.current);
     const gFathers = d3.select(fathersRef.current);   // FATHERS: layer
+
+    
 
     gRoot.attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -1636,41 +1902,45 @@ useEffect(() => {
       return (d.colors || []).map((color, i) => ({ color, i, n: d.colors.length, id: d.id }));
     }
 
-    // Keep a stable selection handle for later filtering by data
-    const piesSel = gTexts.selectAll("g.dotSlices");
+const piesSel = gTexts.selectAll("g.dotSlices");
 
-    // Data join for pie groups (only for multi-color texts)
-    piesSel
-      .data(textRows.filter((d) => (d.colors || []).length > 1), (d) => d.id)
-      .join(
-        (enter) => {
-          const g = enter
-            .append("g")
-            .attr("class", "dotSlices")
-            .style("pointer-events", "none")
-            .style("opacity", BASE_OPACITY);
+piesSel
+  .data(textRows.filter(d => (d.colors || []).length > 1), d => d.id)
+  .join(
+    enter => {
+      const g = enter.append("g")
+        .attr("class", "dotSlices")
+        .style("pointer-events", "none")
+        .style("opacity", BASE_OPACITY);
 
-          g.selectAll("path.slice")
-            .data((d) => slicesDataFor(d))
-            .join("path")
-            .attr("class", "slice")
-            .attr("fill", (s) => s.color);
+        g.append("g").attr("class", "separators");
 
-          return g;
-        },
-        (update) => {
-          update
-            .selectAll("path.slice")
-            .data((d) => slicesDataFor(d))
-            .join(
-              (e2) => e2.append("path").attr("class", "slice").attr("fill", (s) => s.color),
-              (u2) => u2.attr("fill", (s) => s.color),
-              (x2) => x2.remove()
-            );
-          return update;
-        },
-        (exit) => exit.remove()
-      );
+      
+      g.selectAll("path.slice")
+        .data(d => (d.colors || []).map((color, i) => ({ color, i, n: d.colors.length })))
+        .join("path")
+        .attr("class", "slice")
+        .attr("fill", s => s.color);
+
+      return g;
+    },
+    update => {
+      
+      update.selectAll("g.separators").data([0]).join("g").attr("class", "separators");
+      
+      update.selectAll("path.slice")
+        .data(d => (d.colors || []).map((color, i) => ({ color, i, n: d.colors.length })))
+        .join(
+          e => e.append("path").attr("class", "slice").attr("fill", s => s.color),
+          u => u.attr("fill", s => s.color),
+          x => x.remove()
+        );
+      return update;
+    },
+    exit => exit.remove()
+  );
+
+
 
     // Keep draw order stable for pies as well
     gTexts
@@ -1678,30 +1948,61 @@ useEffect(() => {
       .sort((a, b) => (a.when - b.when) || a.durationId.localeCompare(b.durationId));
 
     // helper to (re)compute wedge paths at a given radius
-    function drawSlicesAtRadius(selection, r) {
-      const arcGen = d3.arc().innerRadius(0).outerRadius(r);
+function drawSlicesAtRadius(selection, r) {
+  const ANGLE_OFFSET = -Math.PI / 2;           // 12 o'clock start
+  const arcGen = d3.arc().innerRadius(0).outerRadius(r);
 
-      selection.each(function (d) {
-        const g = d3.select(this);
-        const n = (d.colors || []).length;
+  selection.each(function (d) {
+    const g = d3.select(this);
+    const n = Math.max(1, (d.colors || []).length);
 
-        g.selectAll("path.slice").attr("d", (s) => {
-          if (n === 2) {
-            // First color on the RIGHT, second on the LEFT
-            const halves = [
-              { startAngle: 0, endAngle: Math.PI },           // right half
-              { startAngle: Math.PI, endAngle: 2 * Math.PI }, // left half
-            ];
-            const h = halves[Math.min(s.i, 1)];
-            return arcGen(h);
-          }
-          // Default fan layout (starts at top, clockwise)
-          const a0 = (s.i / n) * 2 * Math.PI - Math.PI / 2;
-          const a1 = ((s.i + 1) / n) * 2 * Math.PI - Math.PI / 2;
-          return arcGen({ startAngle: a0, endAngle: a1 });
-        });
+    // --- 1) Color wedges (same angle convention for all n) ---
+    g.selectAll("path.slice")
+      .attr("d", (_s, i) => {
+        const a0 = ANGLE_OFFSET + (i / n) * 2 * Math.PI;
+        const a1 = ANGLE_OFFSET + ((i + 1) / n) * 2 * Math.PI;
+        return arcGen({ startAngle: a0, endAngle: a1 });
       });
-    }
+
+    // --- 2) White separators on the EXACT wedge boundaries ---
+    // One separator per boundary: i = 0..n-1
+    const boundaryAngles = n > 1
+      ? d3.range(n).map(i => ANGLE_OFFSET + (i / n) * 2 * Math.PI)
+      : [];
+
+    const sepG = g.selectAll("g.separators")
+      .data([0])
+      .join("g")
+      .attr("class", "separators")
+      .raise();
+
+    const show = n > 1;
+    const w = Math.max(0.35, Math.min(r * 0.18, 1.5));  // same visual scale used elsewhere
+
+    sepG.selectAll("line.sep")
+      .data(boundaryAngles, a => a)   // stable key by angle
+      .join(
+        e => e.append("line")
+              .attr("class", "sep")
+              .attr("stroke", "#fff")
+              .attr("stroke-linecap", "round")
+              .attr("vector-effect", "non-scaling-stroke")
+              .attr("shape-rendering", "geometricPrecision")
+              .style("pointer-events", "none"),
+        u => u,
+        x => x.remove()
+      )
+      // draw a diameter through the center at each boundary angle
+      .attr("x1", a => d3.pointRadial(a, -r)[0])
+      .attr("y1", a => d3.pointRadial(a, -r)[1])
+      .attr("x2", a => d3.pointRadial(a,  r)[0])
+      .attr("y2", a => d3.pointRadial(a,  r)[1])
+      .attr("stroke-width", show ? w : 0)
+      .attr("opacity", show ? 0.9 : 0);
+  });
+}
+
+
 
     const within = (v, a, b) => v >= Math.min(a, b) && v <= Math.max(a, b);
 
@@ -1717,29 +2018,6 @@ useEffect(() => {
           within(d.y, s.y, s.y + s.h)
       );
     };
-
-    // === Log how many text dots are currently visible on screen ===
-    (function logVisibleTextsThrottled() {
-      const now = performance.now();
-      if (now - (lastVisibleLogTsRef.current || 0) < 200) return; // throttle ~5/s
-      lastVisibleLogTsRef.current = now;
-
-      // We’re in the inner chart coords, so use innerWidth/innerHeight bounds
-      const visibleCount = d3.select(textsRef.current)
-        .selectAll("circle.textDot")
-        .filter(function () {
-          const sel = d3.select(this);
-          const cx = +sel.attr("cx") || 0;
-          const cy = +sel.attr("cy") || 0;
-          const r  = +sel.attr("r")  || 0;
-          // visible if any part of the circle overlaps the viewport
-          return (cx + r) >= 0 && (cx - r) <= innerWidth &&
-                 (cy + r) >= 0 && (cy - r) <= innerHeight;
-        })
-        .size();
-
-      console.log(`[Timeline] Visible text dots: ${visibleCount}`);
-    })();
 
     // Text dots hover/click (zoomed-in only via pointer-events toggle)
     textSel
@@ -1845,97 +2123,58 @@ if (a) showTip(tipText, html, a.x, a.y, d.color);
       };
     }
 
-    /* ---------- FATHERS: triangles ---------- */
-    // --- Founding-figure size helpers ---
-const FATHER_R_FOUNDING = 0.5;   // YES
-const FATHER_R_NONFOUND = 0.25;  // NO
-
-function isYesish(v) {
-  const s = String(v || "").trim().toLowerCase();
-  // be generous about truthy "yes"
-  return s === "yes" || s === "y" || s === "true" || s === "1";
-}
-
-function getFatherBaseR(fatherRow) {
-  return isYesish(fatherRow?.foundingFigure) ? FATHER_R_FOUNDING : FATHER_R_NONFOUND;
-}
-
-function hasHistoricTag(tags) {
-  return String(tags || "")
-    .toLowerCase()
-    .split(",")
-    .map(s => s.trim())
-    .includes("historic");
-}
 
 
-
-    function triPathRight(cx, cy, r) {
-      // right-pointing triangle: left-top -> left-bottom -> right-mid
-      const xL = cx - r, xR = cx + r, yT = cy - r, yB = cy + r, yM = cy;
-      return `M ${xL} ${yT} L ${xL} ${yB} L ${xR} ${yM} Z`;
-    }
+   
 
     // Data join for fathers
-    const fathersSel = gFathers
-      .selectAll("path.fatherMark")
-      .data(fatherRows, (d) => d.id)
-      .join(
-        (enter) =>
-          enter
-            .append("path")
-            .attr("class", "fatherMark")
-            .attr("fill", (d) => d.color || "#666")
-            .attr("opacity", BASE_OPACITY)
-            .style("transition", "opacity 120ms ease"),
-        (update) => update,
-        (exit) => exit.remove()
-      );
-
-      const fatherMidSel = gFathers
-  .selectAll("line.fatherMid")
+// In fathersSel join (enter)
+const fathersSel = gFathers
+  .selectAll("g.fatherMark")
   .data(fatherRows, d => d.id)
   .join(
-    enter => enter
-      .append("line")
-      .attr("class", "fatherMid")
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
-      .attr("stroke-linecap", "round")
-      .attr("vector-effect", "non-scaling-stroke")
-      .style("pointer-events", "none"), // never capture events
+    enter => {
+      const g = enter.append("g")
+        .attr("class", "fatherMark")
+        .attr("opacity", BASE_OPACITY)
+        .style("transition", "opacity 120ms ease");
+      g.append("g").attr("class", "slices");    // colored triangles
+      g.append("g").attr("class", "overlays");  // ALL white lines live here
+      return g;
+    },
     update => update,
     exit => exit.remove()
   );
 
-    // Lightweight hover tooltip for fathers (zoomed-in like texts)
-    fathersSel
-  .on("mouseenter", function (_ev, d) {
-    if (kRef.current < ZOOM_THRESHOLD) return;
-    d3.select(this).attr("opacity", 1);
 
+    // Lightweight hover tooltip for fathers (zoomed-in like texts)
+fathersSel
+  .on("mouseover", function (_ev, d) {
+    if (kRef.current < ZOOM_THRESHOLD) return;
+
+    const baseR = getFatherBaseR(d) * kRef.current * 2.2;
+    redrawFatherAtRadius(d3.select(this), d, baseR * HOVER_SCALE_FATHER);
+
+    // keep your tooltip code (unchanged)...
     const a = fatherAnchorClient(this, d);
     if (!a) return;
-
     const title = d.name || "";
-    const subtitle = d.dob || "";                               // D.O.B. (empty if missing)
-
+    const subtitle = d.dob || "";
     showTip(tipText, tipHTML(title, subtitle, null), a.x, a.y, d.color);
   })
   .on("mousemove", function (_ev, d) {
     if (kRef.current < ZOOM_THRESHOLD) return;
-
     const a = fatherAnchorClient(this, d);
     if (!a) return;
-
     const title = d.name || "";
     const subtitle = d.dob || "";
-
     showTip(tipText, tipHTML(title, subtitle, null), a.x, a.y, d.color);
   })
-  .on("mouseleave", function () {
-    d3.select(this).attr("opacity", BASE_OPACITY);
+  .on("mouseout", function (_ev, d) {
     hideTipSel(tipText);
+    // restore to base radius
+    const baseR = getFatherBaseR(d) * kRef.current * 2.2;
+    redrawFatherAtRadius(d3.select(this), d, baseR);
   })
   .on("click", function (ev, d) {
   // Keep any open segment box visible
@@ -2072,14 +2311,12 @@ function hasHistoricTag(tags) {
       gTexts.selectAll("circle.textDot").each(function (d) {
         const cx = zx(toAstronomical(d.when));
 
-        // Default to the original hashed Y (what you had before lanes)
-        let cyU = y0(d.y);
-
-        if (d.authorKey) { // only lane-align if real author
-          const lanes = authorLaneMap.get(d.durationId);
-          const laneU = lanes?.get(d.authorKey);
-          if (Number.isFinite(laneU)) cyU = laneU;
+        let cyU = textYMap.get(d.durationId)?.get(d.id);
+        if (!Number.isFinite(cyU)) {
+        // very rare: fallback if not in map yet
+        cyU = y0(d.y);
         }
+
 
         const cy = zy(cyU);
         d3.select(this).attr("cx", cx).attr("cy", cy).attr("r", TEXT_BASE_R * k);
@@ -2089,52 +2326,71 @@ function hasHistoricTag(tags) {
       gTexts.selectAll("g.dotSlices").each(function (d) {
         const cx = zx(toAstronomical(d.when));
 
-        let cyU = y0(d.y);
-        if (d.authorKey) {
-          const lanes = authorLaneMap.get(d.durationId);
-          const laneU = lanes?.get(d.authorKey);
-          if (Number.isFinite(laneU)) cyU = laneU;
-        }
-
+        let cyU = textYMap.get(d.durationId)?.get(d.id);
+          if (!Number.isFinite(cyU)) cyU = y0(d.y);
         const cy = zy(cyU);
         const g = d3.select(this);
         g.attr("transform", `translate(${cx},${cy})`);
         drawSlicesAtRadius(g, TEXT_BASE_R * k);
       });
 
-      gFathers.selectAll("path.fatherMark").each(function (d) {
+  gFathers.selectAll("g.fatherMark").each(function (d) {
+  const zx = zxRef.current, zy = zyRef.current;
   const cx = zx(toAstronomical(d.when));
-  // bin-aware random jitter lookup (fallback to original y if missing)
+
+  // lane Y (uses your fatherYMap)
   let cyU = y0(d.y);
   const yBandMap = fatherYMap.get(d.durationId);
   const assignedU = yBandMap?.get(d.id);
   if (Number.isFinite(assignedU)) cyU = assignedU;
   const cy = zy(cyU);
 
-  // use per-entry base radius:
+  d3.select(this).attr("data-cy", cy);
+
+  const cols = (d.colors && d.colors.length) ? d.colors : [d.color || "#666"];
   const r = getFatherBaseR(d) * k * 2.2;
 
-  const path = triPathRight(cx, cy, r);
-  d3.select(this)
-    .attr("d", path)
-    .attr("data-cy", cy); // used by fatherAnchorClient
+  // 1) Colored triangle slices
+  const triSlices = leftSplitTriangleSlices(cx, cy, r, cols);
+  d3.select(this).select("g.slices")
+    .selectAll("path.slice")
+    .data(triSlices, (_, i) => i)
+    .join(
+      e => e.append("path")
+        .attr("class", "slice")
+        .attr("vector-effect", "non-scaling-stroke")
+        .attr("shape-rendering", "geometricPrecision"),
+      u => u,
+      x => x.remove()
+    )
+    .attr("d", s => s.d)
+    .attr("fill", s => s.fill);
+
+  // 2) Unified white overlays (splits + optional midline)
+  const showMid = hasHistoricTag(d.historicMythicStatusTags) && r >= 3;
+  const overlaySegs = buildOverlaySegments(cx, cy, r, cols, showMid);
+  const w = overlayStrokeWidth(r);
+  const showOverlays = r >= 3;
+
+  d3.select(this).select("g.overlays")
+    .selectAll("line.overlay")
+    .data(overlaySegs, (s, i) => `${s.type}:${i}`)
+    .join(
+      e => e.append("line")
+        .attr("class", "overlay")
+        .attr("stroke", "#fff")
+        .attr("stroke-linecap", "round")
+        .attr("shape-rendering", "geometricPrecision")
+        .style("pointer-events", "none"),   // no capture, ever
+      u => u,
+      x => x.remove()
+    )
+    .attr("x1", s => s.x1).attr("y1", s => s.y1)
+    .attr("x2", s => s.x2).attr("y2", s => s.y2)
+    .attr("stroke-width", showOverlays ? w : 0)
+    .attr("opacity", showOverlays ? 0.9 : 0);
 });
 
-gFathers.selectAll("line.fatherMid").each(function (d) {
-  const cx = zx(toAstronomical(d.when));
-  let cyU = y0(d.y);
-  const yBandMap = fatherYMap.get(d.durationId);
-  const assignedU = yBandMap?.get(d.id);   // use fatherYMap keyed by father id
-  if (Number.isFinite(assignedU)) cyU = assignedU;
-  const cy = zy(cyU);
-
-  const r = getFatherBaseR(d) * k * 2.2;
-
-  d3.select(this)
-    .attr("x1", cx).attr("x2", cx)
-    .attr("y1", cy - r).attr("y2", cy + r)
-    .attr("opacity", hasHistoricTag(d.historicMythicStatusTags) ? 1 : 0);
-});
 
     }
 
@@ -2146,7 +2402,7 @@ gFathers.selectAll("line.fatherMid").each(function (d) {
       gSeg.selectAll("rect.segmentHit").style("pointer-events", zoomedIn ? "all" : "none");
       gTexts.selectAll("circle.textDot").style("pointer-events", zoomedIn ? "all" : "none");
       gCustom.selectAll("path.customGroup").style("pointer-events", zoomedIn ? "none" : "visibleFill");
-      gFathers.selectAll("path.fatherMark").style("pointer-events", zoomedIn ? "all" : "none"); // FATHERS
+      gFathers.selectAll("g.fatherMark").style("pointer-events", zoomedIn ? "all" : "none");
 
       if (!zoomedIn) {
         clearActiveSegment();
@@ -2227,11 +2483,7 @@ function computeTransformForPoint(xDataAstro, yU, kTarget) {
   const px0 = x(xDataAstro);   // x: astro -> px
   const py0 = y0(yU);          // y0: band units -> px
 
- console.log("[TL] computeTransformForPoint()", {
-   px0, py0, innerWidth, innerHeight,
-   desiredX: innerWidth * SEARCH_FLY.xFrac,
-   desiredY: innerHeight * SEARCH_FLY.yFrac
- });
+
 
   const desiredX = innerWidth  * SEARCH_FLY.xFrac;
   const desiredY = innerHeight * SEARCH_FLY.yFrac;
@@ -2239,7 +2491,7 @@ function computeTransformForPoint(xDataAstro, yU, kTarget) {
   const tx = desiredX - kTarget * px0;
   const ty = desiredY - kTarget * py0;
 
-  console.log("[TL] computed translate", { tx, ty });
+ 
 
   return d3.zoomIdentity.translate(tx, ty).scale(kTarget);
 }
@@ -2272,14 +2524,7 @@ const zoom = (zoomRef.current ?? d3.zoom())
         updateHoverVisuals();
       })
       .on("zoom", (event) => {
-        if (event && event.transform) {
-    console.log("[TL] zoom.on('zoom')", {
-      k: event.transform.k,
-      x: event.transform.x,
-      y: event.transform.y,
-      source: event.sourceEvent ? event.sourceEvent.type : "programmatic"
-    });
-  }
+        
         const t = event.transform;
         lastTransformRef.current = t;
         kRef.current = t.k;
@@ -2329,6 +2574,7 @@ const zoom = (zoomRef.current ?? d3.zoom())
         syncDurationHoverFromPointer(event.sourceEvent);
         syncSegmentHoverFromPointer(event.sourceEvent);
         updateHoverVisuals();
+        logRenderedCounts();
       });
 
   const svgSel = svgSelRef.current ?? d3.select(svgRef.current);
@@ -2346,11 +2592,11 @@ const zoom = (zoomRef.current ?? d3.zoom())
   if (type === "father") yU = laneYUForFather(d);
   else                   yU = laneYUForText(d);
 
-  console.log("[TL] flyToDatum()", { id: d.id, type, when: d.when, xAstro, yU, kTarget });
+ 
 
   const t = computeTransformForPoint(xAstro, yU, kTarget);
 
-  console.log("[TL] flyToDatum() transform", t);
+ 
 
   svgSelRef.current
     .transition()
@@ -2361,13 +2607,14 @@ const zoom = (zoomRef.current ?? d3.zoom())
 };
 
  // Dev helper: try window.flyToTest(id) from DevTools
- window.flyToTest = (id) => {
-   const t = textRows.find(x => x.id === id);
-   if (t) { console.log("[TL] flyToTest → text", id); flyToRef.current?.(t, "text"); return; }
-   const f = fatherRows.find(x => x.id === id);
-   if (f) { console.log("[TL] flyToTest → father", id); flyToRef.current?.(f, "father"); return; }
-   console.warn("[TL] flyToTest: no such id", id);
- };
+window.flyToTest = (id) => {
+  const t = textRows.find(x => x.id === id);
+  if (t) { flyToRef.current?.(t, "text"); return; }
+  const f = fatherRows.find(x => x.id === id);
+  if (f) { flyToRef.current?.(f, "father"); return; }
+  // no logs; silently no-op
+};
+
    if (!didInitRef.current) {
    // First time only: bind zoom and set init transform
   const initT = d3.zoomIdentity; // translate(0,0).scale(1)
@@ -2384,6 +2631,7 @@ const zoom = (zoomRef.current ?? d3.zoom())
    const t = lastTransformRef.current ?? d3.zoomIdentity;
    apply(t.rescaleX(x), t.rescaleY(y0), t.k);
    updateInteractivity(t.k);
+   logRenderedCounts();
    kRef.current = t.k;
  }
 
