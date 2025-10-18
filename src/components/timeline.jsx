@@ -360,6 +360,14 @@ function buildOverlaySegments(cx, cy, r, colors, showMid) {
   return segs;
 }
 
+const __tagColorCache = new Map();
+function pickSystemColorsCached(tagsStr) {
+  const key = String(tagsStr || "");
+  if (__tagColorCache.has(key)) return __tagColorCache.get(key);
+  const out = pickSystemColors(key);
+  __tagColorCache.set(key, out);
+  return out;
+}
 
 function pickSystemColors(tagsStr) {
   const seen = new Set();
@@ -567,6 +575,11 @@ function bandRectPx({ start, end, y, h }, zx, zy) {
   return { x: Math.min(x0, x1), y: yTop, w: Math.abs(x1 - x0), h: hPix };
 }
 
+function drawTextDot(circleSel, pieSel, k){
+  const r = TEXT_BASE_R * k;
+  circleSel.attr("r", r).attr("opacity", BASE_OPACITY);
+  if (!pieSel.empty()) drawSlicesAtRadius(pieSel, r);
+}
 
 function shouldShowDurationLabel({ d, k, bandW, bandH, labelSel }) {
   // Always show custom group labels unless explicitly blocked
@@ -671,6 +684,7 @@ export default function Timeline() {
   const fathersRef = useRef(null);      // FATHERS: new layer ref
   const prevZoomedInRef = useRef(false);
   const hoveredDurationIdRef = useRef(null);
+  
   const zoomDraggingRef = useRef(false);
   const clipId = useId();
     function logRenderedCounts() {
@@ -696,6 +710,8 @@ export default function Timeline() {
   const clearActiveSegmentRef = useRef(() => {});
   const clearActiveDurationRef = useRef(() => {});
 
+  
+
   // current zoom scale
   const kRef = useRef(1);
   // current rescaled axes for anchoring tooltips
@@ -709,14 +725,14 @@ export default function Timeline() {
   const hoveredSegParentIdRef = useRef(null);
   // One-shot close for duration cards (the next click closes)
   const awaitingCloseClickRef = useRef(false);
-  const lastVisibleLogTsRef = useRef(0);
+
   const hoverRaf = useRef(0);
 
   const zoomRef = useRef(null);
   const svgSelRef = useRef(null);
   const flyToRef = useRef(null);
 
-  const [layoutStamp, setLayoutStamp] = useState(0);
+
 
   const SEARCH_FLY = {
   k: 4.5,         // target zoom (>= ZOOM_THRESHOLD so dots/triangles are interactive)
@@ -964,7 +980,7 @@ export default function Timeline() {
         if (!Number.isFinite(when)) continue;
 
         const color = pickSystemColor(symbolicSystemTags);
-        const colors = pickSystemColors(symbolicSystemTags);
+        const colors = pickSystemColorsCached(symbolicSystemTags);
         const textKey = `${authorName || "anon"}::${title || ""}::${when}`;
         const y = yForKey(textKey);
         const displayDate = approxDateStr || formatYear(when);
@@ -1052,7 +1068,7 @@ const socioPoliticalTags = (f["Socio-political Tags"] || "").trim();
         ).trim().toLowerCase();
         const y = yForKey(keyForLane); // still compute as a fallback
         const symbolicSystem =   (f["Symbolic System"] || f["Symbolic System Tags"] || "").trim();
-        const colors = pickSystemColors(symbolicSystem);
+        const colors = pickSystemColorsCached(symbolicSystem);
         const color  = colors[0] || "#666";
         rowsF.push({
           id: `${ds.durationId}__father__${name || hashString(JSON.stringify(f))}__${when}`,
@@ -1691,6 +1707,19 @@ useEffect(() => {
       updateHoverVisuals();
     }
 
+    // Close the duration box on ANY click anywhere (next click after opening)
+function onAnyClickClose(ev) {
+  if (!activeDurationIdRef.current) return;          // nothing open
+  if (!awaitingCloseClickRef.current) return;        // not armed (should be armed right after open)
+
+  // Close and stop the click from immediately re-triggering open on the same element beneath.
+  clearActiveDuration();
+  ev.stopPropagation();
+}
+
+window.addEventListener("click", onAnyClickClose, { capture: true });
+
+
     clearActiveSegmentRef.current = clearActiveSegment;
     clearActiveDurationRef.current = clearActiveDuration;
 
@@ -2040,16 +2069,8 @@ function drawSlicesAtRadius(selection, r) {
     textSel
       .on("mouseenter", function (_ev, d) {
         const k = kRef.current;
-        const newR = TEXT_BASE_R * k * HOVER_SCALE_DOT;
-
-        d3.select(this).attr("r", newR).attr("opacity", 1);
-
-        // Sync the pie slices (if any) to the same radius and opacity
-        const gPie = piesSel.filter((p) => p.id === d.id);
-        if (!gPie.empty()) {
-          gPie.style("opacity", 1);
-          drawSlicesAtRadius(gPie, newR);
-        }
+        const gPie = piesSel.filter((p) => p.id === d.id).style("opacity", 1);
+      drawTextDot(d3.select(this), gPie, k * HOVER_SCALE_DOT);
 
         // NEW: derive segment preview from state (no ad-hoc styling)
         const seg = findSegForText(d);
@@ -2060,7 +2081,7 @@ function drawSlicesAtRadius(selection, r) {
           updateHoverVisuals();
         }
 
-// --- inside textSel.on("mouseenter", ...) ---
+
 const titleLine = d.title || "";
 const html = tipHTML(titleLine, d.displayDate || formatYear(d.when));
 const a = textAnchorClient(this, d);
@@ -2068,7 +2089,7 @@ if (a) showTip(tipText, html, a.x, a.y, d.color);
 
       })
       .on("mousemove", function (_ev, d) {
-// --- inside textSel.on("mousemove", ...) ---
+
 const titleLine = d.title || "";
 const html = tipHTML(titleLine, d.displayDate || formatYear(d.when));
 const a = textAnchorClient(this, d);
@@ -2414,6 +2435,8 @@ fathersSel
     function updateInteractivity(k) {
       const zoomedIn = k >= ZOOM_THRESHOLD;
 
+      d3.select(svgRef.current).classed("zoomed-in", zoomedIn);
+
       gOut.selectAll("rect.outlineRect")
         .style("pointer-events", d => (d._isCustomGroup || d._hiddenCustom) ? "none" : (zoomedIn ? "none" : "all"));
       gSeg.selectAll("rect.segmentHit").style("pointer-events", zoomedIn ? "all" : "none");
@@ -2662,8 +2685,9 @@ window.flyToTest = (id) => {
     });
 
     return () => {
-      svgSel.on("mouseleave.tl-tip", null);
-      svgSel.on("click.clearActive", null);
+        svgSel.on("mouseleave.tl-tip", null);
+        svgSel.on("click.clearActive", null);
+        window.removeEventListener("click", onAnyClickClose, true);
     };
   }, [
     outlines,
