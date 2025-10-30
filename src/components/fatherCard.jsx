@@ -1,17 +1,60 @@
-import React from "react";
+import React, {
+  forwardRef,
+  useRef,
+  useState,
+  useEffect,
+  useImperativeHandle,
+} from "react";
 import "../styles/timeline.css";
 
-export default function FatherCard({
-  d,
-  left = 16,
-  top = 16,
-  showMore = false,
-  setShowMore = () => {},
-  onClose = () => {},
-}) {
+const FatherCard = forwardRef(function FatherCard(
+  { d, left = 16, top = 16, showMore = false, setShowMore = () => {}, onClose = () => {} },
+  ref
+) {
   if (!d) return null;
 
-  // Title: just the Name (index moves left)
+  const elRef = useRef(null);
+  const [isClosing, setIsClosing] = useState(false);
+  const closedOnceRef = useRef(false);
+
+  useImperativeHandle(ref, () => ({
+    startClose: () => {
+      if (!isClosing) setIsClosing(true);
+    },
+  }));
+
+  // Animate out then call onClose
+  useEffect(() => {
+    if (!isClosing || !elRef.current) return;
+    const el = elRef.current;
+
+    el.classList.remove("tl-slideIn");
+    el.classList.add("tl-slideOut");
+
+    const handleDone = () => {
+      if (closedOnceRef.current) return;
+      closedOnceRef.current = true;
+      onClose?.();
+    };
+    el.addEventListener("animationend", handleDone, { once: true });
+    return () => el.removeEventListener("animationend", handleDone);
+  }, [isClosing, onClose]);
+
+  // Close on Esc (capture; ignore when search list is open)
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      const key = e.key || e.code;
+      if (key !== "Escape" && key !== "Esc") return;
+      if (document.body.classList.contains("sb-open")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setIsClosing(true);
+    };
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
+  }, []);
+
+  // Title & small utils
   const title = d.name || "";
   const indexStr = (d.index ?? "").toString().trim();
 
@@ -64,30 +107,36 @@ export default function FatherCard({
   };
 
   return (
-    <div className="fatherCard" role="dialog" aria-label={`Details for ${title}`}>
-      {/* left-aligned, subtle index */}
+    <div
+      ref={elRef}
+      className="fatherCard tl-slideIn"
+      style={{ position: "absolute", left, top }}
+      role="dialog"
+      aria-label={`Details for ${title}`}
+    >
       {indexStr && <span className="textCard-index">{indexStr}</span>}
 
-      <button className="textCard-close" onClick={onClose} aria-label="Close">×</button>
+      <button
+        className="textCard-close"
+        onClick={() => setIsClosing(true)}
+        aria-label="Close"
+      >
+        ×
+      </button>
 
-      {/* Title + Category (reuse TextCard classes for consistency) */}
       <div className="textCard-titleCombo">
         <span className="textCard-title">{title}</span>
         {d.category && <span className="textCard-sep"> - </span>}
         {d.category && <span className="textCard-category">{d.category}</span>}
       </div>
 
-      {/* Centered description */}
       <Row value={d.description} className="is-centered" />
 
-      {/* Small meta line */}
       {metaLine && <div className="textCard-meta">{metaLine}</div>}
 
-      {/* Primary rows */}
       <SymbolicTagRow label="Symbolic System(s):" value={d.symbolicSystem} />
       <Row label="Comtean framework:" value={d.comteanFramework} />
 
-      {/* Toggle */}
       <div className="textCard-moreToggle">
         <button
           className="textCard-button"
@@ -98,14 +147,15 @@ export default function FatherCard({
         </button>
       </div>
 
-      {/* Expanded area */}
       {showMore && (
         <div className="textCard-more">
           <div className="textCard-row is-tags">
             <span className="textCard-label">Jungian Archetypes:</span>
             <div className="textCard-tags">
               {splitTags(d.jungianArchetypesTags).map((t, i) => (
-                <span key={`ja-${i}`} className="textCard-tag">{t}</span>
+                <span key={`ja-${i}`} className="textCard-tag">
+                  {t}
+                </span>
               ))}
             </div>
           </div>
@@ -114,7 +164,9 @@ export default function FatherCard({
             <span className="textCard-label">Neumann Stages:</span>
             <div className="textCard-tags">
               {splitTags(d.neumannStagesTags).map((t, i) => (
-                <span key={`ns-${i}`} className="textCard-tag">{t}</span>
+                <span key={`ns-${i}`} className="textCard-tag">
+                  {t}
+                </span>
               ))}
             </div>
           </div>
@@ -123,7 +175,9 @@ export default function FatherCard({
             <span className="textCard-label">Socio-political:</span>
             <div className="textCard-tags">
               {splitTags(d.socioPoliticalTags).map((t, i) => (
-                <span key={`sp-${i}`} className="textCard-tag">{t}</span>
+                <span key={`sp-${i}`} className="textCard-tag">
+                  {t}
+                </span>
               ))}
             </div>
           </div>
@@ -132,7 +186,9 @@ export default function FatherCard({
             <span className="textCard-label">Historic-Mythic Status:</span>
             <div className="textCard-tags">
               {splitTags(d.historicMythicStatusTags).map((t, i) => (
-                <span key={`hm-${i}`} className="textCard-tag">{t}</span>
+                <span key={`hm-${i}`} className="textCard-tag">
+                  {t}
+                </span>
               ))}
             </div>
           </div>
@@ -140,4 +196,6 @@ export default function FatherCard({
       )}
     </div>
   );
-}
+});
+
+export default FatherCard;

@@ -5,6 +5,7 @@
 /* Full-height vertical strip on the right */
 .tagPanelWrap {
   --tab-w: 30px;                 /* width of the FILTERS tab that sticks out */
+  --panel-bg: #fdf5d8;           /* warm panel background */
 
   position: absolute;
   top: 0;
@@ -16,11 +17,11 @@
   display: flex;
   flex-direction: column;
 
-  background: rgba(250, 250, 252, 0.95);
+  background: var(--panel-bg);
   backdrop-filter: blur(4px);
 
   /* Only the left border is visible */
-  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  border-left: 1px solid rgba(0, 0, 0, 0.18);
   border-top: none;
   border-right: none;
   border-bottom: none;
@@ -34,23 +35,6 @@
   /* let attached tab extend outside; content scrolls inside .tagPanel__content */
   overflow: visible;
 }
-
-/* TagPanel background (a bit darker) */
-.tagPanelWrap {
-  --panel-bg: rgba(238, 240, 244, 0.98);  /* ← adjust to taste */
-  background: var(--panel-bg);
-  /* (optional) slightly stronger border for contrast */
-  border-left: 1px solid rgba(0, 0, 0, 0.18);
-}
-
-/* Drop-left menu background (a bit darker than panel if you like) */
-.tagPanel__dropdown {
-  --menu-bg: rgba(238, 240, 244, 0.98);   /* ← adjust to taste */
-  background: var(--menu-bg);
-  /* (optional) slightly stronger border for contrast */
-  border: 1px solid rgba(0, 0, 0, 0.18);
-}
-
 
 /* closed: slide panel off-screen, keep only the tab visible */
 .tagPanelWrap--closed { transform: translateX(calc(114% - var(--tab-w))); }
@@ -145,10 +129,10 @@
    ========================= */
 /* Portaled menu uses these styles, plus inline fixed positioning from JSX */
 .tagPanel__dropdown {
-  /* A small CSS variable you can tweak to nudge horizontally via CSS only */
-  --menu-offset-x: 11px;          /* increase to move the menu RIGHT; negative moves LEFT */
+  --menu-bg: #fdf5d8;           /* warm dropdown background */
+  --menu-offset-x: 11px;        /* increase to move the menu RIGHT; negative moves LEFT */
 
-  position: absolute;            /* overridden by inline `position: fixed` */
+  position: absolute;           /* overridden by inline `position: fixed` */
   top: 0;
   right: 100%;
   margin-right: 8px;
@@ -166,8 +150,8 @@
      - remove right border/corner
      - shadows on LEFT, TOP, and BOTTOM (no right-side shadow)
   */
-  background: rgba(250, 250, 252, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--menu-bg);
+  border: 1px solid rgba(0, 0, 0, 0.18);
   border-right: none;                          /* no right border */
   border-radius: 12px 0 0 12px;                /* left corners only */
   box-shadow:
@@ -259,43 +243,39 @@
   color: #000;          /* black */
 }
 
-/* TagPanel background (a bit darker) */
-.tagPanelWrap {
-  --panel-bg: #fdf5d8;  /* ← adjust to taste */
-  background: var(--panel-bg);
-  /* (optional) slightly stronger border for contrast */
-  border-left: 1px solid rgba(0, 0, 0, 0.18);
-}
-
-/* Drop-left menu background (a bit darker than panel if you like) */
-.tagPanel__dropdown {
-  --menu-bg: #fdf5d8;  /* ← adjust to taste */
-  background: var(--menu-bg);
-  /* (optional) slightly stronger border for contrast */
-  border: 1px solid rgba(0, 0, 0, 0.18);
-}
-
-/* Shared close button — identical size/shape anywhere it’s used */
+/* ============================
+   TagPanel Close Buttons — match TextCard/FatherCard
+   ============================ */
 .tagPanel__close {
-  --close-size: 26px;
-
-  width: var(--close-size);
-  height: var(--close-size);
+  /* same visual recipe as .textCard-close / .tl-card-close */
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
 
-  flex: 0 0 auto;                 /* behaves consistently in flex containers */
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.18);
-  background: #fff;
-  color: #111;
-
-  font-size: 18px;                /* same glyph size */
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;         /* same rounded feel */
+  color: var(--muted);
+  font-size: 20px;             /* × glyph size matches TextCard */
   line-height: 1;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.tagPanel__close:hover { background: #f3f4f6; }
+.tagPanel__close:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+.tagPanel__close:active {
+  filter: brightness(0.98);
+}
+
+.tagPanel__close:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 3px var(--btn-brown-ring, #b08a4b55);
+}
 
 /* Positioning helper ONLY for the panel’s close button */
 .tagPanel__panelClosePos {

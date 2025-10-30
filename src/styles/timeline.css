@@ -223,7 +223,8 @@ body {
   top: 0 !important;
   bottom: 0 !important;
   right: auto !important;
-  transform: none !important;
+  transform: none !important;     /* keep base transform neutral */
+  translate: 0;                   /* we animate this property for slide-in/out */
 
   /* sidebar sizing */
   width: min(330px, 92vw);
@@ -248,6 +249,9 @@ body {
   z-index: 1200;
   pointer-events: auto;
   font-family: var(--font-ui);
+
+  /* ===== Slide-in on mount ===== */
+  animation: tlSidebarIn 260ms cubic-bezier(.22,.61,.36,1) both;
 }
 .textCard-title {
   font-size: 20px;
@@ -377,7 +381,8 @@ body {
   top: 0 !important;
   bottom: 0 !important;
   right: auto !important;
-  transform: none !important;
+  transform: none !important;     /* keep base transform neutral */
+  translate: 0;                   /* animate this for slide-in/out */
 
   width: min(330px, 92vw);
   max-width: 92vw;
@@ -399,6 +404,9 @@ body {
   z-index: 1200;
   pointer-events: auto;
   font-family: var(--font-ui);
+
+  /* ===== Slide-in on mount ===== */
+  animation: tlSidebarIn 260ms cubic-bezier(.22,.61,.36,1) both;
 }
 
 /* Header + rows reused by FatherCard */
@@ -522,6 +530,54 @@ body {
 .textCard::-webkit-scrollbar-thumb:hover,
 .fatherCard::-webkit-scrollbar-thumb:hover {
   background: var(--scroll-thumb-hover);
+}
+
+/* ============================
+   Slide animations (Left Sidebar)
+   ============================ */
+
+/* Enter animation: slide in from the left and fade */
+@keyframes tlSidebarIn {
+  from {
+    opacity: 0;
+    /* start slightly off-screen to the left */
+    translate: -48px 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Exit animation hook:
+   Add `.tl-slideOut` to the card before unmounting to animate out. */
+.textCard.tl-slideOut,
+.fatherCard.tl-slideOut {
+  animation: tlSidebarOut 220ms cubic-bezier(.4,0,.2,1) both;
+}
+
+@keyframes tlSidebarOut {
+  from {
+    opacity: 1;
+    translate: 0 0;
+  }
+  to {
+    opacity: 0;
+    /* slide left when closing */
+    translate: -48px 0;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .textCard,
+  .fatherCard {
+    animation: none !important;
+  }
+  .textCard.tl-slideOut,
+  .fatherCard.tl-slideOut {
+    animation: none !important;
+  }
 }
 
 /* ============================

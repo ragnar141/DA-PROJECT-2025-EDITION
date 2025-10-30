@@ -7,7 +7,6 @@ import "../styles/searchBar.css";
 const SB_DEBUG = true;
 const dlog = (...args) => {
   if (!SB_DEBUG) return;
-  // use console.log so it shows up even if "Verbose" is filtered off
   console.log("[SearchBar]", ...args);
 };
 
@@ -120,11 +119,12 @@ function Highlight({ text, query }) {
 
 /**
  * Props:
- * - items: Array<{ id, type: "text"|"father", title, author?, date?, subtitle?, category?, description?, color?, colors?, founding?, index?, textIndex?, dob?, when?, durationId? }>
+ * - items: Array<...>
  * - onSelect: (item) => void
  * - placeholder?: string
  * - maxResults?: number
  * - onInteract?: () => void
+ * - visibleIds?: Set<string>    // <— NEW optional filter: only show items whose id is in this set
  */
 export default function SearchBar({
   items = [],
@@ -132,6 +132,7 @@ export default function SearchBar({
   placeholder = "Search",
   maxResults = 12,
   onInteract = () => {},
+  visibleIds,            // NEW
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -139,19 +140,19 @@ export default function SearchBar({
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
 
-  // mount/unmount trace
   useEffect(() => {
     dlog("mounted", { itemsCount: items?.length ?? 0 });
     return () => dlog("unmounted");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Trace props updates that matter
   useEffect(() => {
-    dlog("props update", { itemsCount: items?.length ?? 0, maxResults });
-  }, [items, maxResults]);
+    dlog("props update", {
+      itemsCount: items?.length ?? 0,
+      maxResults,
+      visibleIdsCount: visibleIds instanceof Set ? visibleIds.size : "(none)",
+    });
+  }, [items, maxResults, visibleIds]);
 
-  // Track when the list transitions from hidden -> visible to fire onInteract once
   const listWasVisibleRef = useRef(false);
 
   const closeAndReset = () => {
@@ -163,8 +164,13 @@ export default function SearchBar({
 
   const results = useMemo(() => {
     const qq = q.trim().toLowerCase();
+    // NEW: filter to visible first (if provided)
+    const base = (visibleIds instanceof Set)
+      ? items.filter(it => visibleIds.has(it.id))
+      : items;
+
     if (!qq) {
-      dlog("results(empty query)", { open, q });
+      dlog("results(empty query)", { open, q, baseCount: base.length });
       return [];
     }
     const score = (it) => {
@@ -181,7 +187,7 @@ export default function SearchBar({
       s += inc(it.dob, 2);
       return s;
     };
-    const out = items
+    const out = base
       .map((it) => ({ it, s: score(it) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s || a.it.title.localeCompare(b.it.title))
@@ -189,13 +195,10 @@ export default function SearchBar({
       .map((x) => x.it);
     dlog("results(populated)", { q, count: out.length, sample: out.slice(0, 2) });
     return out;
-  }, [q, items, maxResults, open]);
+  }, [q, items, maxResults, open, visibleIds]);
 
-  useEffect(() => {
-    setHoverIdx(0);
-  }, [q]);
+  useEffect(() => { setHoverIdx(0); }, [q]);
 
-  // Close on any outside click/tap
   useEffect(() => {
     const handleOutside = (e) => {
       if (!(open && q.trim())) return;
@@ -209,7 +212,6 @@ export default function SearchBar({
     return () => document.removeEventListener("pointerdown", handleOutside, true);
   }, [open, q]);
 
-  // Notify parent when list appears/disappears
   useEffect(() => {
     const listVisible = !!(open && q.trim() && results.length > 0);
     if (listVisible && !listWasVisibleRef.current) {
@@ -240,7 +242,7 @@ export default function SearchBar({
     onInteract();
     try {
       dlog("onSelect → begin");
-      onSelect(item); // Timeline should log from handleSearchSelect too
+      onSelect(item);
       dlog("onSelect → end");
     } catch (err) {
       console.log("[SearchBar] onSelect threw", err);
@@ -354,8 +356,6 @@ export default function SearchBar({
             </div>
 
             <span style={{ marginLeft: "auto" }} />
-
-            
           </div>
         )}
 
@@ -489,7 +489,6 @@ export default function SearchBar({
         />
       </div>
 
-      {/* Backdrop via portal so it covers viewport and blocks graph interactions */}
       {listVisible &&
         createPortal(
           <div

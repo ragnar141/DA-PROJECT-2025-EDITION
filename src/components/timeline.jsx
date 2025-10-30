@@ -145,6 +145,13 @@ function getDatavizNumber(row) {
 }
 
 
+// Stable micro-jitter so fathers don't sit on exactly the same Y
+const FATHER_JITTER_PX = 7; // tweak to taste (in band-units = px at k=1)
+function fatherJitterU(id, bandId) {
+  // stable in-session & across toggles; different per id
+  const h = hashString(`${bandId}::${id}`);
+  return (h - 0.5) * 2 * FATHER_JITTER_PX; // [-J, +J]
+}
 
 
 
@@ -239,15 +246,14 @@ function layoutMarksByPixels({ marks, outlines, authorLaneMap, x, y0, innerHeigh
       const free   = [];
       for (const m of items) {
         let yLock = null;
-        if (m.kind === "text") {
-          if (m.authorKey) {
-            // author-lane texts lock to lane
-            const lane = authorLaneMap.get(m.bandId)?.get(m.authorKey);
-            if (Number.isFinite(lane)) yLock = lane;
-          } else if (Number.isFinite(m.baseYU)) {
-            // no-author texts lock to their hashed base Y (stable)
-            yLock = m.baseYU;
-          }
+        // 1) texts with real authors → lock to their author lane
+       if (m.kind === "text" && m.authorKey) {
+          const lane = authorLaneMap.get(m.bandId)?.get(m.authorKey);
+          if (Number.isFinite(lane)) yLock = lane;
+        }
+        // 2) otherwise, if baseYU is provided (texts w/o author OR fathers), lock to it
+        if (!Number.isFinite(yLock) && Number.isFinite(m.baseYU)) {
+          yLock = m.baseYU;
         }
         if (Number.isFinite(yLock)) locked.push({ m, yLock });
         else free.push(m);
@@ -784,7 +790,7 @@ const TAG_GROUPS = [
   },
   {
     key: "comtean",
-    label: "Comtean framework",
+    label: "Comtean Framework",
     appliesTo: "both",
     allTags: [
       "Theological/Mythological","Philosophical/Metaphysical","Positive/Empirical","Synthetic Literature"
@@ -916,6 +922,12 @@ export default function Timeline() {
   const zoomRef = useRef(null);
   const svgSelRef = useRef(null);
   const flyToRef = useRef(null);
+  const textCardRef = useRef(null);
+  const fatherCardRef = useRef(null);
+
+  const [visibleIds, setVisibleIds] = useState(() => new Set());
+  const visibleIdsRef = useRef(new Set());
+  const visUpdateRaf = useRef(0);
 
 
 
@@ -934,11 +946,15 @@ export default function Timeline() {
   const [cardPos, setCardPos] = useState({ left: 16, top: 16 });
   const [selectedFather, setSelectedFather] = useState(null);
   const [fatherCardPos, setFatherCardPos] = useState({ left: 16, top: 16 });
-  const closeAll = () => {
-    setSelectedText(null);
-    setSelectedFather(null);
-    setShowMore(false);
-  };
+const closeAllAnimated = () => {
+  if (selectedText && textCardRef.current?.startClose) {
+    textCardRef.current.startClose();
+  }
+  if (selectedFather && fatherCardRef.current?.startClose) {
+    fatherCardRef.current.startClose();
+  }
+  // Don't clear state here; each card will call its onClose after animation.
+};
   const modalOpen = !!selectedText || !!selectedFather;
   const lastTransformRef = useRef(null);  // remembers latest d3.zoom transform
   const didInitRef = useRef(false);       // tracks first-time init
@@ -1286,7 +1302,13 @@ const socioPoliticalTags = (f["Socio-political Tags"] || "").trim();
         const keyForLane = String(
           (f["Index"] ?? "").toString().trim() || name || "anon"
         ).trim().toLowerCase();
-        const y = yForKey(keyForLane); // still compute as a fallback
+        const yBaseU = yForKey(keyForLane);
+       // add tiny, stable offset per father so they don't all sit on the exact same lane
+        const y = yBaseU + fatherJitterU(
+        // use the eventual id seed to be consistent — we can construct it here too:
+        `${ds.durationId}__father__${name || hashString(JSON.stringify(f))}__${when}`,
+        ds.durationId
+        );
         const symbolicSystem =   (f["Symbolic System"] || f["Symbolic System Tags"] || "").trim();
         const colors = pickSystemColorsCached(symbolicSystem);
         const color  = colors[0] || "#666";
@@ -1362,6 +1384,7 @@ const fatherMarks = useMemo(() => (visFatherRows || []).map(f => ({
   when: f.when,
   sizeU: getFatherBaseR(f),
   authorKey: null,
+  baseYU: y0(f.y), // lock to y computed above (includes jitter)
   priority: (isYesish(f.foundingFigure) ? 2 : 0) + (hasHistoricTag(f.historicMythicStatusTags) ? 1 : 0),
 })), [visFatherRows]);
 
@@ -1494,7 +1517,7 @@ function redrawFatherAtRadius(gFather, d, r) {
   
 
 const searchItems = useMemo(() => {
-  const texts = (textRows || []).map(t => ({
+  const texts = (visTextRows || []).map(t => ({
     id: t.id,
     type: "text",
     title: t.title || "",
@@ -1509,7 +1532,7 @@ const searchItems = useMemo(() => {
     durationId: t.durationId,
   }));
 
-  const fathers = (fatherRows || []).map(f => ({
+  const fathers = (visFatherRows || []).map(f => ({
     id: f.id,
     type: "father",
     title: f.name || "",
@@ -1526,7 +1549,7 @@ const searchItems = useMemo(() => {
   }));
 
   return [...texts, ...fathers];
-}, [textRows, fatherRows]);
+}, [visTextRows, visFatherRows]);
 
 
 // ---- Selection handler for the SearchBar ----
@@ -1614,7 +1637,7 @@ useEffect(() => {
     if (selectedText || selectedFather) {
       e.preventDefault();
       e.stopPropagation();
-      closeAll();
+      closeAllAnimated();
     }
   };
 
@@ -2722,6 +2745,37 @@ fathersSel
     const on = a >= xLo && a <= xHi;
     d3.select(this).style("display", on ? null : "none");
   });
+
+  // ===== NEW: compute & publish visible ids for SearchBar =====
+  const newVisible = new Set();
+
+  // Use the same X-range check we just applied
+  gTexts.selectAll("circle.textDot").each(function (d) {
+    const a = toAstronomical(d.when);
+    if (a >= xLo && a <= xHi) newVisible.add(d.id);
+  });
+  gFathers.selectAll("g.fatherMark").each(function (d) {
+    const a = toAstronomical(d.when);
+    if (a >= xLo && a <= xHi) newVisible.add(d.id);
+  });
+
+  // Only update state if the set contents actually changed (throttled to rAF)
+  const prev = visibleIdsRef.current;
+  let changed = newVisible.size !== prev.size;
+  if (!changed) {
+    for (const id of newVisible) {
+      if (!prev.has(id)) { changed = true; break; }
+    }
+  }
+  if (changed) {
+    visibleIdsRef.current = newVisible;
+    if (!visUpdateRaf.current) {
+      visUpdateRaf.current = requestAnimationFrame(() => {
+        visUpdateRaf.current = 0;
+        setVisibleIds(new Set(visibleIdsRef.current));
+      });
+    }
+  }
 }
 
 
@@ -3077,7 +3131,7 @@ return (
     </svg>
 
     {/* Backdrop for modal; closes on click */}
-    {modalOpen && <div className="modalBackdrop" onClick={closeAll} />}
+    {modalOpen && <div className="modalBackdrop" onClick={closeAllAnimated} />}
 
     {/* Text modal */}
     {selectedText && (
@@ -3087,7 +3141,10 @@ return (
         top={cardPos.top}
         showMore={showMore}
         setShowMore={setShowMore}
-        onClose={closeAll}
+        onClose={() => {
+        setSelectedText(null);    // unmount after its slide-out finishes
+        setShowMore(false);
+      }}
       />
     )}
 
@@ -3099,7 +3156,10 @@ return (
         top={fatherCardPos.top}
         showMore={showMore}
         setShowMore={setShowMore}
-        onClose={closeAll}
+        onClose={() => {
+        setSelectedFather(null);  // unmount after its slide-out finishes
+        setShowMore(false);
+        }}
       />
     )}
   </div>
