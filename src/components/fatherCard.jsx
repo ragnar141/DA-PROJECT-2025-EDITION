@@ -76,11 +76,6 @@ const FatherCard = forwardRef(function FatherCard(
       .filter(Boolean)
       .filter((t) => t !== "-"); // treat "-" as NA
 
-  const isYesish = (v) => {
-    const s = String(v || "").trim().toLowerCase();
-    return s === "yes" || s === "y" || s === "true" || s === "1";
-  };
-
   const Row = ({ label, value, className }) =>
     value ? (
       <div className={`textCard-row ${className || ""}`}>
@@ -134,11 +129,7 @@ const FatherCard = forwardRef(function FatherCard(
         <span className="textCard-title">{title}</span>
         {d.category && <span className="textCard-sep"> - </span>}
         {d.category && <span className="textCard-category">{d.category}</span>}
-        {isYesish(d.foundingFigure) && (
-          <span className="textCard-chip" title="Founding Figure" style={{ marginLeft: 8 }}>
-            Founding Figure
-          </span>
-        )}
+        {/* Founding Figure chip removed */}
       </div>
 
       <Row value={d.description} className="is-centered" />
@@ -147,8 +138,6 @@ const FatherCard = forwardRef(function FatherCard(
 
       {/* Symbolic systems */}
       <SymbolicTagRow label="Symbolic System(s):" value={d.symbolicSystem} />
-
-      {/* Removed: Comtean framework row */}
 
       <div className="textCard-moreToggle">
         <button
@@ -185,8 +174,6 @@ const FatherCard = forwardRef(function FatherCard(
               ))}
             </div>
           </div>
-
-          {/* Removed: Socio-political block */}
 
           {/* Historic/Mythic */}
           <div className="textCard-row is-tags">

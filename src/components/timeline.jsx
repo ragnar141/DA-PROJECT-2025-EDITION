@@ -805,6 +805,8 @@ function useDiscoveredFatherSets() {
   return registry;
 }
 
+const SYMBOLIC_SYSTEM_KEYS = Object.keys(SymbolicSystemColorPairs);
+
 /* ===== Tag groups (config-first) ===== */
 const TAG_GROUPS = [
   // TEXTS-ONLY
@@ -876,7 +878,16 @@ const TAG_GROUPS = [
     allTags: ["Priestly / Theocratic", "Bureaucratic / Legal / Scribal", "Merchant / Cosmopolitan", "Warrior / Imperial", "Royal", "Scholarly", "Bohemian / Aesthetic", 
       "Folk / Communal", "Subversive / Revolutionary", "Mystical / Initiatory", "National", "Recluse / Ascetic"],
   },
+
+  {
+  key: "symbolicSystems",
+  label: "Symbolic Systems",
+  appliesTo: "both",
+  allTags: SYMBOLIC_SYSTEM_KEYS,
+},
 ];
+
+
 
 /* Normalizers */
 const canonSetByKey = new Map(
@@ -1300,7 +1311,12 @@ const tags = {
   neumann:         normalizeTagStringToArray(neumannStagesTags, "neumann"),
   comtean:         normalizeTagStringToArray(comteanFramework, "comtean"),
   socioPolitical:  normalizeTagStringToArray(socioPoliticalTags, "socioPolitical"),
+  // ADD THIS:
+  symbolicSystems: normalizeTagStringToArray(symbolicSystemTags, "symbolicSystems"),
 };
+
+
+
 
 
         const when = getTextDate(t);
@@ -1358,97 +1374,94 @@ const tags = {
 
   // FATHERS: rows (right-pointing triangles; no author lanes)
   const fatherRows = useMemo(() => {
-    const outlinesById = new Map(outlines.map((o) => [o.id, o]));
-    const rowsF = [];
+  const outlinesById = new Map(outlines.map((o) => [o.id, o]));
+  const rowsF = [];
 
+  for (const ds of fatherRegistry) {
+    const band = outlinesById.get(ds.durationId);
+    if (!band) continue;
 
+    const bandY = band.y;
+    const bandH = band.h;
+    const pad = Math.min(6, Math.max(2, bandH * 0.15));
+    const yForKey = (key) => {
+      const r = hashString(`${ds.durationId}::father::${key || "anon"}`);
+      return bandY + pad + r * Math.max(1, bandH - 2 * pad);
+    };
 
-    for (const ds of fatherRegistry) {
-      const band = outlinesById.get(ds.durationId);
-      if (!band) continue;
+    for (const f of ds.fathers || []) {
+      const name = String(f["Name"] || "").trim();
+      const when = getDatavizNumber(f);
+      if (!Number.isFinite(when)) continue;
 
-      const bandY = band.y;
-      const bandH = band.h;
-      const pad = Math.min(6, Math.max(2, bandH * 0.15));
-      const yForKey = (key) => {
-        const r = hashString(`${ds.durationId}::father::${key || "anon"}`);
-        return bandY + pad + r * Math.max(1, bandH - 2 * pad);
-      };
+      const index = f["Index"] != null ? f["Index"] : null;
+      const dob = (f["D.O.B"] || "").trim();
+      const dod = (f["D.O.D"] || "").trim();
+      const location = (f["Location"] || "").trim();
+      const description = (f["Description"] || "").trim();
+      const historicMythicStatusTags = (f["Historic-Mythic Status Tags"] || "").trim();
+      const foundingFigure = (f["Founding Figure?"] || "").trim();
+      const jungianArchetypesTags = (f["Jungian Archetypes Tags"] || "").trim();
+      const neumannStagesTags = (f["Neumann Stages Tags"] || "").trim();
+      const category = (f["Category"] || "").trim();
 
-      for (const f of ds.fathers || []) {
-        const name = String(f["Name"] || "").trim();
-        const when = getDatavizNumber(f);
-        if (!Number.isFinite(when)) continue;
+      // Define symbolic system first, then colors + color
+      const symbolicSystem = (f["Symbolic System"] || f["Symbolic System Tags"] || "").trim();
+      const colors = pickSystemColorsCached(symbolicSystem);
+      const color  = colors[0] || "#666";
 
-const index = f["Index"] != null ? f["Index"] : null;
-const dob = (f["D.O.B"] || "").trim();                     // string; keep as-is if you want to parse later
-const dod = (f["D.O.D"] || "").trim();
-const location = (f["Location"] || "").trim();
-const description = (f["Description"] || "").trim();
-const historicMythicStatusTags = (f["Historic-Mythic Status Tags"] || "").trim();
-const foundingFigure = (f["Founding Figure?"] || "").trim();
-const jungianArchetypesTags = (f["Jungian Archetypes Tags"] || "").trim();
-const neumannStagesTags = (f["Neumann Stages Tags"] || "").trim();
-const category = (f["Category"] || "").trim();
-
-    const tags = {
-  jungian:        normalizeTagStringToArray(jungianArchetypesTags, "jungian"),
-  neumann:        normalizeTagStringToArray(neumannStagesTags, "neumann"),
-};
-
-        const keyForLane = String(
-          (f["Index"] ?? "").toString().trim() || name || "anon"
-        ).trim().toLowerCase();
-        const yBaseU = yForKey(keyForLane);
-       // add tiny, stable offset per father so they don't all sit on the exact same lane
-        const y = yBaseU + fatherJitterU(
-        // use the eventual id seed to be consistent — we can construct it here too:
+      // Lane key & base Y (then add stable jitter)
+      const keyForLane = String(
+        (f["Index"] ?? "").toString().trim() || name || "anon"
+      ).trim().toLowerCase();
+      const yBaseU = yForKey(keyForLane);
+      const y = yBaseU + fatherJitterU(
         `${ds.durationId}__father__${name || hashString(JSON.stringify(f))}__${when}`,
         ds.durationId
-        );
-        const symbolicSystem =   (f["Symbolic System"] || f["Symbolic System Tags"] || "").trim();
-        const colors = pickSystemColorsCached(symbolicSystem);
-        const color  = colors[0] || "#666";
-        rowsF.push({
-          id: `${ds.durationId}__father__${name || hashString(JSON.stringify(f))}__${when}`,
-          durationId: ds.durationId,
-          when,
-          y,
-          laneKey: keyForLane,
-          color,
-          colors,
-          name,
-          index,
-  dob,
-  dod,
-  location,
-  description,
-  historicMythicStatusTags,
-  foundingFigure,
-  jungianArchetypesTags,
-  neumannStagesTags,
-  category,
-  symbolicSystem,
-  tags,
-        });
-      }
+      );
+
+      // Build tag arrays AFTER symbolicSystem is available
+      const tags = {
+        jungian:          normalizeTagStringToArray(jungianArchetypesTags, "jungian"),
+        neumann:          normalizeTagStringToArray(neumannStagesTags, "neumann"),
+        symbolicSystems:  normalizeTagStringToArray(symbolicSystem, "symbolicSystems"),
+      };
+
+      rowsF.push({
+        id: `${ds.durationId}__father__${name || hashString(JSON.stringify(f))}__${when}`,
+        durationId: ds.durationId,
+        when,
+        y,
+        laneKey: keyForLane,
+        color,
+        colors,
+        name,
+        index,
+        dob,
+        dod,
+        location,
+        description,
+        historicMythicStatusTags,
+        foundingFigure,
+        jungianArchetypesTags,
+        neumannStagesTags,
+        category,
+        symbolicSystem,
+        tags,
+      });
     }
+  }
 
-// ---- Search index (texts + fathers) ----
-// === Unified marks for the vertical layout engine ===
+  // Clamp to band extent
+  const bandExtent = new Map(
+    outlines.map((o) => [o.id, { min: Math.min(o.start, o.end), max: Math.max(o.start, o.end) }])
+  );
+  return rowsF.filter((r) => {
+    const e = bandExtent.get(r.durationId);
+    return e ? r.when >= e.min && r.when <= e.max : true;
+  });
+}, [fatherRegistry, outlines]);
 
-
-
-
-    // Clamp to band extent
-    const bandExtent = new Map(
-      outlines.map((o) => [o.id, { min: Math.min(o.start, o.end), max: Math.max(o.start, o.end) }])
-    );
-    return rowsF.filter((r) => {
-      const e = bandExtent.get(r.durationId);
-      return e ? r.when >= e.min && r.when <= e.max : true;
-    });
-  }, [fatherRegistry, outlines]);
 
   // New: filtered (visible) rows based on selected tags
 const visTextRows = useMemo(

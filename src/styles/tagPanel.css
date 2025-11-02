@@ -52,6 +52,7 @@
   overflow: auto;                /* scroll if content is tall */
 }
 
+
 /* =========================
    Attached FILTERS tab
    ========================= */
@@ -121,7 +122,6 @@
   font-size: 12px;
   line-height: 1.1;
 }
-
 .tagPanel__btn:hover { background:#f6f7fb; }
 
 /* =========================
@@ -145,32 +145,27 @@
   overflow-y: auto !important;
   overflow-x: hidden !important;
 
-  /* Tucked-under look:
-     - rounded only on the LEFT side
-     - remove right border/corner
-     - shadows on LEFT, TOP, and BOTTOM (no right-side shadow)
-  */
+  /* Tucked-under look */
   background: var(--menu-bg);
   border: 1px solid rgba(0, 0, 0, 0.18);
-  border-right: none;                          /* no right border */
-  border-radius: 12px 0 0 12px;                /* left corners only */
+  border-right: none;
+  border-top: none;
+  border-radius: 12px 0 0 12px;
   box-shadow:
-    -16px 0   24px rgba(0, 0, 0, 0.04),        /* left */
-     0   12px 24px rgba(0, 0, 0, 0),           /* bottom */
-     0  -12px 24px rgba(0, 0, 0, 0);           /* top */
+    -16px 0   24px rgba(0, 0, 0, 0.04),
+     0   12px 24px rgba(0, 0, 0, 0),
+     0  -12px 24px rgba(0, 0, 0, 0);
 
   padding: 8px;
-  z-index: 2070;                 /* above the panel */
+  z-index: 2070;
 
-  /* Slide-out on appear USING individual transform properties.
-     This composes with the inline `transform: translateY(-50%)` from JSX. */
-  translate: calc(var(--menu-offset-x) + 10px) 0;  /* start slightly tucked */
+  translate: calc(var(--menu-offset-x) + 10px) 0;
   opacity: 0;
   animation: dropdown-slide-out 200ms ease-out both;
   will-change: translate, opacity;
 }
 
-/* Entry animation only (exit would require a short JS unmount delay) */
+/* Entry animation only */
 @keyframes dropdown-slide-out {
   from { opacity: 0; translate: calc(var(--menu-offset-x) + 10px) 0; }
   to   { opacity: 1; translate: var(--menu-offset-x) 0; }
@@ -182,10 +177,21 @@
   align-items: center;
   justify-content: space-between;
   padding: 4px 6px 8px;
-  border-bottom: 0.5px solid rgb(0, 0, 0);
+
+  /* crisp divider; no blur/shadow mismatch */
+  border-bottom: none;
+  box-shadow: inset 0 -1px #000;
+
   margin-bottom: 6px;
+
+  position: sticky;
+  top: 0;
+  background: var(--menu-bg);
+  z-index: 1;
+  transform: translateZ(0);
 }
 
+/* Buttons inside header */
 .tagPanel__miniBtn {
   padding: 4px 8px;
   font-size: 11px;
@@ -194,7 +200,6 @@
   background: #fff;
   cursor: pointer;
 }
-
 .tagPanel__miniBtn:hover { background:#f6f7fb; }
 
 /* list of checkboxes */
@@ -221,7 +226,7 @@
 
 /* Make the checkbox box + checkmark black (modern browsers) */
 .tagPanel__row input[type="checkbox"] {
-  accent-color: #000; /* or #111827, etc. */
+  accent-color: #000;
 }
 
 /* count badge in button */
@@ -237,41 +242,34 @@
 .tagPanel__sectionLabel {
   padding: 6px 10px;
   font-family: var(--font-ui, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
-  font-size: 14px;      /* a bit bigger */
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: #000;          /* black */
+  color: #000;
 }
 
 /* ============================
    TagPanel Close Buttons — match TextCard/FatherCard
    ============================ */
 .tagPanel__close {
-  /* same visual recipe as .textCard-close / .tl-card-close */
   width: 32px;
   height: 32px;
   display: grid;
   place-items: center;
-
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 10px;         /* same rounded feel */
+  border-radius: 10px;
   color: var(--muted);
-  font-size: 20px;             /* × glyph size matches TextCard */
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-
 .tagPanel__close:hover {
   background: #f3f4f6;
   border-color: #e5e7eb;
 }
-
-.tagPanel__close:active {
-  filter: brightness(0.98);
-}
-
+.tagPanel__close:active { filter: brightness(0.98); }
 .tagPanel__close:focus-visible {
   outline: 2px solid transparent;
   box-shadow: 0 0 0 3px var(--btn-brown-ring, #b08a4b55);
@@ -283,4 +281,129 @@
   top: 8px;
   right: 8px;
   z-index: 2080;
+}
+
+/* =========================================================
+   SYMBOLIC SYSTEMS — TAG CLOUD (chips + color dots)
+   ========================================================= */
+
+/* Trigger button that opens the cloud (if you add a separate opener) */
+.tagPanel__cloudBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.1;
+}
+.tagPanel__cloudBtn:hover { background: #f6f7fb; }
+
+/* Container used inside a dropdown to lay out chips */
+.tagCloud {
+  --chip-gap: 6px;
+  --chip-pad-x: 8px;
+  --chip-pad-y: 6px;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* tight since menu is 300px */
+  gap: var(--chip-gap);
+  padding: 4px 6px 8px;
+}
+
+/* Each chip row: dot + label */
+.tagCloud__chip {
+  --swatch: #666; /* overridden inline via style="--swatch:#HEX" */
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: var(--chip-pad-y) var(--chip-pad-x);
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: #fff;
+  cursor: pointer;
+
+  font-size: 12px;
+  line-height: 1.1;
+  user-select: none;
+
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+/* color dot */
+.tagCloud__chip::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+
+/* hover/focus states */
+.tagCloud__chip:hover {
+  background: #f6f7fb;
+}
+.tagCloud__chip:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 3px var(--btn-brown-ring, #b08a4b55);
+}
+
+/* selected state */
+.tagCloud__chip.is-on {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+.tagCloud__chip.is-on::before {
+  /* keep the color dot visible on dark bg */
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+
+/* disabled state (if you temporarily disable a chip) */
+.tagCloud__chip.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* A small inline count badge for chips, if you wire one up */
+.tagCloud__count {
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.08);
+}
+
+/* toolbar under the header divider; lines up with first tag */
+.tagPanel__toolbar {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;     /* horizontal, left-aligned */
+  padding: 4px 6px 4px;            /* match .tagPanel__menuList left/right pad (6px) */
+  margin: 0 0 0px;                  /* space below toolbar before the list */
+  background: var(--menu-bg);
+}
+
+/* keep the X in the top-right corner of the header */
+.tagPanel__close--menu {
+  position: absolute;
+  top: -5px;
+  right: -2px;
+  z-index: 2;
+}
+
+
+/* When the tag cloud is the ONLY content in a dropdown,
+   make it two columns on compact widths & three on wider screens */
+@media (min-width: 1200px) {
+  .tagPanel__dropdown .tagCloud {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }

@@ -20,15 +20,16 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
 
   const panelRef = useRef(null);
   const menuRef = useRef(null);                   // portal menu container
-  const btnRefs = useRef(new Map());              // trigger buttons by group key (kept, even if not used for position)
+  const btnRefs = useRef(new Map());              // trigger buttons by group key
 
   // Floating menu position (fixed coords)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 320 });
 
   // ---- Tweakables (keep MENU_WIDTH in sync with CSS) ----
-  const MENU_WIDTH = 320;
-  const GAP = 12;          // base gap between panel and menu
-  const EXTRA_LEFT = 16;   // push a bit further left
+  const MENU_WIDTH = 230;
+  const GAP = 12;
+  const EXTRA_LEFT = 16;
+  const VIEWPAD = 8;
 
   // Convert Sets to quick lookup for rendering (memoized)
   const selectedMaps = useMemo(() => {
@@ -41,11 +42,7 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
   }, [groups, selectedByGroup]);
 
   const toggleMenu = (key) => {
-    setOpenKey((prev) => {
-      const nextKey = prev === key ? null : key;
-      if (nextKey) positionMenu(); // position relative to the PANEL, not the button
-      return nextKey;
-    });
+    setOpenKey((prev) => (prev === key ? null : key));
   };
 
   const handleToggleTag = (groupKey, tag) => {
@@ -70,20 +67,15 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
   };
 
   // Close on outside click + Esc (CAPTURE phase so nothing can block it)
-  // Still respects clicks inside the panel or the portaled dropdown.
   useEffect(() => {
     if (!isOpen) return;
 
     const onDocDown = (e) => {
       const panelEl = panelRef.current;
       const portalEl = menuRef.current;
-
-      // If click is inside the panel OR inside the portaled menu, ignore
       if ((panelEl && panelEl.contains(e.target)) || (portalEl && portalEl.contains(e.target))) {
         return;
       }
-
-      // Otherwise close everything
       setIsOpen(false);
       setOpenKey(null);
     };
@@ -95,9 +87,8 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
       }
     };
 
-    document.addEventListener("pointerdown", onDocDown, true); // capture
+    document.addEventListener("pointerdown", onDocDown, true);
     document.addEventListener("keydown", onKey, true);
-
     return () => {
       document.removeEventListener("pointerdown", onDocDown, true);
       document.removeEventListener("keydown", onKey, true);
@@ -107,7 +98,7 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
   // Reposition the floating menu on scroll/resize while open
   useEffect(() => {
     if (!openKey) return;
-    const onWin = () => positionMenu();
+    const onWin = () => positionMenu({ measure: true });
     window.addEventListener("scroll", onWin, true);
     window.addEventListener("resize", onWin);
     return () => {
@@ -117,9 +108,21 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openKey]);
 
+  // When a menu opens, position it on the next frame so we can measure height
+  useEffect(() => {
+    if (!openKey) return;
+    const r1 = requestAnimationFrame(() => {
+      const r2 = requestAnimationFrame(() => positionMenu({ measure: true }));
+      return () => cancelAnimationFrame(r2);
+    });
+    return () => cancelAnimationFrame(r1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openKey, isOpen]);
+
   // ---- Forced order + two section labels ----
   const ORDER = [
     "__regular__",
+    "symbolicSystems",
     "artsSciences",
     "literaryForms",
     "literaryContent",
@@ -136,7 +139,6 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
   const orderedGroups = useMemo(() => {
     const seen = new Set();
     const out = [];
-
     for (const key of ORDER) {
       if (key === "__regular__") {
         out.push({ __section: true, label: "Regular Tags", key });
@@ -159,30 +161,43 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
   }, [groups, groupsByKey]);
 
   // ---- Floating menu positioning (relative to the PANEL, not the button) ----
-  function positionMenu() {
+  function positionMenu({ measure = false } = {}) {
     const panelEl = panelRef.current;
     if (!panelEl) return;
 
     const panelRect = panelEl.getBoundingClientRect();
 
-    // Horizontal: anchor to the panel's LEFT edge with extra left offset
     const width = MENU_WIDTH;
     let left = panelRect.left - width - GAP - EXTRA_LEFT;
 
-    // Vertical: center on the entire panel
-    let topCenter = panelRect.top + panelRect.height / 2;
+    const panelCenter = panelRect.top + panelRect.height / 2;
 
-    // Keep inside viewport horizontally
+    let menuH = 300;
+    if (measure && menuRef.current && menuRef.current.offsetHeight) {
+      menuH = menuRef.current.offsetHeight;
+    }
+
+    let top = Math.round(panelCenter - menuH / 2);
+
+    const minTop = VIEWPAD;
+    const maxTop = Math.max(VIEWPAD, window.innerHeight - menuH - VIEWPAD);
+    if (top < minTop) top = minTop;
+    if (top > maxTop) top = maxTop;
+
     const minLeft = 4;
     if (left < minLeft) left = minLeft;
 
-    // Keep the "center line" within viewport a bit (menu has max-height)
-    const minCenter = 12;
-    const maxCenter = window.innerHeight - 12;
-    if (topCenter < minCenter) topCenter = minCenter;
-    if (topCenter > maxCenter) topCenter = maxCenter;
+    setMenuPos({ top, left, width });
+  }
 
-    setMenuPos({ top: topCenter, left, width });
+  // --- badge helper (local) ---
+  function renderCountBadge(count, total) {
+    const text = `${count}/${total}`;
+    return (
+      <span className="tagPanel__badge" aria-label={`${count} of ${total} selected`}>
+        {text}
+      </span>
+    );
   }
 
   return (
@@ -191,9 +206,9 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
     ref={panelRef}
     className={`tagPanelWrap ${isOpen ? "tagPanelWrap--open" : "tagPanelWrap--closed"}`}
     aria-hidden={!isOpen}
-    onMouseDown={(e) => e.stopPropagation()} // keep internal clicks internal
+    onMouseDown={(e) => e.stopPropagation()}
   >
-    {/* FILTERS tab (always rendered so it can animate) */}
+    {/* FILTERS tab */}
     <button
       type="button"
       className="tagPanel__tab"
@@ -210,7 +225,7 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
       FILTERS
     </button>
 
-    {/* Panel X close (only visible when open) */}
+    {/* Panel X close */}
     {isOpen && (
       <button
         type="button"
@@ -242,6 +257,15 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
         const count = set.size;
         const isDropdownOpen = openKey === g.key;
 
+        // two-column normalized checklist for Symbolic Systems
+        const items = [...g.allTags].sort((a, b) =>
+          a.localeCompare(b, "en", { sensitivity: "base" })
+        );
+        const listClass =
+          g.key === "symbolicSystems"
+            ? "tagPanel__menuList tagPanel__menuList--twoCols"
+            : "tagPanel__menuList";
+
         return (
           <div key={g.key} style={{ position: "relative" }}>
             <button
@@ -254,11 +278,11 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
               className="tagPanel__btn"
               aria-expanded={isDropdownOpen}
               aria-controls={`menu-${g.key}`}
+              title={g.label}
             >
               {g.label} {renderCountBadge(count, total)}
             </button>
 
-            {/* FLOATING DROPDOWN: portaled to <body> with position:fixed */}
             {isDropdownOpen && (
               <MenuPortal>
                 <div
@@ -274,42 +298,46 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
                     maxHeight: "calc(100vh - 32px)",
                     overflow: "auto",
                     zIndex: 9999,
-                    transform: "translateY(-50%)", // center vertically to the panel middle
+                    transform: "none",
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
                 >
+                  {/* Header (title + corner X) */}
                   <div className="tagPanel__menuHeader">
                     <span style={{ fontWeight: 600 }}>{g.label}</span>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <button
-                        type="button"
-                        onClick={() => handleAll(g.key, g.allTags)}
-                        className="tagPanel__miniBtn"
-                      >
-                        All
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleNone(g.key)}
-                        className="tagPanel__miniBtn"
-                      >
-                        None
-                      </button>
-                      <button
-                        type="button"
-                        className="tagPanel__close"
-                        aria-label="Close menu"
-                        title="Close"
-                        onClick={() => setOpenKey(null)}
-                      >
-                        ×
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      className="tagPanel__close tagPanel__close--menu"
+                      aria-label="Close menu"
+                      title="Close"
+                      onClick={() => setOpenKey(null)}
+                    >
+                      ×
+                    </button>
                   </div>
 
-                  <div className="tagPanel__menuList">
-                    {g.allTags.map((tag) => {
+                  {/* Toolbar under divider, aligned with first tag */}
+                  <div className="tagPanel__toolbar">
+                    <button
+                      type="button"
+                      onClick={() => handleAll(g.key, g.allTags)}
+                      className="tagPanel__miniBtn"
+                    >
+                      All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleNone(g.key)}
+                      className="tagPanel__miniBtn"
+                    >
+                      None
+                    </button>
+                  </div>
+
+                  {/* List */}
+                  <div className={listClass}>
+                    {items.map((tag) => {
                       const checked = set.has(tag);
                       return (
                         <label key={tag} className="tagPanel__row">
@@ -333,14 +361,4 @@ export default function TagPanel({ groups, selectedByGroup, onChange }) {
   </div>
 );
 
-}
-
-/* badge helper */
-function renderCountBadge(count, total) {
-  const text = `${count}/${total}`;
-  return (
-    <span className="tagPanel__badge" aria-label={`${count} of ${total} selected`}>
-      {text}
-    </span>
-  );
 }
