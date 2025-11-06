@@ -51,7 +51,7 @@
     "Jungian Archetypes Tags": "Terrible Mother, Shadow, Anima, Trickster, Initiator",
     "Neumann Stages Tags": "Separation from World Parents, Initiation, Divine Intervention, Magical Empowerment, Isolation, Descent into the Underworld, Battle with the Dragon, Death, Mythic Ordering of Reality",
     "Category": "Chthonic Trickster Night Spirit",
-    "Y-pos": "-"
+    "Y-pos": "40"
   },
   {
     "Index": "4",
@@ -213,7 +213,7 @@
     "Jungian Archetypes Tags": "Father Archetype, Wise Old Man, Terrible Father, Persona",
     "Neumann Stages Tags": "Separation from World Parents, Mythic Ordering of Reality, Coronation of the King, Divine Intervention, Magical Empowerment, Return to the Community",
     "Category": "Transcendent Storm Deity",
-    "Y-pos": "-"
+    "Y-pos": "0"
   },
   {
     "Index": "13",
@@ -357,7 +357,7 @@
     "Jungian Archetypes Tags": "Father Archetype, Wise Old Man, Persona, Initiator, Hero, Terrible Father",
     "Neumann Stages Tags": "Mythic Ordering of Reality, Coronation of the King, Divine Intervention, Magical Empowerment, Return to the Community, Battle with the Dragon, Initiation, Rebirth",
     "Category": "Lawgiver-King of Babylon",
-    "Y-pos": "-"
+    "Y-pos": "0"
   },
   {
     "Index": "21",
@@ -375,7 +375,7 @@
     "Jungian Archetypes Tags": "Terrible Mother, Mother Archetype, Shadow, Trickster",
     "Neumann Stages Tags": "Uroboric Stage, Separation from World Parents, Battle with the Dragon, Death, Mythic Ordering of Reality, Coronation of the King",
     "Category": "Chthonic Storm Goddess",
-    "Y-pos": "-"
+    "Y-pos": "70"
   },
   {
     "Index": "22",
@@ -429,7 +429,7 @@
     "Jungian Archetypes Tags": "Wise Old Man, Initiator, Persona, Trickster, Shadow, Self",
     "Neumann Stages Tags": "Divine Intervention, Initiation, Isolation, Battle with the Dragon, Descent into the Underworld, Rebirth, Mythic Ordering of Reality, Return to the Community, Magical Empowerment",
     "Category": "Monotheistic Priestly Prophet",
-    "Y-pos": "-"
+    "Y-pos": "80"
   },
   {
     "Index": "25",

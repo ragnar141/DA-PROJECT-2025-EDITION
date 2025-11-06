@@ -123,7 +123,7 @@
     "Jungian Archetypes Tags": "Mother Archetype, Terrible Mother, Wise Old Woman, Initiator",
     "Neumann Stages Tags": "Isolation, Divine Intervention, Initiation, Magical Empowerment, Return to the Community, Rebirth, Mythic Ordering of Reality",
     "Category": "Chthonic Mother Goddess",
-    "Y-pos": "-"
+    "Y-pos": "0"
   },
   {
     "Index": "8",
@@ -213,7 +213,7 @@
     "Jungian Archetypes Tags": "Persona, Wise Old Woman, Hero, Initiator, Trickster, Self",
     "Neumann Stages Tags": "Divine Intervention, Magical Empowerment, Initiation, Mythic Ordering of Reality, Return to the Community, Battle with the Dragon",
     "Category": "Civilizing Warrior Goddess",
-    "Y-pos": "-"
+    "Y-pos": "-50"
   },
   {
     "Index": "13",
@@ -231,7 +231,7 @@
     "Jungian Archetypes Tags": "Father Archetype, Terrible Father, Wise Old Man, Initiator, Shadow",
     "Neumann Stages Tags": "Coronation of the King, Mythic Ordering of Reality, Divine Intervention, Magical Empowerment, Battle with the Dragon, Descent into the Underworld, Death",
     "Category": "Cretan Lawgiver-King",
-    "Y-pos": "-"
+    "Y-pos": "0"
   },
   {
     "Index": "14",
@@ -393,7 +393,7 @@
     "Jungian Archetypes Tags": "Father Archetype, Terrible Father, Persona, Shadow, Hero, Initiator",
     "Neumann Stages Tags": "Coronation of the King, Divine Intervention, Battle with the Dragon, Isolation, Return to the Community, Death, Descent into the Underworld, Mythic Ordering of Reality, Ego Collapse",
     "Category": "Mycenaean High King & Warrior-Commander",
-    "Y-pos": "-"
+    "Y-pos": "30"
   },
   {
     "Index": "23",
@@ -663,7 +663,7 @@
     "Jungian Archetypes Tags": "Wise Old Woman, Initiator, Mother Archetype, Persona, Self",
     "Neumann Stages Tags": "Initiation, Divine Intervention, Magical Empowerment, Mythic Ordering of Reality, Return to the Community, Ego Transcendence, Isolation",
     "Category": "Mantinean Priestess–Philosopher of Eros",
-    "Y-pos": "-"
+    "Y-pos": "30"
   },
   {
     "Index": "38",
@@ -717,7 +717,7 @@
     "Jungian Archetypes Tags": "Wise Old Man, Initiator, Father Archetype, Persona, Trickster, Self, Shadow",
     "Neumann Stages Tags": "Battle with the Dragon, Initiation, Isolation, Return to the Community, Mythic Ordering of Reality, Ego Transcendence, Rebirth",
     "Category": "Skeptic Philosopher & Founder of Pyrrhonism",
-    "Y-pos": "-"
+    "Y-pos": "10"
   },
   {
     "Index": "41",
@@ -735,7 +735,7 @@
     "Jungian Archetypes Tags": "Hero, Persona, Initiator, Father Archetype, Shadow, Terrible Father",
     "Neumann Stages Tags": "Coronation of the King, Divine Intervention, Battle with the Dragon, Initiation, Mythic Ordering of Reality, Isolation, Ego Collapse, Death, Rebirth",
     "Category": "Macedonian King & Founder of the Hellenistic World",
-    "Y-pos": "-"
+    "Y-pos": "20"
   },
   {
     "Index": "42",

@@ -231,7 +231,7 @@
     "Jungian Archetypes Tags": "Hero, Initiator, Father Archetype, Terrible Father, Trickster, Persona",
     "Neumann Stages Tags": "Mythic Ordering of Reality, Battle with the Dragon, Coronation of the King, Initiation, Death, Rebirth, Return to the Community, Divine Intervention, Separation from World Parents",
     "Category": "Founding Father of Rome",
-    "Y-pos": "-"
+    "Y-pos": "0"
   },
   {
     "Index": "14",
@@ -357,7 +357,7 @@
     "Jungian Archetypes Tags": "Hero, Initiator, Father Archetype, Terrible Father, Trickster, Persona",
     "Neumann Stages Tags": "Mythic Ordering of Reality, Initiation, Battle with the Dragon, Death, Return to the Community, Rebirth, Ego Collapse",
     "Category": "Founder of the Roman Republic",
-    "Y-pos": "-"
+    "Y-pos": "-40"
   },
   {
     "Index": "21",
@@ -411,7 +411,7 @@
     "Jungian Archetypes Tags": "Persona, Hero, Initiator, Anima, Shadow",
     "Neumann Stages Tags": "Isolation, Death, Return to the Community, Mythic Ordering of Reality, Initiation, Separation from World Parents",
     "Category": "Republic-Founding Martyr",
-    "Y-pos": "-"
+    "Y-pos": "0"
   },
   {
     "Index": "24",
@@ -429,7 +429,7 @@
     "Jungian Archetypes Tags": "Hero, Initiator, Persona, Trickster",
     "Neumann Stages Tags": "Battle with the Dragon, Isolation, Initiation, Rebirth, Return to the Community, Mythic Ordering of Reality",
     "Category": "Patriot-Hero",
-    "Y-pos": "-"
+    "Y-pos": "-50"
   },
   {
     "Index": "25",
@@ -501,7 +501,7 @@
     "Jungian Archetypes Tags": "Initiator, Hero, Wise Old Man, Father Archetype, Persona, Shadow",
     "Neumann Stages Tags": "Separation from World Parents, Initiation, Divine Intervention, Magical Empowerment, Battle with the Dragon, Ego Collapse, Rebirth, Return to the Community, Mythic Ordering of Reality",
     "Category": "Foundational Apostolic Shepherd",
-    "Y-pos": "-"
+    "Y-pos": "15"
   },
   {
     "Index": "29",

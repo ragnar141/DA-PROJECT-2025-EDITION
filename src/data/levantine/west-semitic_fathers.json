@@ -51,7 +51,7 @@
     "Jungian Archetypes Tags": "Shadow, Terrible Father, Trickster",
     "Neumann Stages Tags": "Uroboric Stage, Death, Battle with the Dragon, Descent into the Underworld, Ego Collapse",
     "Category": "Chthonic Storm Deity",
-    "Y-pos": "-"
+    "Y-pos": "0"
   },
   {
     "Index": "4",
@@ -87,7 +87,7 @@
     "Jungian Archetypes Tags": "Mother Archetype, Wise Old Woman, Terrible Mother, Anima",
     "Neumann Stages Tags": "Uroboric Stage, Mythic Ordering of Reality, Death, Rebirth, Return to the Community, Ego Transcendence",
     "Category": "Chthonic Mother Goddess",
-    "Y-pos": "-"
+    "Y-pos": "-30"
   },
   {
     "Index": "6",
@@ -105,7 +105,7 @@
     "Jungian Archetypes Tags": "Father Archetype, Initiator, Hero, Wise Old Man, Shadow, Trickster",
     "Neumann Stages Tags": "Separation from World Parents, Initiation, Divine Intervention, Isolation, Battle with the Dragon, Mythic Ordering of Reality, Death, Rebirth, Return to the Community, Ego Transcendence",
     "Category": "Monotheistic Patriarch & Covenant-Bearer",
-    "Y-pos": "-"
+    "Y-pos": "30"
   },
   {
     "Index": "7",
@@ -177,7 +177,7 @@
     "Jungian Archetypes Tags": "Terrible Mother, Initiator, Anima, Trickster, Mother Archetype",
     "Neumann Stages Tags": "Uroboric Stage, Battle with the Dragon, Death, Rebirth, Initiation, Magical Empowerment, Descent into the Underworld",
     "Category": "Chthonic Storm-Fertility Goddess",
-    "Y-pos": "-"
+    "Y-pos": "-50"
   },
   {
     "Index": "11",
@@ -195,7 +195,7 @@
     "Jungian Archetypes Tags": "Shadow, Terrible Father, Animus",
     "Neumann Stages Tags": "Uroboric Stage, Battle with the Dragon, Death, Mythic Ordering of Reality",
     "Category": "Chthonic Storm Deity",
-    "Y-pos": "-"
+    "Y-pos": "0"
   },
   {
     "Index": "12",
@@ -771,7 +771,7 @@
     "Jungian Archetypes Tags": "Wise Old Man, Initiator, Persona, Shadow, Hero",
     "Neumann Stages Tags": "Battle with the Dragon, Divine Intervention, Mythic Ordering of Reality, Return to the Community, Rebirth, Magical Empowerment",
     "Category": "Monotheistic Anti-Edom Judgment Prophet",
-    "Y-pos": "-"
+    "Y-pos": "-40"
   },
   {
     "Index": "44",
