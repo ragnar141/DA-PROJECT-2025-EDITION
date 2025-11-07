@@ -1,7 +1,7 @@
 // searchBar.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import "../styles/searchBar.css";
+import "../styles/searchbar.css";
 
 /* === Tiny SVGs that mirror timeline glyphs (inline) === */
 function MarkerIcon({ item }) {
