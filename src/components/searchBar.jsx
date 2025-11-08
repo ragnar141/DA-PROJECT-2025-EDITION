@@ -2,60 +2,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import "../styles/searchbar.css";
+import MarkerIcon from "./markerIcon";
 
-/* === Tiny SVGs that mirror timeline glyphs (inline) === */
-function MarkerIcon({ item }) {
-  const type = item?.type;
-  const color = item?.color || "#666";
-  const colors = Array.isArray(item?.colors) ? item.colors.filter(Boolean) : null;
-  const vb = "0 0 16 16";
-  const MIDLINE_OFFSET = 0.22;
-
-  if (type === "father") {
-    const r = item?.founding ? 5.5 : 4.0;
-    const cx = 8, cy = 8;
-    const xL = cx - r, xR = cx + r, yT = cy - r, yB = cy + r, yM = cy;
-    const midX = Math.max(xL + 1, cx - r * MIDLINE_OFFSET);
-    const isHistoric = !!(item?.historic ?? item?.isHistoric);
-
-    return (
-      <svg viewBox={vb} width="16" height="16" focusable="false" aria-hidden="true">
-        <path d={`M ${xL} ${yT} L ${xL} ${yB} L ${xR} ${yM} Z`} fill={color} />
-        {isHistoric && (
-          <line x1={midX} y1={cy - r} x2={midX} y2={cy + r} stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-        )}
-      </svg>
-    );
-  }
-
-  if (colors && colors.length > 1) {
-    const n = colors.length;
-    const cx = 8, cy = 8, r = 5.5;
-    const paths = [];
-    if (n === 2) {
-      paths.push(arcPath(cx, cy, r, 0, Math.PI));
-      paths.push(arcPath(cx, cy, r, Math.PI, 2 * Math.PI));
-    } else {
-      for (let i = 0; i < n; i++) {
-        const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
-        const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
-        paths.push(arcPath(cx, cy, r, a0, a1));
-      }
-    }
-    return (
-      <svg viewBox={vb} width="16" height="16" focusable="false" aria-hidden="true">
-        {paths.map((d, i) => (
-          <path key={i} d={d} fill={colors[i]} />
-        ))}
-      </svg>
-    );
-  }
-
-  return (
-    <svg viewBox={vb} width="16" height="16" focusable="false" aria-hidden="true">
-      <circle cx="8" cy="8" r="5.5" fill={color} />
-    </svg>
-  );
+/* === Utils === */
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function durationLabelFromId(id) {
@@ -66,20 +17,6 @@ function durationLabelFromId(id) {
   }
   const m = id.match(/^(.+?)-composite$/);
   return (m ? m[1] : id).trim();
-}
-
-function arcPath(cx, cy, r, a0, a1) {
-  const x0 = cx + r * Math.cos(a0);
-  const y0 = cy + r * Math.sin(a0);
-  const x1 = cx + r * Math.cos(a1);
-  const y1 = cy + r * Math.sin(a1);
-  const sweep = 1;
-  const largeArc = ((a1 - a0 + 2 * Math.PI) % (2 * Math.PI)) > Math.PI ? 1 : 0;
-  return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${largeArc} ${sweep} ${x1} ${y1} Z`;
-}
-
-function escapeRegExp(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /* === Helpers for date/field handling === */
@@ -95,6 +32,7 @@ function formatYearHuman(y) {
   return n < 0 ? `${Math.abs(n)} BCE` : `${n} CE`;
 }
 
+/* === Highlight component === */
 function Highlight({ text, query }) {
   if (!text || !query) return <>{text}</>;
   const words = query.trim().split(/\s+/).filter(Boolean);
@@ -108,6 +46,53 @@ function Highlight({ text, query }) {
       )}
     </>
   );
+}
+
+/* === Derive symbolic-system colors from item tags via global lookup === */
+function deriveSymbolColorsFromItem(r) {
+  // Prefer pre-provided props
+  if (Array.isArray(r.colors) && r.colors.filter(Boolean).length > 1) {
+    return { colors: r.colors.filter(Boolean) };
+  }
+  if (r.color) return { color: r.color };
+
+  // Pull possible tag fields
+  const raw =
+    r.symbolic ??
+    r.symbolicSystems ??
+    r.symbolicSystem ??
+    r.tags ??
+    r.category ??
+    r.tag;
+
+  // Normalize to array of tokens
+  const tokens = Array.isArray(raw)
+    ? raw
+    : String(raw || "")
+        .split(/[;,/|]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+
+  // Global lookup injected by timeline (fallback to empty)
+  const LOOKUP =
+    (typeof window !== "undefined" && (window.SYMBOLIC_COLOR_LOOKUP || window.SYMBOLIC_COLOR_MAP)) ||
+    {};
+
+  const seen = new Set();
+  const out = [];
+  for (const t of tokens) {
+    const lc = t.toLowerCase();
+    const tc = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+    const c = LOOKUP[t] || LOOKUP[lc] || LOOKUP[tc];
+    if (c && !seen.has(c)) {
+      seen.add(c);
+      out.push(c);
+    }
+  }
+
+  if (out.length > 1) return { colors: out };
+  if (out.length === 1) return { color: out[0] };
+  return {};
 }
 
 /**
@@ -133,8 +118,26 @@ export default function SearchBar({
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Refs for auto-scrolling + keyboard/mouse nav mode
+  const popoverRef = useRef(null);
+  const itemRefs = useRef([]);
+  const navModeRef = useRef("mouse");          // "mouse" | "keyboard"
+  const navResetTimerRef = useRef(null);
+
+  const setKeyboardNav = () => {
+    navModeRef.current = "keyboard";
+    if (navResetTimerRef.current) clearTimeout(navResetTimerRef.current);
+    // After a short pause with no key navigation, allow mouse hover again
+    navResetTimerRef.current = setTimeout(() => {
+      navModeRef.current = "mouse";
+      navResetTimerRef.current = null;
+    }, 400);
+  };
+
   useEffect(() => {
-    return () => {};
+    return () => {
+      if (navResetTimerRef.current) clearTimeout(navResetTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {}, [items, maxResults, visibleIds]);
@@ -178,8 +181,15 @@ export default function SearchBar({
       .map((x) => x.it);
   }, [q, items, maxResults, open, visibleIds]);
 
+  // Reset hover to first when query changes
   useEffect(() => { setHoverIdx(0); }, [q]);
 
+  // Reset item refs when results change
+  useEffect(() => {
+    itemRefs.current = [];
+  }, [results]);
+
+  // Close on outside click
   useEffect(() => {
     const handleOutside = (e) => {
       if (!(open && q.trim())) return;
@@ -192,6 +202,7 @@ export default function SearchBar({
     return () => document.removeEventListener("pointerdown", handleOutside, true);
   }, [open, q]);
 
+  // Notify when list first becomes visible
   useEffect(() => {
     const listVisible = !!(open && q.trim() && results.length > 0);
     if (listVisible && !listWasVisibleRef.current) {
@@ -199,6 +210,24 @@ export default function SearchBar({
     }
     listWasVisibleRef.current = listVisible;
   }, [open, q, results, onInteract]);
+
+  // Auto-scroll hovered item into view
+  useEffect(() => {
+    const container = popoverRef.current;
+    const el = itemRefs.current[hoverIdx];
+    if (!container || !el) return;
+
+    const elTop = el.offsetTop;
+    const elBottom = elTop + el.offsetHeight;
+    const viewTop = container.scrollTop;
+    const viewBottom = viewTop + container.clientHeight;
+
+    if (elTop < viewTop) {
+      container.scrollTop = elTop; // scroll up
+    } else if (elBottom > viewBottom) {
+      container.scrollTop = elBottom - container.clientHeight; // scroll down
+    }
+  }, [hoverIdx, results]);
 
   const activate = (idx) => {
     const item = results[idx];
@@ -222,9 +251,11 @@ export default function SearchBar({
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
+      setKeyboardNav();
       setHoverIdx((i) => Math.min((results.length || 1) - 1, i + 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
+      setKeyboardNav();
       setHoverIdx((i) => Math.max(0, i - 1));
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -235,6 +266,20 @@ export default function SearchBar({
       e.preventDefault();
       closeAndReset();
     }
+  };
+
+  // When user moves the mouse inside the list, switch back to mouse mode
+  const onPopoverMouseMove = () => {
+    navModeRef.current = "mouse";
+    if (navResetTimerRef.current) {
+      clearTimeout(navResetTimerRef.current);
+      navResetTimerRef.current = null;
+    }
+  };
+
+  const maybeHoverByMouse = (idx) => {
+    if (navModeRef.current === "keyboard") return; // ignore hover while keyboard nav is active
+    setHoverIdx(idx);
   };
 
   const renderTextItem = (r, idx, isHover) => {
@@ -254,13 +299,13 @@ export default function SearchBar({
       (Number.isFinite(Number(r.when)) ? formatYearHuman(r.when) : null);
 
     const idxDisplay = cleanField(r.index ?? r.textIndex);
-    const durationLabel = r.durationId ? durationLabelFromId(r.durationId) : null;
 
     return (
       <button
+        ref={(el) => (itemRefs.current[idx] = el)}
         key={r.id}
         className={`sb-item ${isHover ? "is-hover" : ""}`}
-        onMouseEnter={() => setHoverIdx(idx)}
+        onMouseEnter={() => maybeHoverByMouse(idx)}
         onMouseDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -272,7 +317,12 @@ export default function SearchBar({
       >
         <div className="sb-line sb-line1">
           <span className="sb-inline-icon" aria-hidden="true">
-            <MarkerIcon item={r} />
+            <MarkerIcon
+              type="text"
+              founding={false}
+              historic={!!(r.historic ?? r.isHistoric)}
+              {...deriveSymbolColorsFromItem(r)}
+            />
           </span>
           <span className="sb-title-text">
             <Highlight text={r.title} query={q} />
@@ -341,9 +391,10 @@ export default function SearchBar({
 
     return (
       <button
+        ref={(el) => (itemRefs.current[idx] = el)}
         key={r.id}
         className={`sb-item ${isHover ? "is-hover" : ""}`}
-        onMouseEnter={() => setHoverIdx(idx)}
+        onMouseEnter={() => maybeHoverByMouse(idx)}
         onMouseDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -355,7 +406,12 @@ export default function SearchBar({
       >
         <div className="sb-line sb-line1">
           <span className="sb-inline-icon" aria-hidden="true">
-            <MarkerIcon item={r} />
+            <MarkerIcon
+              type="father"
+              founding={!!r.founding}
+              historic={!!(r.historic ?? r.isHistoric)}
+              {...deriveSymbolColorsFromItem(r)}
+            />
           </span>
           <span className="sb-title-text">
             <Highlight text={r.title} query={q} />
@@ -454,7 +510,13 @@ export default function SearchBar({
       }
 
       {open && q.trim() && results.length > 0 && (
-        <div className="sb-popover" role="listbox" onMouseDown={() => { onInteract(); }}>
+        <div
+          ref={popoverRef}
+          className="sb-popover"
+          role="listbox"
+          onMouseDown={() => { onInteract(); }}
+          onMouseMove={onPopoverMouseMove}
+        >
           {results.map((r, idx) => {
             const isHover = idx === hoverIdx;
             return r.type === "father"
